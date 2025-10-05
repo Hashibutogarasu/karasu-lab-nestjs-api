@@ -1,0 +1,175 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// OAuth 2.0 Core Models
+
+model Client {
+  id           String   @id @default(cuid()) @map("client_id")
+  secret       String   @map("client_secret") // ハッシュ化して保存
+  name         String   @map("client_name")
+  redirectUris String[] @map("redirect_uris")
+  grantTypes   String[] @map("grant_types")
+  scope        String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  authorizationCodes AuthorizationCode[]
+  accessTokens       AccessToken[]
+  refreshTokens      RefreshToken[]
+  userConsents       UserConsent[]
+
+  @@map("clients")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String?  @map("password_hash") // Nullable for SNS users
+  providers    String[] @default([])
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  authorizationCodes AuthorizationCode[]
+  accessTokens       AccessToken[]
+  refreshTokens      RefreshToken[]
+  userConsents       UserConsent[]
+  extraProfiles      ExtraProfile[]
+  passwordResets     PasswordReset[]
+
+  @@map("users")
+}
+
+model AuthorizationCode {
+  code                String   @id // ハッシュ化推奨
+  clientId            String   @map("client_id")
+  userId              String   @map("user_id")
+  redirectUri         String   @map("redirect_uri")
+  scope               String?
+  codeChallenge       String?  @map("code_challenge")
+  codeChallengeMethod String?  @map("code_challenge_method")
+  expiresAt           DateTime @map("expires_at")
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  // Relations
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("authorization_codes")
+}
+
+model AccessToken {
+  token     String   @id // ステートフルの場合ハッシュ化推奨
+  clientId  String   @map("client_id")
+  userId    String   @map("user_id")
+  scope     String?
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  client        Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokens RefreshToken[]
+
+  @@map("access_tokens")
+}
+
+model RefreshToken {
+  token       String   @id // ハッシュ化必須
+  accessToken String   @map("access_token")
+  clientId    String   @map("client_id")
+  userId      String   @map("user_id")
+  scope       String?
+  expiresAt   DateTime @map("expires_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  accessTokenRef AccessToken @relation(fields: [accessToken], references: [token], onDelete: Cascade)
+  client         Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model UserConsent {
+  userId       String   @map("user_id")
+  clientId     String   @map("client_id")
+  grantedScope String   @map("granted_scope")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@id([userId, clientId])
+  @@map("user_consents")
+}
+
+// SNS認証用のプロフィール情報
+model ExtraProfile {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  provider    String // "google", "x", etc.
+  providerId  String   @map("provider_id")
+  displayName String?  @map("display_name")
+  email       String?
+  avatarUrl   String?  @map("avatar_url")
+  rawProfile  Json     @map("raw_profile") // SNS固有のプロフィール情報をJSONで保存
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, provider])
+  @@index([userId, provider])
+  @@map("extra_profiles")
+}
+
+// SNS認証用のステート管理
+model AuthState {
+  id           String   @id @default(cuid())
+  stateCode    String   @unique @map("state_code")
+  oneTimeToken String   @unique @map("one_time_token")
+  provider     String
+  callbackUrl  String   @map("callback_url")
+  expiresAt    DateTime @map("expires_at")
+  used         Boolean  @default(false)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([stateCode])
+  @@index([oneTimeToken])
+  @@map("auth_states")
+}
+
+// パスワードリセット用のテーブル
+model PasswordReset {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  resetCode String   @unique @map("reset_code") // 6桁の確認コード
+  expiresAt DateTime @map("expires_at")
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([resetCode])
+  @@index([userId])
+  @@map("password_resets")
+}
