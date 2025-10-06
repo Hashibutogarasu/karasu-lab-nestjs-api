@@ -32,9 +32,11 @@ import type { AuthStateDto, VerifyTokenDto } from './dto/auth.dto';
 @Controller('auth')
 export class AuthController {
   private readonly DEFAULT_CALLBACK_URL =
-    process.env.FRONTEND_CALLBACK_URL || 'http://localhost:3000/auth/callback';
+    process.env.FRONTEND_CALLBACK_URL ||
+    'http://localhost:3000/api/auth/signin';
   private readonly DEFAULT_GOOGLE_CALLBACK_URL =
-    process.env.FRONTEND_CALLBACK_URL || 'http://localhost:3000/auth/callback';
+    process.env.FRONTEND_CALLBACK_URL ||
+    'http://localhost:3000/api/auth/signin';
 
   constructor(private readonly authService: AuthService) {}
 
@@ -393,12 +395,7 @@ export class AuthController {
       const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
       const apiCallbackUrl = `${baseUrl}/auth/callback`;
 
-      // フロントエンドのコールバックURLがAPIのコールバックURLと同じかチェック
-      const isApiCallback =
-        authState.callbackUrl === apiCallbackUrl ||
-        authState.callbackUrl.startsWith(`${apiCallbackUrl}?`);
-
-      // Google OAuth処理（この例ではGoogleのみ実装）
+      // Google OAuth処理
       const redirectUri = apiCallbackUrl;
       const snsProfile = await processGoogleOAuth(code, redirectUri);
 
@@ -407,53 +404,25 @@ export class AuthController {
 
       if (!processResult.success) {
         const errorType = processResult.error || 'authentication_failed';
-        if (isApiCallback) {
-          // APIコールバックの場合はJSON形式でエラーを返す
-          res.status(HttpStatus.BAD_REQUEST).json({
-            error: errorType,
-            error_description: 'SNS authentication failed',
-          });
-          return;
-        } else {
-          // フロントエンドのコールバックの場合はリダイレクト
-          const errorRedirect = SnsAuthCallback.buildErrorRedirect(
-            authState.callbackUrl,
-            errorType,
-          );
-          return res.redirect(errorRedirect);
-        }
-      }
-
-      if (isApiCallback) {
-        // APIコールバックの場合は直接ユーザー情報を返す（リダイレクトループを防ぐ）
-        const userProfile = await this.authService.getUserProfileById(
-          processResult.userId!,
-        );
-        const sessionData = await this.authService.createSession(
-          processResult.userId!,
-        );
-
-        res.status(HttpStatus.OK).json({
-          message: 'Google authentication successful',
-          user: userProfile,
-          session_id: sessionData.sessionId,
-          expires_at: sessionData.expiresAt,
-          provider: 'google',
-        });
-        return;
-      } else {
-        // フロントエンドのコールバックの場合は従来のリダイレクト処理
-        const successRedirect = SnsAuthCallback.buildCallbackRedirect(
+        const errorRedirect = SnsAuthCallback.buildErrorRedirect(
           authState.callbackUrl,
-          state,
-          processResult.oneTimeToken!,
+          errorType,
         );
-        return res.redirect(successRedirect);
+        return res.redirect(errorRedirect);
       }
+
+      // フロントエンドのコールバック処理ページにリダイレクト
+      const callbackUrl = new URL(
+        '/api/auth/callback/karasu-sns',
+        process.env.FRONTEND_URL || 'http://localhost:3000',
+      );
+      callbackUrl.searchParams.set('token', processResult.oneTimeToken!);
+      callbackUrl.searchParams.set('state', state);
+      callbackUrl.searchParams.set('callbackUrl', authState.callbackUrl);
+
+      return res.redirect(callbackUrl.toString());
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
+      console.error('OAuth callback error:', error);
       const errorRedirect = SnsAuthCallback.buildErrorRedirect(
         this.DEFAULT_GOOGLE_CALLBACK_URL,
         'server_error',

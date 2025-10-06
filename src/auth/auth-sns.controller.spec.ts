@@ -78,6 +78,13 @@ describe('AuthController - SNS OAuth Authentication', () => {
     query.cleanupExpiredAuthStates as jest.MockedFunction<
       typeof query.cleanupExpiredAuthStates
     >;
+  const mockUpdateAuthStateWithUser =
+    query.updateAuthStateWithUser as jest.MockedFunction<
+      typeof query.updateAuthStateWithUser
+    >;
+  const mockFindUserById = query.findUserById as jest.MockedFunction<
+    typeof query.findUserById
+  >;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -234,6 +241,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
         oneTimeToken: 'one_time_token_123',
         provider: 'google',
         callbackUrl: 'https://frontend.example.com/auth/callback', // Different URL to trigger frontend callback
+        userId: null, // Initially null, will be updated after profile processing
         expiresAt: new Date(Date.now() + 15 * 60 * 1000),
         used: false,
         createdAt: new Date(),
@@ -282,11 +290,11 @@ describe('AuthController - SNS OAuth Authentication', () => {
       );
 
       expect(buildErrorRedirectMock).toHaveBeenCalledWith(
-        'http://localhost:3000/auth/callback',
+        'http://localhost:3000/auth/callback/karasu-sns',
         error,
       );
       expect(mockRedirectFn).toHaveBeenCalledWith(
-        'http://localhost:3000/auth/callback?error=access_denied',
+        'http://localhost:3000/auth/callback/karasu-sns?error=access_denied',
       );
     });
 
@@ -300,7 +308,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
       );
 
       expect(buildErrorRedirectMock).toHaveBeenCalledWith(
-        'http://localhost:3000/auth/callback',
+        'http://localhost:3000/auth/callback/karasu-sns',
         'invalid_request',
       );
     });
@@ -315,7 +323,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
       );
 
       expect(buildErrorRedirectMock).toHaveBeenCalledWith(
-        'http://localhost:3000/auth/callback',
+        'http://localhost:3000/auth/callback/karasu-sns',
         'invalid_request',
       );
     });
@@ -333,7 +341,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
       );
 
       expect(buildErrorRedirectMock).toHaveBeenCalledWith(
-        'http://localhost:3000/auth/callback',
+        'http://localhost:3000/auth/callback/karasu-sns',
         'invalid_state',
       );
     });
@@ -346,6 +354,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
         oneTimeToken: 'one_time_token_123',
         provider: 'google',
         callbackUrl: 'https://frontend.example.com/auth/callback',
+        userId: null,
         expiresAt: new Date(Date.now() + 15 * 60 * 1000),
         used: false,
         createdAt: new Date(),
@@ -365,7 +374,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
       );
 
       expect(buildErrorRedirectMock).toHaveBeenCalledWith(
-        'http://localhost:3000/auth/callback',
+        'http://localhost:3000/auth/callback/karasu-sns',
         'server_error',
       );
     });
@@ -378,6 +387,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
         oneTimeToken: 'one_time_token_123',
         provider: 'google',
         callbackUrl: 'https://frontend.example.com/auth/callback',
+        userId: null,
         expiresAt: new Date(Date.now() + 15 * 60 * 1000),
         used: false,
         createdAt: new Date(),
@@ -411,6 +421,20 @@ describe('AuthController - SNS OAuth Authentication', () => {
       oneTimeToken: 'one_time_token_123',
     };
 
+    beforeEach(() => {
+      // Mock user data for verification tests
+      const mockUser = {
+        id: 'user_123',
+        username: 'testuser',
+        email: 'test@example.com',
+        passwordHash: null, // SNS users don't have passwords
+        providers: ['google'],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      mockFindUserById.mockResolvedValue(mockUser);
+    });
+
     it('should verify token and return JWT successfully', async () => {
       const expectedResult = {
         success: true,
@@ -418,7 +442,6 @@ describe('AuthController - SNS OAuth Authentication', () => {
           sub: 'user_123',
           name: 'Test User',
           email: 'test@example.com',
-          picture: 'https://example.com/avatar.jpg',
           provider: 'google',
           providers: ['google'],
         },
@@ -517,6 +540,35 @@ describe('AuthController - SNS OAuth Authentication', () => {
         controller.verifyToken(validVerifyDto, mockResponse),
       ).rejects.toThrow(UnauthorizedException);
     });
+
+    it('should handle missing user ID in authentication state', async () => {
+      const errorResult = {
+        success: false,
+        error: 'invalid_state',
+        errorDescription:
+          'Authentication state does not contain user information',
+      };
+
+      mockVerifyAndCreateToken.mockResolvedValue(errorResult);
+
+      await expect(
+        controller.verifyToken(validVerifyDto, mockResponse),
+      ).rejects.toThrow(HttpException);
+    });
+
+    it('should handle user not found after verification', async () => {
+      const errorResult = {
+        success: false,
+        error: 'user_not_found',
+        errorDescription: 'User associated with authentication state not found',
+      };
+
+      mockVerifyAndCreateToken.mockResolvedValue(errorResult);
+
+      await expect(
+        controller.verifyToken(validVerifyDto, mockResponse),
+      ).rejects.toThrow(HttpException);
+    });
   });
 
   describe('State Code Security Tests', () => {
@@ -528,6 +580,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
         oneTimeToken: 'one_time_token_123',
         provider: 'google',
         callbackUrl: 'http://localhost:3000/auth/callback',
+        userId: 'user_123',
         expiresAt: expiredDate,
         used: false,
         createdAt: new Date(),
@@ -560,6 +613,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
         oneTimeToken: 'one_time_token_123',
         provider: 'google',
         callbackUrl: 'http://localhost:3000/auth/callback',
+        userId: 'user_123',
         expiresAt: new Date(Date.now() + 15 * 60 * 1000),
         used: true, // Already used
         createdAt: new Date(),
@@ -630,6 +684,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
         oneTimeToken: 'one_time_token_123',
         provider: 'google',
         callbackUrl: 'http://localhost:3000/auth/callback',
+        userId: null,
         expiresAt: new Date(Date.now() + 15 * 60 * 1000),
         used: false,
         createdAt: new Date(),
@@ -665,6 +720,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
         oneTimeToken: 'one_time_token_123',
         provider: 'google',
         callbackUrl: 'http://localhost:3000/auth/callback',
+        userId: null,
         expiresAt: new Date(Date.now() + 15 * 60 * 1000),
         used: false,
         createdAt: new Date(),
@@ -706,6 +762,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
         oneTimeToken: 'one_time_token_123',
         provider: 'google',
         callbackUrl: 'http://localhost:3000/auth/callback',
+        userId: null,
         expiresAt: new Date(Date.now() + 15 * 60 * 1000),
         used: false,
         createdAt: new Date(),
@@ -842,6 +899,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
         oneTimeToken: 'one_time_token_123',
         provider: 'google',
         callbackUrl: 'http://localhost:3000/auth/callback',
+        userId: null,
         expiresAt: new Date(Date.now() + 15 * 60 * 1000),
         used: false,
         createdAt: new Date(),

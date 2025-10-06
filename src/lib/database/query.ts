@@ -661,6 +661,7 @@ export async function createAuthState(data: {
   provider: string;
   callbackUrl: string;
   expiresAt: Date;
+  userId?: string;
 }) {
   return prisma.authState.create({
     data,
@@ -683,6 +684,19 @@ export async function consumeAuthState(stateCode: string) {
   return prisma.authState.update({
     where: { stateCode },
     data: { used: true },
+  });
+}
+
+/**
+ * 認証ステートにユーザーIDを設定
+ */
+export async function updateAuthStateWithUser(
+  stateCode: string,
+  userId: string,
+) {
+  return prisma.authState.update({
+    where: { stateCode },
+    data: { userId },
   });
 }
 

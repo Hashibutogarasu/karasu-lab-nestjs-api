@@ -12,6 +12,8 @@ import {
   addUserProvider,
   createSnsUser,
   findUserByEmail,
+  findUserById,
+  updateAuthStateWithUser,
   generateRandomString,
   hashString,
   calculateExpiration,
@@ -109,7 +111,8 @@ function generateProviderRedirectUrl(
   stateCode: string,
 ): string {
   const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
-  const callbackUrl = `${baseUrl}/auth/callback`;
+  // APIのコールバックエンドポイントを使用
+  const apiCallbackUrl = `${baseUrl}/auth/callback`;
 
   switch (provider) {
     case 'google': {
@@ -119,7 +122,7 @@ function generateProviderRedirectUrl(
         `https://accounts.google.com/o/oauth2/v2/auth?` +
         `response_type=code&` +
         `client_id=${googleClientId}&` +
-        `redirect_uri=${encodeURIComponent(callbackUrl)}&` +
+        `redirect_uri=${encodeURIComponent(apiCallbackUrl)}&` +
         `scope=${encodeURIComponent(scopes)}&` +
         `state=${stateCode}`
       );
@@ -213,6 +216,9 @@ export async function processSnsCProfile(
       });
     }
 
+    // 認証ステートにユーザーIDを保存（後でverifyAndCreateTokenで使用）
+    await updateAuthStateWithUser(stateCode, user.id);
+
     return {
       success: true,
       userId: user.id,
@@ -269,18 +275,35 @@ export async function verifyAndCreateToken(
       };
     }
 
+    // 認証ステートにユーザーIDが保存されているかチェック
+    if (!authState.userId) {
+      return {
+        success: false,
+        error: 'invalid_state',
+        errorDescription:
+          'Authentication state does not contain user information',
+      };
+    }
+
     // ステートを消費（使用済みにする）
     await consumeAuthState(request.stateCode);
 
-    // トークンからユーザー情報を抽出（実際の実装では別の方法でユーザーを取得）
-    // ここでは簡単化のため、authStateに関連付けられた最新のプロファイル取得をシミュレート
-    // 実際の実装では、プロセス中でユーザーIDを保存する必要があります
+    // ユーザー情報を取得
+    const user = await findUserById(authState.userId);
+    if (!user) {
+      return {
+        success: false,
+        error: 'user_not_found',
+        errorDescription: 'User associated with authentication state not found',
+      };
+    }
 
-    // TODO: より良い方法でユーザー情報を取得する実装が必要
-    // 現在は簡単化のためにダミーレスポンスを返す
+    // JWTトークンを生成
     const jwtSecret = process.env.JWT_SECRET || 'default-secret';
     const payload = {
-      sub: 'temp-user-id', // 実際の実装ではprocessSnsProfileの結果を使用
+      sub: user.id,
+      username: user.username,
+      email: user.email,
       provider: authState.provider,
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + 60 * 60, // 1時間
@@ -291,9 +314,11 @@ export async function verifyAndCreateToken(
     return {
       success: true,
       profile: {
-        sub: payload.sub,
+        sub: user.id,
+        name: user.username,
+        email: user.email,
         provider: authState.provider,
-        providers: [authState.provider],
+        providers: user.providers || [authState.provider],
       },
       token,
     };
