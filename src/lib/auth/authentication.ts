@@ -27,6 +27,7 @@ export interface AuthResponse {
     id: string;
     username: string;
     email: string;
+    role: string;
   };
   error?: string;
   errorDescription?: string;
@@ -90,6 +91,7 @@ export async function registerUser(
         id: newUser.id,
         username: newUser.username,
         email: newUser.email,
+        role: newUser.role,
       },
     };
   } catch (error) {
@@ -135,6 +137,7 @@ export async function loginUser(request: LoginRequest): Promise<AuthResponse> {
         id: authResult.user.id,
         username: authResult.user.username,
         email: authResult.user.email,
+        role: authResult.user.role,
       },
     };
   } catch (error) {

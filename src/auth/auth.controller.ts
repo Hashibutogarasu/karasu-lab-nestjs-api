@@ -413,7 +413,7 @@ export class AuthController {
 
       // フロントエンドのコールバック処理ページにリダイレクト
       const callbackUrl = new URL(
-        '/api/auth/callback/karasu-sns',
+        '/api/sns-callback',
         process.env.FRONTEND_URL || 'http://localhost:3000',
       );
       callbackUrl.searchParams.set('token', processResult.oneTimeToken!);
@@ -473,6 +473,7 @@ export class AuthController {
         message: 'Token verified successfully',
         profile: result.profile,
         token: result.token,
+        role: result.user?.role,
       });
     } catch (error) {
       if (error instanceof HttpException) {

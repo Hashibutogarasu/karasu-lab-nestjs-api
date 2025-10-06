@@ -58,6 +58,9 @@ export interface VerifyTokenResponse {
     provider: string;
     providers: string[];
   };
+  user?: {
+    role: string;
+  };
   token?: string;
   error?: string;
   errorDescription?: string;
@@ -299,7 +302,7 @@ export async function verifyAndCreateToken(
     }
 
     // JWTトークンを生成
-    const jwtSecret = process.env.JWT_SECRET || 'default-secret';
+    const jwtSecret = process.env.JWT_SECRET!;
     const payload = {
       sub: user.id,
       username: user.username,
@@ -319,6 +322,9 @@ export async function verifyAndCreateToken(
         email: user.email,
         provider: authState.provider,
         providers: user.providers || [authState.provider],
+      },
+      user: {
+        role: user.role,
       },
       token,
     };

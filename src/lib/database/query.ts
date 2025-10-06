@@ -159,6 +159,16 @@ export async function findUserById(userId: string) {
 }
 
 /**
+ * ユーザー名を更新
+ */
+export async function updateUserNameById(userId: string, username: string) {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { username },
+  });
+}
+
+/**
  * ユーザーを作成
  */
 export async function createUser(data: {

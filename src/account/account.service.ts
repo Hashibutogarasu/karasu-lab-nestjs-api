@@ -17,8 +17,10 @@ import {
   markPasswordResetAsUsed,
   updateUserPassword,
   verifyUserPassword,
+  updateUserNameById,
 } from '../lib/database/query';
 import { ResendService } from '../resend/resend.service';
+import { UpdateUserNameDto } from './dto/update-user-name.dto';
 
 @Injectable()
 export class AccountService {
@@ -115,5 +117,32 @@ export class AccountService {
       message: 'パスワードが正常にリセットされました',
       user: updatedUser,
     };
+  }
+
+  async getProfile(userId: string) {
+    const user = await findUserById(userId);
+    if (!user) {
+      throw new NotFoundException('ユーザーが見つかりません');
+    }
+    const { passwordHash, ...profile } = user;
+    return profile;
+  }
+
+  async updateProfile(userId: string, dto: UpdateUserNameDto) {
+    const user = await findUserById(userId);
+    if (!user) {
+      throw new NotFoundException('ユーザーが見つかりません');
+    }
+
+    try {
+      await updateUserNameById(userId, dto.username);
+      return {
+        message: 'ユーザー名が正常に更新されました',
+      };
+    } catch {
+      return {
+        message: 'ユーザー名の更新に失敗しました',
+      };
+    }
   }
 }

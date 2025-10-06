@@ -10,6 +10,7 @@ import {
   Request,
   Res,
   HttpStatus,
+  Put,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { AccountService } from './account.service';
@@ -19,7 +20,8 @@ import {
   ConfirmResetPasswordDto,
 } from './dto/password-reset.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-
+import type { Request as ExpressRequest } from 'express';
+import { UpdateUserNameDto } from './dto/update-user-name.dto';
 @Controller('account')
 export class AccountController {
   constructor(private readonly accountService: AccountService) {}
@@ -63,5 +65,31 @@ export class AccountController {
   ): Promise<void> {
     const result = await this.accountService.confirmResetPassword(dto);
     res.status(HttpStatus.OK).json(result);
+  }
+
+  @Get('profile')
+  @UseGuards(JwtAuthGuard)
+  async getProfile(
+    @Request() req: ExpressRequest,
+    @Res() res: Response,
+  ): Promise<void> {
+    const userId = req.user?.['id'];
+    const profile = await this.accountService.getProfile(userId);
+    res.status(HttpStatus.OK).json(profile);
+  }
+
+  @Put('profile')
+  @UseGuards(JwtAuthGuard)
+  async updateProfile(
+    @Request() req: ExpressRequest,
+    @Body() body: UpdateUserNameDto,
+    @Res() res: Response,
+  ): Promise<void> {
+    const userId = req.user?.['id'];
+    const updatedProfile = await this.accountService.updateProfile(
+      userId,
+      body,
+    );
+    res.status(HttpStatus.OK).json(updatedProfile);
   }
 }

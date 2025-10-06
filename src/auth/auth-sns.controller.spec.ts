@@ -106,6 +106,9 @@ describe('AuthController - SNS OAuth Authentication', () => {
     mockStatusFn.mockReturnThis();
     mockJsonFn.mockReturnThis();
     mockRedirectFn.mockReturnThis();
+
+    // Mock console.error to prevent test output pollution
+    jest.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   describe('SNS Authentication State Management - POST /auth/state', () => {
@@ -274,7 +277,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
         validState,
       );
       expect(mockRedirectFn).toHaveBeenCalledWith(
-        'https://frontend.example.com/auth/callback?state=state_abc123&token=one_time_token_123',
+        'http://localhost:3000/api/sns-callback?token=one_time_token_123&state=state_abc123&callbackUrl=https%3A%2F%2Ffrontend.example.com%2Fauth%2Fcallback',
       );
     });
 
@@ -290,11 +293,11 @@ describe('AuthController - SNS OAuth Authentication', () => {
       );
 
       expect(buildErrorRedirectMock).toHaveBeenCalledWith(
-        'http://localhost:3000/auth/callback/karasu-sns',
+        'http://localhost:3000/api/auth/signin',
         error,
       );
       expect(mockRedirectFn).toHaveBeenCalledWith(
-        'http://localhost:3000/auth/callback/karasu-sns?error=access_denied',
+        'http://localhost:3000/api/auth/signin?error=access_denied',
       );
     });
 
@@ -308,7 +311,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
       );
 
       expect(buildErrorRedirectMock).toHaveBeenCalledWith(
-        'http://localhost:3000/auth/callback/karasu-sns',
+        'http://localhost:3000/api/auth/signin',
         'invalid_request',
       );
     });
@@ -323,7 +326,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
       );
 
       expect(buildErrorRedirectMock).toHaveBeenCalledWith(
-        'http://localhost:3000/auth/callback/karasu-sns',
+        'http://localhost:3000/api/auth/signin',
         'invalid_request',
       );
     });
@@ -341,7 +344,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
       );
 
       expect(buildErrorRedirectMock).toHaveBeenCalledWith(
-        'http://localhost:3000/auth/callback/karasu-sns',
+        'http://localhost:3000/api/auth/signin',
         'invalid_state',
       );
     });
@@ -373,9 +376,20 @@ describe('AuthController - SNS OAuth Authentication', () => {
         mockRequest,
       );
 
+      expect(mockProcessGoogleOAuth).toHaveBeenCalledWith(
+        validCode,
+        'http://localhost:3000/auth/callback',
+      );
+      expect(console.error).toHaveBeenCalledWith(
+        'OAuth callback error:',
+        expect.any(Error),
+      );
       expect(buildErrorRedirectMock).toHaveBeenCalledWith(
-        'http://localhost:3000/auth/callback/karasu-sns',
+        'http://localhost:3000/api/auth/signin',
         'server_error',
+      );
+      expect(mockRedirectFn).toHaveBeenCalledWith(
+        expect.stringContaining('error=server_error'),
       );
     });
 
@@ -408,9 +422,20 @@ describe('AuthController - SNS OAuth Authentication', () => {
         mockRequest,
       );
 
+      expect(mockProcessGoogleOAuth).toHaveBeenCalledWith(
+        validCode,
+        'http://localhost:3000/auth/callback',
+      );
+      expect(mockProcessSnsCProfile).toHaveBeenCalledWith(
+        mockSnsProfile,
+        validState,
+      );
       expect(buildErrorRedirectMock).toHaveBeenCalledWith(
         'https://frontend.example.com/auth/callback',
         'server_error',
+      );
+      expect(mockRedirectFn).toHaveBeenCalledWith(
+        expect.stringContaining('error=server_error'),
       );
     });
   });
@@ -431,6 +456,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
         providers: ['google'],
         createdAt: new Date(),
         updatedAt: new Date(),
+        role: 'user',
       };
       mockFindUserById.mockResolvedValue(mockUser);
     });
