@@ -5,6 +5,7 @@ import {
   findUserByEmail,
 } from '../database/query';
 import { hashString } from '../database/query';
+import { z } from 'zod';
 
 /**
  * 認証関連のワークフロー処理
@@ -156,32 +157,29 @@ export function validatePasswordStrength(password: string): {
   isValid: boolean;
   errors: string[];
 } {
-  const errors: string[] = [];
+  const passwordSchema = z
+    .string()
+    .min(8, { message: 'Password must be at least 8 characters long' })
+    .regex(/[a-z]/, {
+      message: 'Password must contain at least one lowercase letter',
+    })
+    .regex(/[A-Z]/, {
+      message: 'Password must contain at least one uppercase letter',
+    })
+    .regex(/\d/, { message: 'Password must contain at least one number' })
+    .regex(/[!@#$%^&*(),.?":{}|<>]/, {
+      message: 'Password must contain at least one special character',
+    });
 
-  if (password.length < 8) {
-    errors.push('Password must be at least 8 characters long');
+  const result = passwordSchema.safeParse(password);
+  if (result.success) {
+    return { isValid: true, errors: [] };
+  } else {
+    return {
+      isValid: false,
+      errors: result.error.issues.map((e) => e.message),
+    };
   }
-
-  if (!/[a-z]/.test(password)) {
-    errors.push('Password must contain at least one lowercase letter');
-  }
-
-  if (!/[A-Z]/.test(password)) {
-    errors.push('Password must contain at least one uppercase letter');
-  }
-
-  if (!/\d/.test(password)) {
-    errors.push('Password must contain at least one number');
-  }
-
-  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-    errors.push('Password must contain at least one special character');
-  }
-
-  return {
-    isValid: errors.length === 0,
-    errors,
-  };
 }
 
 /**
@@ -199,30 +197,28 @@ export function validateUsernameFormat(username: string): {
   isValid: boolean;
   errors: string[];
 } {
-  const errors: string[] = [];
+  const usernameSchema = z
+    .string()
+    .min(3, { message: 'Username must be at least 3 characters long' })
+    .max(50, { message: 'Username must be no more than 50 characters long' })
+    .regex(/^[a-zA-Z0-9_-]+$/, {
+      message:
+        'Username can only contain letters, numbers, underscores, and hyphens',
+    });
 
-  if (username.length < 3) {
-    errors.push('Username must be at least 3 characters long');
+  const result = usernameSchema.safeParse(username);
+  if (result.success) {
+    return { isValid: true, errors: [] };
+  } else {
+    return {
+      isValid: false,
+      errors: result.error.issues.map((e) => e.message),
+    };
   }
-
-  if (username.length > 50) {
-    errors.push('Username must be no more than 50 characters long');
-  }
-
-  if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
-    errors.push(
-      'Username can only contain letters, numbers, underscores, and hyphens',
-    );
-  }
-
-  return {
-    isValid: errors.length === 0,
-    errors,
-  };
 }
 
 /**
- * セキュアなセッション管理（シンプルな実装例）
+ * セキュアなセッション管理
  */
 export class SessionManager {
   private static sessions = new Map<

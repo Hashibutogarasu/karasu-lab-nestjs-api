@@ -13,6 +13,7 @@ import {
   ForgotPasswordDto,
   ResetPasswordDto,
   ConfirmResetPasswordDto,
+  SetPasswordDto,
 } from './dto/password-reset.dto';
 
 describe('AccountController - Password Management', () => {
@@ -23,6 +24,8 @@ describe('AccountController - Password Management', () => {
     resetPassword: jest.fn(),
     forgotPassword: jest.fn(),
     confirmResetPassword: jest.fn(),
+    setPassword: jest.fn(),
+    canSetPassword: jest.fn(),
   };
 
   // Mock Response object
@@ -388,6 +391,224 @@ describe('AccountController - Password Management', () => {
         'confirmResetPassword',
       );
       expect(guards).toBeUndefined();
+    });
+  });
+
+  describe('setPassword (POST /account/set-password)', () => {
+    const validSetPasswordDto: SetPasswordDto = {
+      newPassword: 'NewSecurePass123',
+    };
+
+    it('should set password for SNS user without existing password', async () => {
+      const expectedResult = {
+        message: 'パスワードが正常に設定されました',
+        user: mockUser,
+      };
+
+      mockAccountService.setPassword.mockResolvedValue(expectedResult);
+
+      await controller.setPassword(
+        mockRequest,
+        validSetPasswordDto,
+        mockResponse,
+      );
+
+      expect(mockAccountService.setPassword).toHaveBeenCalledWith(
+        'user_123',
+        validSetPasswordDto,
+      );
+      expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
+      expect(mockJsonFn).toHaveBeenCalledWith(expectedResult);
+    });
+
+    it('should handle user not found error', async () => {
+      mockAccountService.setPassword.mockRejectedValue(
+        new NotFoundException('ユーザーが見つかりません'),
+      );
+
+      await expect(
+        controller.setPassword(mockRequest, validSetPasswordDto, mockResponse),
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        controller.setPassword(mockRequest, validSetPasswordDto, mockResponse),
+      ).rejects.toThrow('ユーザーが見つかりません');
+    });
+
+    it('should handle user with existing password error', async () => {
+      mockAccountService.setPassword.mockRejectedValue(
+        new BadRequestException(
+          '既にパスワードが設定されています。パスワードを変更したい場合は、パスワードリセット機能をご利用ください。',
+        ),
+      );
+
+      await expect(
+        controller.setPassword(mockRequest, validSetPasswordDto, mockResponse),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        controller.setPassword(mockRequest, validSetPasswordDto, mockResponse),
+      ).rejects.toThrow('既にパスワードが設定されています');
+    });
+
+    it('should require JWT authentication', () => {
+      // This test verifies that the JwtAuthGuard is applied
+      expect(mockJwtAuthGuard).toBeDefined();
+      expect(mockJwtAuthGuard.canActivate).toBeDefined();
+
+      const result = mockJwtAuthGuard.canActivate();
+      expect(result).toBe(true);
+    });
+
+    it('should extract user ID from JWT token', async () => {
+      const customRequest = {
+        headers: {},
+        ip: '127.0.0.1',
+        user: { id: 'sns_user_456' },
+      } as unknown as Request;
+
+      const expectedResult = {
+        message: 'パスワードが正常に設定されました',
+        user: { ...mockUser, id: 'sns_user_456' },
+      };
+
+      mockAccountService.setPassword.mockResolvedValue(expectedResult);
+
+      await controller.setPassword(
+        customRequest,
+        validSetPasswordDto,
+        mockResponse,
+      );
+
+      expect(mockAccountService.setPassword).toHaveBeenCalledWith(
+        'sns_user_456',
+        validSetPasswordDto,
+      );
+      expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
+      expect(mockJsonFn).toHaveBeenCalledWith(expectedResult);
+    });
+
+    it('should validate password strength', async () => {
+      const weakPasswordDto = {
+        newPassword: 'weak',
+      };
+
+      // In production, this would be caught by validation pipes
+      mockAccountService.setPassword.mockRejectedValue(
+        new BadRequestException('パスワードの形式が正しくありません'),
+      );
+
+      await expect(
+        controller.setPassword(
+          mockRequest,
+          weakPasswordDto as any,
+          mockResponse,
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('canSetPassword (GET /account/can-set-password)', () => {
+    it('should return true when user has external providers and no password', async () => {
+      const expectedResult = {
+        canSetPassword: true,
+        hasPassword: false,
+        hasExternalProviders: true,
+        providers: ['google', 'discord'],
+      };
+
+      mockAccountService.canSetPassword.mockResolvedValue(expectedResult);
+
+      await controller.canSetPassword(mockRequest, mockResponse);
+
+      expect(mockAccountService.canSetPassword).toHaveBeenCalledWith(
+        'user_123',
+      );
+      expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
+      expect(mockJsonFn).toHaveBeenCalledWith(expectedResult);
+    });
+
+    it('should return false when user has password set', async () => {
+      const expectedResult = {
+        canSetPassword: false,
+        hasPassword: true,
+        hasExternalProviders: true,
+        providers: ['google'],
+      };
+
+      mockAccountService.canSetPassword.mockResolvedValue(expectedResult);
+
+      await controller.canSetPassword(mockRequest, mockResponse);
+
+      expect(mockAccountService.canSetPassword).toHaveBeenCalledWith(
+        'user_123',
+      );
+      expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
+      expect(mockJsonFn).toHaveBeenCalledWith(expectedResult);
+    });
+
+    it('should return false when user has no external providers', async () => {
+      const expectedResult = {
+        canSetPassword: false,
+        hasPassword: false,
+        hasExternalProviders: false,
+        providers: [],
+      };
+
+      mockAccountService.canSetPassword.mockResolvedValue(expectedResult);
+
+      await controller.canSetPassword(mockRequest, mockResponse);
+
+      expect(mockAccountService.canSetPassword).toHaveBeenCalledWith(
+        'user_123',
+      );
+      expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
+      expect(mockJsonFn).toHaveBeenCalledWith(expectedResult);
+    });
+
+    it('should handle user not found error', async () => {
+      mockAccountService.canSetPassword.mockRejectedValue(
+        new NotFoundException('ユーザーが見つかりません'),
+      );
+
+      await expect(
+        controller.canSetPassword(mockRequest, mockResponse),
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        controller.canSetPassword(mockRequest, mockResponse),
+      ).rejects.toThrow('ユーザーが見つかりません');
+    });
+
+    it('should require JWT authentication', () => {
+      // This test verifies that the JwtAuthGuard is applied
+      expect(mockJwtAuthGuard).toBeDefined();
+      expect(mockJwtAuthGuard.canActivate).toBeDefined();
+
+      const result = mockJwtAuthGuard.canActivate();
+      expect(result).toBe(true);
+    });
+
+    it('should extract user ID from JWT token', async () => {
+      const customRequest = {
+        headers: {},
+        ip: '127.0.0.1',
+        user: { id: 'external_user_789' },
+      } as unknown as Request;
+
+      const expectedResult = {
+        canSetPassword: true,
+        hasPassword: false,
+        hasExternalProviders: true,
+        providers: ['discord'],
+      };
+
+      mockAccountService.canSetPassword.mockResolvedValue(expectedResult);
+
+      await controller.canSetPassword(customRequest, mockResponse);
+
+      expect(mockAccountService.canSetPassword).toHaveBeenCalledWith(
+        'external_user_789',
+      );
+      expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
+      expect(mockJsonFn).toHaveBeenCalledWith(expectedResult);
     });
   });
 

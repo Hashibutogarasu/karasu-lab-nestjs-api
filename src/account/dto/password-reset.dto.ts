@@ -15,3 +15,7 @@ export class ConfirmResetPasswordDto {
 export class GetUserProfileDto {
   userId: string;
 }
+
+export class SetPasswordDto {
+  newPassword: string;
+}

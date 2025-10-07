@@ -8,6 +8,7 @@ import {
   ForgotPasswordDto,
   ResetPasswordDto,
   ConfirmResetPasswordDto,
+  SetPasswordDto,
 } from './dto/password-reset.dto';
 import {
   findUserByEmail,
@@ -145,5 +146,49 @@ export class AccountService {
           'ユーザー名の更新に失敗しました。ユーザー名が既に使用されている可能性があります。',
       };
     }
+  }
+
+  /**
+   * 外部プロバイダーユーザーの新規パスワード設定
+   * パスワードハッシュがnullのユーザーのみ設定可能
+   */
+  async setPassword(userId: string, dto: SetPasswordDto) {
+    const user = await findUserById(userId);
+    if (!user) {
+      throw new NotFoundException('ユーザーが見つかりません');
+    }
+
+    // 既にパスワードが設定されている場合はエラー
+    if (user.passwordHash) {
+      throw new BadRequestException(
+        '既にパスワードが設定されています。パスワードを変更したい場合は、パスワードリセット機能をご利用ください。',
+      );
+    }
+
+    const updatedUser = await updateUserPassword(userId, dto.newPassword);
+    return {
+      message: 'パスワードが正常に設定されました',
+      user: updatedUser,
+    };
+  }
+
+  /**
+   * パスワード設定可能性チェック
+   * JWT認証したユーザーが外部プロバイダーでパスワードを持たないかどうかを判定
+   */
+  async canSetPassword(userId: string) {
+    const user = await findUserById(userId);
+    if (!user) {
+      throw new NotFoundException('ユーザーが見つかりません');
+    }
+
+    const canSetPassword = !user.passwordHash && user.providers.length > 0;
+
+    return {
+      canSetPassword,
+      hasPassword: !!user.passwordHash,
+      hasExternalProviders: user.providers.length > 0,
+      providers: user.providers,
+    };
   }
 }

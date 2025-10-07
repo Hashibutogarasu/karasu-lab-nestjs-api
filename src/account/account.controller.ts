@@ -18,6 +18,7 @@ import {
   ForgotPasswordDto,
   ResetPasswordDto,
   ConfirmResetPasswordDto,
+  SetPasswordDto,
 } from './dto/password-reset.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import type { Request as ExpressRequest } from 'express';
@@ -91,5 +92,36 @@ export class AccountController {
       body,
     );
     res.status(HttpStatus.OK).json(updatedProfile);
+  }
+
+  /**
+   * 外部プロバイダーユーザーの新規パスワード設定
+   * JWTガードで保護されており、パスワードを持たないユーザーのみ設定可能
+   */
+  @Post('set-password')
+  @UseGuards(JwtAuthGuard)
+  async setPassword(
+    @Request() req: ExpressRequest,
+    @Body() dto: SetPasswordDto,
+    @Res() res: Response,
+  ): Promise<void> {
+    const userId = req.user?.['id'];
+    const result = await this.accountService.setPassword(userId, dto);
+    res.status(HttpStatus.OK).json(result);
+  }
+
+  /**
+   * パスワード設定可能性チェック
+   * JWT認証したユーザーが外部プロバイダーでパスワードを持たないかどうかを判定
+   */
+  @Get('can-set-password')
+  @UseGuards(JwtAuthGuard)
+  async canSetPassword(
+    @Request() req: ExpressRequest,
+    @Res() res: Response,
+  ): Promise<void> {
+    const userId = req.user?.['id'];
+    const result = await this.accountService.canSetPassword(userId);
+    res.status(HttpStatus.OK).json(result);
   }
 }
