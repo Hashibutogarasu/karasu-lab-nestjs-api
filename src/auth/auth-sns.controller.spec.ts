@@ -471,7 +471,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
           provider: 'google',
           providers: ['google'],
         },
-        token: 'jwt_token_abc123',
+        // token: 'jwt_token_abc123',
       };
 
       mockVerifyAndCreateToken.mockResolvedValue(expectedResult);
@@ -483,7 +483,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
       expect(mockJsonFn).toHaveBeenCalledWith({
         message: 'Token verified successfully',
         profile: expectedResult.profile,
-        token: expectedResult.token,
+        // token: expectedResult.token,
       });
     });
 

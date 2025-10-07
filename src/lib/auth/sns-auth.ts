@@ -326,7 +326,7 @@ export async function verifyAndCreateToken(
       user: {
         role: user.role,
       },
-      token,
+      // token,
     };
   } catch (error) {
     return {

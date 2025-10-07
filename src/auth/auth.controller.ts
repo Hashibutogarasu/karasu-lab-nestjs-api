@@ -472,7 +472,7 @@ export class AuthController {
       res.status(HttpStatus.OK).json({
         message: 'Token verified successfully',
         profile: result.profile,
-        token: result.token,
+        // token: result.token,
         role: result.user?.role,
       });
     } catch (error) {

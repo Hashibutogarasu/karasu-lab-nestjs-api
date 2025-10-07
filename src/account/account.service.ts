@@ -141,7 +141,8 @@ export class AccountService {
       };
     } catch {
       return {
-        message: 'ユーザー名の更新に失敗しました',
+        message:
+          'ユーザー名の更新に失敗しました。ユーザー名が既に使用されている可能性があります。',
       };
     }
   }

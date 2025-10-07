@@ -162,6 +162,10 @@ export async function findUserById(userId: string) {
  * ユーザー名を更新
  */
 export async function updateUserNameById(userId: string, username: string) {
+  const existingUser = await findUserByUsername(username);
+  if (existingUser && existingUser.id !== userId) {
+    throw new Error('Username already taken');
+  }
   return prisma.user.update({
     where: { id: userId },
     data: { username },
