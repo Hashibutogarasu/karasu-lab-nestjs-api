@@ -17,6 +17,13 @@ export const Google = () => SetMetadata(SNS_PROVIDER_METADATA, 'google');
 export const X = () => SetMetadata(SNS_PROVIDER_METADATA, 'x');
 
 /**
+ * Discord OAuth認証デコレーター
+ * @param scopes Discord OAuth スコープの配列（デフォルト: ['identify']）
+ */
+export const Discord = (scopes: string[] = ['identify']) =>
+  SetMetadata(SNS_PROVIDER_METADATA, { provider: 'discord', scopes });
+
+/**
  * SNSプロバイダー情報を取得するヘルパー
  */
 export function getSnsProvider(target: any): string | undefined {

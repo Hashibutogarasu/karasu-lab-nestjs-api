@@ -131,6 +131,19 @@ function generateProviderRedirectUrl(
       );
     }
 
+    case 'discord': {
+      const discordClientId = process.env.DISCORD_CLIENT_ID;
+      const scopes = 'identify email'; // デフォルトスコープ
+      return (
+        `https://discord.com/oauth2/authorize?` +
+        `response_type=code&` +
+        `client_id=${discordClientId}&` +
+        `redirect_uri=${encodeURIComponent(apiCallbackUrl)}&` +
+        `scope=${encodeURIComponent(scopes)}&` +
+        `state=${stateCode}`
+      );
+    }
+
     // 将来的に他のプロバイダーを追加可能
     case 'x':
       // Twitter/X OAuth implementation would go here

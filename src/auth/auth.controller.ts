@@ -26,7 +26,8 @@ import {
   SnsAuthCallback,
 } from '../lib/auth/sns-auth';
 import { processGoogleOAuth } from '../lib/auth/google-oauth';
-import { Google } from '../lib/auth/sns-decorators';
+import { processDiscordOAuth } from '../lib/auth/discord-oauth';
+import { Google, Discord } from '../lib/auth/sns-decorators';
 import type { AuthStateDto, VerifyTokenDto } from './dto/auth.dto';
 
 @Controller('auth')
@@ -35,6 +36,9 @@ export class AuthController {
     process.env.FRONTEND_CALLBACK_URL ||
     'http://localhost:3000/api/auth/signin';
   private readonly DEFAULT_GOOGLE_CALLBACK_URL =
+    process.env.FRONTEND_CALLBACK_URL ||
+    'http://localhost:3000/api/auth/signin';
+  private readonly DEFAULT_DISCORD_CALLBACK_URL =
     process.env.FRONTEND_CALLBACK_URL ||
     'http://localhost:3000/api/auth/signin';
 
@@ -145,6 +149,51 @@ export class AuthController {
         {
           error: 'server_error',
           error_description: 'Failed to initiate Google authentication',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Discord OAuth認証開始エンドポイント
+   * GET /auth/login/discord
+   */
+  @Get('login/discord')
+  async loginWithDiscord(
+    @Query('callback_url') callbackUrl: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    try {
+      // コールバックURLが指定されていない場合はデフォルトを使用
+      const finalCallbackUrl = callbackUrl || this.DEFAULT_DISCORD_CALLBACK_URL;
+
+      // Discord認証用のステートコードを作成
+      const result = await createAuthenticationState({
+        provider: 'discord',
+        callbackUrl: finalCallbackUrl,
+      });
+
+      if (!result.success) {
+        throw new HttpException(
+          {
+            error: result.error,
+            error_description: result.errorDescription,
+          },
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+
+      // Discordの認証URLにリダイレクト
+      res.redirect(result.redirectUrl!);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        {
+          error: 'server_error',
+          error_description: 'Failed to initiate Discord authentication',
         },
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
@@ -350,11 +399,12 @@ export class AuthController {
   }
 
   /**
-   * Google認証コールバックエンドポイント
+   * SNS認証コールバックエンドポイント（Google, Discord対応）
    * GET /auth/callback
    */
-  @Get('callback')
   @Google()
+  @Discord(['identify', 'openid'])
+  @Get('callback')
   async handleCallback(
     @Query('code') code: string,
     @Query('state') state: string,
@@ -363,10 +413,15 @@ export class AuthController {
     @Req() req: Request,
   ): Promise<void> {
     try {
+      // 認証ステートを取得してプロバイダーを確認
+      const authState = await this.authService.getAuthState(state);
+      const defaultCallbackUrl =
+        authState?.callbackUrl || this.DEFAULT_CALLBACK_URL;
+
       // エラーレスポンスの処理
       if (error) {
         const errorRedirect = SnsAuthCallback.buildErrorRedirect(
-          this.DEFAULT_GOOGLE_CALLBACK_URL,
+          defaultCallbackUrl,
           error,
         );
         return res.redirect(errorRedirect);
@@ -375,17 +430,15 @@ export class AuthController {
       // パラメータ検証
       if (!code || !state) {
         const errorRedirect = SnsAuthCallback.buildErrorRedirect(
-          this.DEFAULT_GOOGLE_CALLBACK_URL,
+          defaultCallbackUrl,
           'invalid_request',
         );
         return res.redirect(errorRedirect);
       }
 
-      // 認証ステートを取得してコールバックURLを確認
-      const authState = await this.authService.getAuthState(state);
       if (!authState) {
         const errorRedirect = SnsAuthCallback.buildErrorRedirect(
-          this.DEFAULT_GOOGLE_CALLBACK_URL,
+          defaultCallbackUrl,
           'invalid_state',
         );
         return res.redirect(errorRedirect);
@@ -395,9 +448,20 @@ export class AuthController {
       const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
       const apiCallbackUrl = `${baseUrl}/auth/callback`;
 
-      // Google OAuth処理
+      // プロバイダーに応じてOAuth処理を実行
+      let snsProfile;
       const redirectUri = apiCallbackUrl;
-      const snsProfile = await processGoogleOAuth(code, redirectUri);
+
+      switch (authState.provider) {
+        case 'google':
+          snsProfile = await processGoogleOAuth(code, redirectUri);
+          break;
+        case 'discord':
+          snsProfile = await processDiscordOAuth(code, redirectUri);
+          break;
+        default:
+          throw new Error(`Unsupported provider: ${authState.provider}`);
+      }
 
       // プロファイル処理
       const processResult = await processSnsCProfile(snsProfile, state);
@@ -423,8 +487,12 @@ export class AuthController {
       return res.redirect(callbackUrl.toString());
     } catch (error) {
       console.error('OAuth callback error:', error);
+      // 認証ステートからコールバックURLを取得、なければデフォルト使用
+      const authState = await this.authService.getAuthState(state);
+      const defaultCallbackUrl =
+        authState?.callbackUrl || this.DEFAULT_CALLBACK_URL;
       const errorRedirect = SnsAuthCallback.buildErrorRedirect(
-        this.DEFAULT_GOOGLE_CALLBACK_URL,
+        defaultCallbackUrl,
         'server_error',
       );
       res.redirect(errorRedirect);

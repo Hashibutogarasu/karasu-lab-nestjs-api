@@ -11,11 +11,13 @@ import { Request, Response } from 'express';
 import { RegisterDto, LoginDto } from './dto/create-auth.dto';
 import * as snsAuth from '../lib/auth/sns-auth';
 import * as googleOAuth from '../lib/auth/google-oauth';
+import * as discordOAuth from '../lib/auth/discord-oauth';
 import * as query from '../lib/database/query';
 
 // Mock implementations
 jest.mock('../lib/auth/sns-auth');
 jest.mock('../lib/auth/google-oauth');
+jest.mock('../lib/auth/discord-oauth');
 jest.mock('../lib/database/query');
 
 describe('AuthController - SNS OAuth Authentication', () => {
@@ -67,6 +69,10 @@ describe('AuthController - SNS OAuth Authentication', () => {
   const mockProcessGoogleOAuth =
     googleOAuth.processGoogleOAuth as jest.MockedFunction<
       typeof googleOAuth.processGoogleOAuth
+    >;
+  const mockProcessDiscordOAuth =
+    discordOAuth.processDiscordOAuth as jest.MockedFunction<
+      typeof discordOAuth.processDiscordOAuth
     >;
   const mockFindAuthState = query.findAuthState as jest.MockedFunction<
     typeof query.findAuthState
@@ -293,11 +299,11 @@ describe('AuthController - SNS OAuth Authentication', () => {
       );
 
       expect(buildErrorRedirectMock).toHaveBeenCalledWith(
-        'http://localhost:3000/api/auth/signin',
+        'https://frontend.example.com/auth/callback',
         error,
       );
       expect(mockRedirectFn).toHaveBeenCalledWith(
-        'http://localhost:3000/api/auth/signin?error=access_denied',
+        'https://frontend.example.com/auth/callback?error=access_denied',
       );
     });
 
@@ -311,7 +317,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
       );
 
       expect(buildErrorRedirectMock).toHaveBeenCalledWith(
-        'http://localhost:3000/api/auth/signin',
+        'https://frontend.example.com/auth/callback',
         'invalid_request',
       );
     });
@@ -326,7 +332,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
       );
 
       expect(buildErrorRedirectMock).toHaveBeenCalledWith(
-        'http://localhost:3000/api/auth/signin',
+        'https://frontend.example.com/auth/callback',
         'invalid_request',
       );
     });
@@ -385,7 +391,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
         expect.any(Error),
       );
       expect(buildErrorRedirectMock).toHaveBeenCalledWith(
-        'http://localhost:3000/api/auth/signin',
+        'https://frontend.example.com/auth/callback',
         'server_error',
       );
       expect(mockRedirectFn).toHaveBeenCalledWith(
@@ -888,6 +894,61 @@ describe('AuthController - SNS OAuth Authentication', () => {
 
       // Restore environment
       process.env = originalEnv;
+    });
+  });
+
+  describe('Discord Login Endpoint Tests', () => {
+    const validCallbackUrl = 'http://localhost:3000/auth/callback';
+
+    it('should initiate Discord authentication successfully', async () => {
+      const mockResult = {
+        success: true,
+        stateCode: 'state_discord_123',
+        redirectUrl:
+          'https://discord.com/oauth2/authorize?response_type=code&client_id=discord_client_id&redirect_uri=http%3A//localhost%3A3000/auth/callback&scope=identify%20email&state=state_discord_123',
+      };
+
+      mockCreateAuthenticationState.mockResolvedValue(mockResult);
+
+      // Mock the GET request to /auth/login/discord
+      await controller.loginWithDiscord(validCallbackUrl, mockResponse);
+
+      expect(mockCreateAuthenticationState).toHaveBeenCalledWith({
+        provider: 'discord',
+        callbackUrl: validCallbackUrl,
+      });
+      expect(mockRedirectFn).toHaveBeenCalledWith(mockResult.redirectUrl);
+    });
+
+    it('should handle Discord authentication initiation failure', async () => {
+      const mockResult = {
+        success: false,
+        error: 'configuration_error',
+        errorDescription: 'Discord client credentials not configured',
+      };
+
+      mockCreateAuthenticationState.mockResolvedValue(mockResult);
+
+      await expect(
+        controller.loginWithDiscord(validCallbackUrl, mockResponse),
+      ).rejects.toThrow(HttpException);
+    });
+
+    it('should use default callback URL when none provided', async () => {
+      const mockResult = {
+        success: true,
+        stateCode: 'state_discord_123',
+        redirectUrl: 'https://discord.com/oauth2/authorize?...',
+      };
+
+      mockCreateAuthenticationState.mockResolvedValue(mockResult);
+
+      await controller.loginWithDiscord('', mockResponse);
+
+      expect(mockCreateAuthenticationState).toHaveBeenCalledWith({
+        provider: 'discord',
+        callbackUrl: expect.stringContaining('localhost:3000'),
+      });
     });
   });
 
