@@ -1,17 +1,17 @@
-import { Injectable } from '@nestjs/common';
-import { Tool } from '@rekog/mcp-nest';
-import z from 'zod';
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import { Resolver, Tool } from '@nestjs-mcp/server';
 
-@Injectable()
+@Resolver()
 export class McpService {
-  @Tool(
-    'greeting-tool',
-    'Returns a greeting with progress updates',
-    z.object({
-      name: z.string().default('World'),
-    }),
-  )
-  async sayHello({ name }) {
-    return `Hello, ${name}!`;
+  @Tool({ name: 'server_health_check' })
+  healthCheck(): CallToolResult {
+    return {
+      content: [
+        {
+          type: 'text',
+          text: 'Server is operational. All systems running normally.',
+        },
+      ],
+    };
   }
 }

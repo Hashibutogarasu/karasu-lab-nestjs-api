@@ -11,6 +11,9 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.19.1
         version: 1.19.1
+      '@nestjs-mcp/server':
+        specifier: ^0.3.0
+        version: 0.3.0(@nestjs/common@11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.6)(@nestjs/platform-express@11.1.6)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@nestjs/common':
         specifier: ^11.0.1
         version: 11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -32,9 +35,6 @@ importers:
       '@prisma/client':
         specifier: 6.16.3
         version: 6.16.3(prisma@6.16.3(typescript@5.9.3))(typescript@5.9.3)
-      '@rekog/mcp-nest':
-        specifier: 1.0.14
-        version: 1.0.14(@modelcontextprotocol/sdk@1.19.1)(@nestjs/common@11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.6)(express@5.1.0)(reflect-metadata@0.2.2)
       '@types/jsonwebtoken':
         specifier: ^9.0.10
         version: 9.0.10
@@ -71,9 +71,6 @@ importers:
       prisma:
         specifier: ^6.16.3
         version: 6.16.3(typescript@5.9.3)
-      reflect-metadata:
-        specifier: ^0.2.2
-        version: 0.2.2
       rehype-stringify:
         specifier: ^10.0.1
         version: 10.0.1
@@ -93,8 +90,8 @@ importers:
         specifier: ^7.8.1
         version: 7.8.2
       zod:
-        specifier: ^4.1.11
-        version: 4.1.11
+        specifier: ^4.1.12
+        version: 4.1.12
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3.2.0
@@ -770,6 +767,16 @@ packages:
   '@napi-rs/wasm-runtime@0.2.12':
     resolution: {integrity: sha512-ZVWUcfwY4E/yPitQJl481FjFo3K22D6qF0DuFH6Y/nbnE11GY5uguDxZMGXPQ8WQ0128MXQD7TnfHyK4oWoIJQ==}
 
+  '@nestjs-mcp/server@0.3.0':
+    resolution: {integrity: sha512-uut4pMhV3Gfyqs8b9Ix+Mxqa3s1bqG25AxZfMNu+iNXk/KbspW1XY/NPIlrZk6OHb/Wcv+tPNr9jbKw4cRYN0A==}
+    engines: {node: '>=22', pnpm: '>=10'}
+    peerDependencies:
+      '@nestjs/common': ^11.0.1
+      '@nestjs/core': ^11.0.1
+      '@nestjs/platform-express': ^11.0.1
+      reflect-metadata: ^0.2.2
+      rxjs: ^7.8.1
+
   '@nestjs/cli@11.0.10':
     resolution: {integrity: sha512-4waDT0yGWANg0pKz4E47+nUrqIJv/UqrZ5wLPkCqc7oMGRMWKAaw1NDZ9rKsaqhqvxb2LfI5+uXOWr4yi94DOQ==}
     engines: {node: '>= 20.11'}
@@ -923,15 +930,6 @@ packages:
 
   '@prisma/get-platform@6.16.3':
     resolution: {integrity: sha512-X1LxiFXinJ4iQehrodGp0f66Dv6cDL0GbRlcCoLtSu6f4Wi+hgo7eND/afIs5029GQLgNWKZ46vn8hjyXTsHLA==}
-
-  '@rekog/mcp-nest@1.0.14':
-    resolution: {integrity: sha512-q3Z+ISH8bK8v8XLkpEhaR8KkbXcbn5V01zrEZZ2eU9fz12wIRYpCsFcgUBsSLRP5PYxG/+QAH6EIte8s9tvzbw==}
-    peerDependencies:
-      '@modelcontextprotocol/sdk': '>=1.4.1'
-      '@nestjs/common': '>=9.0.0'
-      '@nestjs/core': '>=9.0.0'
-      express: '>=4.0.0'
-      reflect-metadata: '>=0.1.14'
 
   '@sapphire/async-queue@1.5.5':
     resolution: {integrity: sha512-cvGzxbba6sav2zZkH8GPf2oGk9yYoD5qrNWdu9fRehifgnFZJMV+nuy2nON2roRO4yQQ+v7MK/Pktl/HgfsUXg==}
@@ -3745,8 +3743,8 @@ packages:
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
-  zod@4.1.11:
-    resolution: {integrity: sha512-WPsqwxITS2tzx1bzhIKsEs19ABD5vmCVa4xBo2tq/SrV4RNZtfws1EnCWQXM6yh8bD08a1idvkB5MZSBiZsjwg==}
+  zod@4.1.12:
+    resolution: {integrity: sha512-JInaHOamG8pt5+Ey8kGmdcAcg3OL9reK8ltczgHTAwNhMys/6ThXHityHxVV2p3fkw/c+MAvBHFVYHFZDmjMCQ==}
 
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
@@ -4550,6 +4548,18 @@ snapshots:
       '@tybys/wasm-util': 0.10.1
     optional: true
 
+  '@nestjs-mcp/server@0.3.0(@nestjs/common@11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.6)(@nestjs/platform-express@11.1.6)(reflect-metadata@0.2.2)(rxjs@7.8.2)':
+    dependencies:
+      '@modelcontextprotocol/sdk': 1.19.1
+      '@nestjs/common': 11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/core': 11.1.6(@nestjs/common@11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.1.6)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/platform-express': 11.1.6(@nestjs/common@11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.6)
+      reflect-metadata: 0.2.2
+      rxjs: 7.8.2
+      zod: 3.25.76
+    transitivePeerDependencies:
+      - supports-color
+
   '@nestjs/cli@11.0.10(@types/node@22.18.8)':
     dependencies:
       '@angular-devkit/core': 19.2.15(chokidar@4.0.3)
@@ -4728,14 +4738,6 @@ snapshots:
   '@prisma/get-platform@6.16.3':
     dependencies:
       '@prisma/debug': 6.16.3
-
-  '@rekog/mcp-nest@1.0.14(@modelcontextprotocol/sdk@1.19.1)(@nestjs/common@11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.6)(express@5.1.0)(reflect-metadata@0.2.2)':
-    dependencies:
-      '@modelcontextprotocol/sdk': 1.19.1
-      '@nestjs/common': 11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@nestjs/core': 11.1.6(@nestjs/common@11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.1.6)(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      express: 5.1.0
-      reflect-metadata: 0.2.2
 
   '@sapphire/async-queue@1.5.5': {}
 
@@ -7932,6 +7934,6 @@ snapshots:
 
   zod@3.25.76: {}
 
-  zod@4.1.11: {}
+  zod@4.1.12: {}
 
   zwitch@2.0.4: {}

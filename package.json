@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.19.1",
+    "@nestjs-mcp/server": "^0.3.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@nestjs/jwt": "^11.0.0",
@@ -28,7 +29,6 @@
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
     "@prisma/client": "6.16.3",
-    "@rekog/mcp-nest": "1.0.14",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/unist": "^3.0.3",
     "bcrypt": "^6.0.0",
@@ -41,14 +41,13 @@
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
     "prisma": "^6.16.3",
-    "reflect-metadata": "^0.2.2",
     "rehype-stringify": "^10.0.1",
     "remark": "^15.0.1",
     "remark-parse": "^11.0.0",
     "remark-rehype": "^11.1.2",
     "resend": "^6.1.2",
     "rxjs": "^7.8.1",
-    "zod": "^4.1.11"
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
