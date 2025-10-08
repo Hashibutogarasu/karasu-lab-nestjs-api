@@ -8,6 +8,7 @@ import { AccountModule } from './account/account.module';
 import { ResendService } from './resend/resend.service';
 import { DiscordAppModule } from './discord-app/discord-app.module';
 import { MarkdownModule } from './markdown/markdown.module';
+import { McpServerModule } from './mcp/mcp.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { MarkdownModule } from './markdown/markdown.module';
     AccountModule,
     DiscordAppModule,
     MarkdownModule,
+    McpServerModule,
   ],
   controllers: [AppController],
   providers: [AppService, ResendService],

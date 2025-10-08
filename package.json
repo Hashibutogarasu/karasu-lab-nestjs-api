@@ -20,6 +20,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.19.1",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@nestjs/jwt": "^11.0.0",
@@ -27,6 +28,7 @@
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
     "@prisma/client": "6.16.3",
+    "@rekog/mcp-nest": "1.0.14",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/unist": "^3.0.3",
     "bcrypt": "^6.0.0",
