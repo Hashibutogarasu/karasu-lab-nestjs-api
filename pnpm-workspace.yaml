@@ -1,3 +1,6 @@
+ignoredBuiltDependencies:
+  - necord
+
 onlyBuiltDependencies:
   - '@nestjs/core'
   - '@prisma/engines'
