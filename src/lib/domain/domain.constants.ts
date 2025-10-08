@@ -1,0 +1,1 @@
+export const DOMAIN_OPTIONS = 'DOMAIN_OPTIONS';
