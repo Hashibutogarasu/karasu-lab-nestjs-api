@@ -7,6 +7,7 @@ import {
   findUserById,
   createJWTState,
   getJWTStateById,
+  updateJWTState,
 } from '../database/query';
 
 export interface JWTPayload {
@@ -103,6 +104,10 @@ export async function generateJWTToken(
 
     // JWTトークンを生成
     const token = sign(payload, jwtSecret);
+
+    await updateJWTState(jwtState.id, {
+      tokenHint: `...${token.slice(-8)}`,
+    });
 
     return {
       success: true,
