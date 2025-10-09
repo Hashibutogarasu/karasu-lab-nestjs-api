@@ -100,6 +100,7 @@ export async function createAuthenticationState(
       redirectUrl: generateProviderRedirectUrl(request.provider, stateCode),
     };
   } catch (error) {
+    console.error(error);
     return {
       success: false,
       error: 'server_error',
