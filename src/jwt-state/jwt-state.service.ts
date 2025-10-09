@@ -7,12 +7,31 @@ import {
   getJWTStateById,
   updateJWTState,
 } from '../lib';
+import { generateJWTToken } from '../lib/auth/jwt-token';
 import { User } from '@prisma/client';
 
 @Injectable()
 export class JwtStateService {
-  create(createJwtStateDto: CreateJwtStateDto) {
-    return createJWTState(createJwtStateDto.userId, { ...createJwtStateDto });
+  async createJWT(createJwtStateDto: CreateJwtStateDto) {
+    const tokenResult = await generateJWTToken({
+      userId: createJwtStateDto.userId,
+      expirationHours: 1, // デフォルト1時間
+    });
+
+    if (!tokenResult.success) {
+      throw new HttpException(
+        tokenResult.errorDescription || 'Failed to generate JWT token',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    return {
+      jwtId: tokenResult.jwtId,
+      token: tokenResult.token,
+      profile: tokenResult.profile,
+      user: tokenResult.user,
+      expiresAt: tokenResult.expiresAt,
+    };
   }
 
   findAll(user: User) {

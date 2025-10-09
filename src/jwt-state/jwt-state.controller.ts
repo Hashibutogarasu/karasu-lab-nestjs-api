@@ -1,13 +1,12 @@
 import {
   Controller,
   Get,
-  Post,
   Body,
-  Patch,
   Param,
   Delete,
   UseGuards,
   Put,
+  Post,
 } from '@nestjs/common';
 import { JwtStateService } from './jwt-state.service';
 import { UpdateJwtStateDto } from './dto/jwt-state.dto';
@@ -15,12 +14,18 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AuthUser } from '../auth/decorators/auth-user.decorator';
 import * as client from '@prisma/client';
 import { IsAdmin } from '../auth/decorators/is-admin.decorator';
-import { AdminGuard } from '../auth/guards/admin.guard';
 
 @UseGuards(JwtAuthGuard)
 @Controller('jwt-state')
 export class JwtStateController {
   constructor(private readonly jwtStateService: JwtStateService) {}
+
+  @Post('create')
+  createJWT(@AuthUser() user: client.User) {
+    return this.jwtStateService.createJWT({
+      userId: user.id,
+    });
+  }
 
   @Get()
   findAll(@AuthUser() user: client.User) {

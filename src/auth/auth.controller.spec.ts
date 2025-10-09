@@ -11,7 +11,26 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { RegisterDto, LoginDto } from './dto/create-auth.dto';
 
-// Mock the createJWTState function
+// Mock the JWT token generation function
+jest.mock('../lib/auth/jwt-token', () => ({
+  generateJWTToken: jest.fn().mockResolvedValue({
+    success: true,
+    jwtId: 'jwt_state_123',
+    token: 'mock_jwt_token_abc123',
+    profile: {
+      sub: 'user_123',
+      name: 'testuser',
+      email: 'test@example.com',
+      providers: [],
+    },
+    user: {
+      role: 'user',
+    },
+    expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+  }),
+}));
+
+// Mock the createJWTState function (for backward compatibility)
 jest.mock('../lib', () => ({
   createJWTState: jest.fn().mockResolvedValue({ id: 'jwt_state_123' }),
 }));

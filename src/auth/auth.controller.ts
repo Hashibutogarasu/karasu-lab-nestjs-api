@@ -29,7 +29,7 @@ import { processGoogleOAuth } from '../lib/auth/google-oauth';
 import { processDiscordOAuth } from '../lib/auth/discord-oauth';
 import { Google, Discord } from '../lib/auth/sns-decorators';
 import type { AuthStateDto, VerifyTokenDto } from './dto/auth.dto';
-import { createJWTState } from '../lib';
+import { generateJWTToken } from '../lib/auth/jwt-token';
 
 @Controller('auth')
 export class AuthController {
@@ -244,12 +244,27 @@ export class AuthController {
       }
 
       const sessionData = await this.authService.createSession(result.user!.id);
-      const jwtState = await createJWTState(result.user!.id);
+      const tokenResult = await generateJWTToken({
+        userId: result.user!.id,
+        expirationHours: 1,
+      });
+
+      if (!tokenResult.success) {
+        throw new HttpException(
+          {
+            error: tokenResult.error || 'token_generation_failed',
+            error_description:
+              tokenResult.errorDescription || 'Failed to generate JWT token',
+          },
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
 
       // 成功レスポンス
       res.status(HttpStatus.OK).json({
         message: 'Login successful',
-        jwtId: jwtState.id,
+        jwtId: tokenResult.jwtId,
+        // token: tokenResult.token,
         user: result.user,
         session_id: sessionData.sessionId,
         expires_at: sessionData.expiresAt,
@@ -544,7 +559,7 @@ export class AuthController {
         message: 'Token verified successfully',
         jwtId: result.jwtId,
         profile: result.profile,
-        // token: result.token,
+        token: result.token,
         role: result.user?.role,
       });
     } catch (error) {

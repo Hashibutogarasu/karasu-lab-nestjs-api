@@ -17,9 +17,8 @@ import {
   generateRandomString,
   hashString,
   calculateExpiration,
-  createJWTState,
 } from '../database/query';
-import { sign } from 'jsonwebtoken';
+import { generateJWTToken } from './jwt-token';
 import * as bcrypt from 'bcrypt';
 
 export interface SnsProfile {
@@ -317,25 +316,25 @@ export async function verifyAndCreateToken(
       };
     }
 
-    const jwtState = await createJWTState(user.id);
-
     // JWTトークンを生成
-    const jwtSecret = process.env.JWT_SECRET!;
-    const payload = {
-      id: jwtState.id,
-      sub: user.id,
-      username: user.username,
-      email: user.email,
+    const tokenResult = await generateJWTToken({
+      userId: user.id,
       provider: authState.provider,
-      iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + 60 * 60, // 1時間
-    };
+      expirationHours: 1,
+    });
 
-    const token = sign(payload, jwtSecret);
+    if (!tokenResult.success) {
+      return {
+        success: false,
+        error: tokenResult.error || 'token_generation_failed',
+        errorDescription:
+          tokenResult.errorDescription || 'Failed to generate JWT token',
+      };
+    }
 
     return {
       success: true,
-      jwtId: jwtState.id,
+      jwtId: tokenResult.jwtId,
       profile: {
         sub: user.id,
         name: user.username,
@@ -346,7 +345,7 @@ export async function verifyAndCreateToken(
       user: {
         role: user.role,
       },
-      // token,
+      token: tokenResult.token,
     };
   } catch (error) {
     return {
