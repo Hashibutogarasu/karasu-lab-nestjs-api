@@ -16,12 +16,15 @@ import {
   findUserById,
   updateUser,
   findAuthState,
+  createJWTState,
+  isJWTStateRevoked,
 } from '../lib/database/query';
 import type {
   RegisterInput,
   LoginInput,
   UserResponse,
 } from '../lib/validation/auth.validation';
+import { JwtPayload } from './jwt.strategy';
 
 interface SessionResponse {
   sessionId: string;
@@ -370,6 +373,15 @@ export class AuthService {
       };
     } catch (error) {
       return null;
+    }
+  }
+
+  async isJWTStateRevoked(payload: JwtPayload): Promise<boolean> {
+    try {
+      const revoked = await isJWTStateRevoked(payload.id);
+      return revoked;
+    } catch (error) {
+      return false;
     }
   }
 }

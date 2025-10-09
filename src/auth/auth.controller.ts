@@ -29,6 +29,7 @@ import { processGoogleOAuth } from '../lib/auth/google-oauth';
 import { processDiscordOAuth } from '../lib/auth/discord-oauth';
 import { Google, Discord } from '../lib/auth/sns-decorators';
 import type { AuthStateDto, VerifyTokenDto } from './dto/auth.dto';
+import { createJWTState } from '../lib';
 
 @Controller('auth')
 export class AuthController {
@@ -242,12 +243,13 @@ export class AuthController {
         }
       }
 
-      // セッション作成（簡単な実装例）
       const sessionData = await this.authService.createSession(result.user!.id);
+      const jwtState = await createJWTState(result.user!.id);
 
       // 成功レスポンス
       res.status(HttpStatus.OK).json({
         message: 'Login successful',
+        jwtId: jwtState.id,
         user: result.user,
         session_id: sessionData.sessionId,
         expires_at: sessionData.expiresAt,
@@ -409,19 +411,22 @@ export class AuthController {
     @Query('code') code: string,
     @Query('state') state: string,
     @Query('error') error: string,
+    @Query('callbackUrl') queryCallbackUrl: string,
     @Res() res: Response,
     @Req() req: Request,
   ): Promise<void> {
+    let authState;
     try {
       // 認証ステートを取得してプロバイダーを確認
-      const authState = await this.authService.getAuthState(state);
+      authState = await this.authService.getAuthState(state);
       const defaultCallbackUrl =
         authState?.callbackUrl || this.DEFAULT_CALLBACK_URL;
 
       // エラーレスポンスの処理
       if (error) {
+        const finalCallbackUrl = queryCallbackUrl || defaultCallbackUrl;
         const errorRedirect = SnsAuthCallback.buildErrorRedirect(
-          defaultCallbackUrl,
+          finalCallbackUrl,
           error,
         );
         return res.redirect(errorRedirect);
@@ -429,16 +434,18 @@ export class AuthController {
 
       // パラメータ検証
       if (!code || !state) {
+        const finalCallbackUrl = queryCallbackUrl || defaultCallbackUrl;
         const errorRedirect = SnsAuthCallback.buildErrorRedirect(
-          defaultCallbackUrl,
+          finalCallbackUrl,
           'invalid_request',
         );
         return res.redirect(errorRedirect);
       }
 
       if (!authState) {
+        const finalCallbackUrl = queryCallbackUrl || this.DEFAULT_CALLBACK_URL;
         const errorRedirect = SnsAuthCallback.buildErrorRedirect(
-          defaultCallbackUrl,
+          finalCallbackUrl,
           'invalid_state',
         );
         return res.redirect(errorRedirect);
@@ -446,11 +453,10 @@ export class AuthController {
 
       // APIのベースURLを取得
       const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
-      const apiCallbackUrl = `${baseUrl}/auth/callback`;
+      const redirectUri = `${baseUrl}/auth/callback`;
 
       // プロバイダーに応じてOAuth処理を実行
       let snsProfile;
-      const redirectUri = apiCallbackUrl;
 
       switch (authState.provider) {
         case 'google':
@@ -468,31 +474,28 @@ export class AuthController {
 
       if (!processResult.success) {
         const errorType = processResult.error || 'authentication_failed';
+        const finalCallbackUrl = queryCallbackUrl || authState.callbackUrl;
         const errorRedirect = SnsAuthCallback.buildErrorRedirect(
-          authState.callbackUrl,
+          finalCallbackUrl,
           errorType,
         );
         return res.redirect(errorRedirect);
       }
 
-      // フロントエンドのコールバック処理ページにリダイレクト
-      const callbackUrl = new URL(
-        '/api/sns-callback',
-        process.env.FRONTEND_URL || 'http://localhost:3000',
-      );
+      // フロントエンドが指定したコールバックURLに最終的にリダイレクト
+      const finalCallbackUrl = queryCallbackUrl || authState.callbackUrl;
+      const callbackUrl = new URL(finalCallbackUrl);
       callbackUrl.searchParams.set('token', processResult.oneTimeToken!);
       callbackUrl.searchParams.set('state', state);
-      callbackUrl.searchParams.set('callbackUrl', authState.callbackUrl);
+      callbackUrl.searchParams.set('success', 'true');
 
       return res.redirect(callbackUrl.toString());
     } catch (error) {
       console.error('OAuth callback error:', error);
-      // 認証ステートからコールバックURLを取得、なければデフォルト使用
-      const authState = await this.authService.getAuthState(state);
-      const defaultCallbackUrl =
-        authState?.callbackUrl || this.DEFAULT_CALLBACK_URL;
+      const fallbackUrl =
+        queryCallbackUrl || authState?.callbackUrl || this.DEFAULT_CALLBACK_URL;
       const errorRedirect = SnsAuthCallback.buildErrorRedirect(
-        defaultCallbackUrl,
+        fallbackUrl,
         'server_error',
       );
       res.redirect(errorRedirect);
@@ -539,6 +542,7 @@ export class AuthController {
 
       res.status(HttpStatus.OK).json({
         message: 'Token verified successfully',
+        jwtId: result.jwtId,
         profile: result.profile,
         // token: result.token,
         role: result.user?.role,

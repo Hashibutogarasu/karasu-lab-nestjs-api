@@ -960,3 +960,32 @@ export async function cleanupExpiredPasswordResets() {
 }
 
 export default prisma;
+
+// ===== JWT状態管理関連クエリ =====
+
+export async function createJWTState(userId: string) {
+  return prisma.jWTState.create({
+    data: {
+      userId,
+    },
+  });
+}
+
+export async function revokeJWTState(id: string): Promise<boolean> {
+  try {
+    await prisma.jWTState.update({
+      where: { id },
+      data: { revoked: true },
+    });
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+export async function isJWTStateRevoked(id: string): Promise<boolean> {
+  const jwtState = await prisma.jWTState.findUnique({
+    where: { id },
+  });
+  return jwtState ? jwtState.revoked : true;
+}

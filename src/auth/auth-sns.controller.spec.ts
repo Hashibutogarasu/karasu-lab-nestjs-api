@@ -31,7 +31,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
   const mockResponse = {
     status: mockStatusFn.mockReturnThis(),
     json: mockJsonFn.mockReturnThis(),
-    redirect: mockRedirectFn.mockReturnThis(),
+    redirect: mockRedirectFn,
   } as unknown as Response;
 
   // Mock Request object
@@ -270,6 +270,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
         validCode,
         validState,
         '',
+        '', // queryCallbackUrl
         mockResponse,
         mockRequest,
       );
@@ -283,61 +284,81 @@ describe('AuthController - SNS OAuth Authentication', () => {
         validState,
       );
       expect(mockRedirectFn).toHaveBeenCalledWith(
-        'http://localhost:3000/api/sns-callback?token=one_time_token_123&state=state_abc123&callbackUrl=https%3A%2F%2Ffrontend.example.com%2Fauth%2Fcallback',
+        'https://frontend.example.com/auth/callback?token=one_time_token_123&state=state_abc123&success=true',
       );
     });
 
     it('should handle OAuth provider error response', async () => {
       const error = 'access_denied';
+      const frontendCallbackUrl = 'https://frontend.example.com/auth/callback';
+
+      // Mock auth state (might not be available in error cases)
+      mockAuthService.getAuthState.mockResolvedValue({
+        callbackUrl: frontendCallbackUrl,
+      });
 
       await controller.handleCallback(
         '',
         validState,
         error,
+        frontendCallbackUrl,
         mockResponse,
         mockRequest,
       );
 
       expect(buildErrorRedirectMock).toHaveBeenCalledWith(
-        'https://frontend.example.com/auth/callback',
+        frontendCallbackUrl,
         error,
       );
       expect(mockRedirectFn).toHaveBeenCalledWith(
-        'https://frontend.example.com/auth/callback?error=access_denied',
+        expect.stringContaining('error=access_denied'),
       );
     });
 
     it('should handle missing authorization code', async () => {
+      const frontendCallbackUrl = 'https://frontend.example.com/auth/callback';
+
+      // Mock auth state for callback URL
+      mockAuthService.getAuthState.mockResolvedValue({
+        callbackUrl: frontendCallbackUrl,
+      });
+
       await controller.handleCallback(
         '', // Missing code
         validState,
         '',
+        frontendCallbackUrl,
         mockResponse,
         mockRequest,
       );
 
       expect(buildErrorRedirectMock).toHaveBeenCalledWith(
-        'https://frontend.example.com/auth/callback',
+        frontendCallbackUrl,
         'invalid_request',
       );
     });
 
     it('should handle missing state parameter (CSRF attack protection)', async () => {
+      const frontendCallbackUrl = 'https://frontend.example.com/auth/callback';
+
       await controller.handleCallback(
         validCode,
         '', // Missing state
         '',
+        frontendCallbackUrl,
         mockResponse,
         mockRequest,
       );
 
       expect(buildErrorRedirectMock).toHaveBeenCalledWith(
-        'https://frontend.example.com/auth/callback',
+        frontendCallbackUrl,
         'invalid_request',
       );
     });
 
     it('should handle invalid state code', async () => {
+      const frontendCallbackUrl = 'https://frontend.example.com/auth/callback';
+
       // Mock auth state not found
       mockAuthService.getAuthState.mockResolvedValue(null);
 
@@ -345,24 +366,30 @@ describe('AuthController - SNS OAuth Authentication', () => {
         validCode,
         'invalid_state_123',
         '',
+        frontendCallbackUrl,
         mockResponse,
         mockRequest,
       );
 
       expect(buildErrorRedirectMock).toHaveBeenCalledWith(
-        'http://localhost:3000/api/auth/signin',
+        frontendCallbackUrl,
         'invalid_state',
+      );
+      expect(mockRedirectFn).toHaveBeenCalledWith(
+        expect.stringContaining('error=invalid_state'),
       );
     });
 
     it('should handle Google OAuth API failure', async () => {
+      const frontendCallbackUrl = 'https://frontend.example.com/auth/callback';
+
       // Mock auth state for frontend callback
       const mockAuthState = {
         id: 'auth_state_123',
         stateCode: validState,
         oneTimeToken: 'one_time_token_123',
         provider: 'google',
-        callbackUrl: 'https://frontend.example.com/auth/callback',
+        callbackUrl: frontendCallbackUrl,
         userId: null,
         expiresAt: new Date(Date.now() + 15 * 60 * 1000),
         used: false,
@@ -378,6 +405,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
         validCode,
         validState,
         '',
+        frontendCallbackUrl,
         mockResponse,
         mockRequest,
       );
@@ -391,7 +419,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
         expect.any(Error),
       );
       expect(buildErrorRedirectMock).toHaveBeenCalledWith(
-        'https://frontend.example.com/auth/callback',
+        frontendCallbackUrl,
         'server_error',
       );
       expect(mockRedirectFn).toHaveBeenCalledWith(
@@ -400,13 +428,15 @@ describe('AuthController - SNS OAuth Authentication', () => {
     });
 
     it('should handle profile processing failure', async () => {
+      const frontendCallbackUrl = 'https://frontend.example.com/auth/callback';
+
       // Mock auth state for frontend callback
       const mockAuthState = {
         id: 'auth_state_123',
         stateCode: validState,
         oneTimeToken: 'one_time_token_123',
         provider: 'google',
-        callbackUrl: 'https://frontend.example.com/auth/callback',
+        callbackUrl: frontendCallbackUrl,
         userId: null,
         expiresAt: new Date(Date.now() + 15 * 60 * 1000),
         used: false,
@@ -424,6 +454,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
         validCode,
         validState,
         '',
+        frontendCallbackUrl,
         mockResponse,
         mockRequest,
       );
@@ -437,7 +468,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
         validState,
       );
       expect(buildErrorRedirectMock).toHaveBeenCalledWith(
-        'https://frontend.example.com/auth/callback',
+        frontendCallbackUrl,
         'server_error',
       );
       expect(mockRedirectFn).toHaveBeenCalledWith(
@@ -734,6 +765,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
         'auth_code_123',
         'state_abc123',
         '',
+        '',
         mockResponse,
         mockRequest,
       );
@@ -769,6 +801,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
       await controller.handleCallback(
         'auth_code_123',
         'state_abc123',
+        '',
         '',
         mockResponse,
         mockRequest,
@@ -812,6 +845,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
         'auth_code_123',
         'state_abc123',
         '',
+        '', // queryCallbackUrl
         mockResponse,
         mockRequest,
       );
@@ -1004,6 +1038,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
         'auth_code_123',
         'state_abc123',
         '',
+        '', // queryCallbackUrl
         mockResponse,
         mockRequest,
       );

@@ -4,6 +4,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { AuthService } from './auth.service';
 
 export interface JwtPayload {
+  id: string; // jwt state id
   sub: string; // user ID
   username: string;
   iat?: number;
@@ -21,6 +22,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayload) {
+    const revoked = await this.authService.isJWTStateRevoked(payload);
+
+    if (revoked) {
+      throw new UnauthorizedException('Token has been revoked');
+    }
+
     const user = await this.authService.getUserProfileById(payload.sub);
     if (!user) {
       throw new UnauthorizedException('Invalid token');

@@ -17,6 +17,7 @@ import {
   generateRandomString,
   hashString,
   calculateExpiration,
+  createJWTState,
 } from '../database/query';
 import { sign } from 'jsonwebtoken';
 import * as bcrypt from 'bcrypt';
@@ -50,6 +51,7 @@ export interface VerifyTokenRequest {
 
 export interface VerifyTokenResponse {
   success: boolean;
+  jwtId?: string;
   profile?: {
     sub: string;
     name?: string;
@@ -314,9 +316,12 @@ export async function verifyAndCreateToken(
       };
     }
 
+    const jwtState = await createJWTState(user.id);
+
     // JWTトークンを生成
     const jwtSecret = process.env.JWT_SECRET!;
     const payload = {
+      id: jwtState.id,
       sub: user.id,
       username: user.username,
       email: user.email,
@@ -329,6 +334,7 @@ export async function verifyAndCreateToken(
 
     return {
       success: true,
+      jwtId: jwtState.id,
       profile: {
         sub: user.id,
         name: user.username,

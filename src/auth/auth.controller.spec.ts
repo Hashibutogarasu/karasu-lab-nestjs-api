@@ -11,6 +11,11 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { RegisterDto, LoginDto } from './dto/create-auth.dto';
 
+// Mock the createJWTState function
+jest.mock('../lib', () => ({
+  createJWTState: jest.fn().mockResolvedValue({ id: 'jwt_state_123' }),
+}));
+
 describe('AuthController', () => {
   let controller: AuthController;
   let service: AuthService;
@@ -237,6 +242,7 @@ describe('AuthController', () => {
       expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
       expect(mockJsonFn).toHaveBeenCalledWith({
         message: 'Login successful',
+        jwtId: 'jwt_state_123',
         user: mockLoginResponse.user,
         session_id: mockSessionData.sessionId,
         expires_at: mockSessionData.expiresAt,
@@ -272,6 +278,13 @@ describe('AuthController', () => {
 
       expect(mockAuthService.login).toHaveBeenCalledWith(loginWithEmail);
       expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
+      expect(mockJsonFn).toHaveBeenCalledWith({
+        message: 'Login successful',
+        jwtId: 'jwt_state_123',
+        user: mockLoginResponse.user,
+        session_id: mockSessionData.sessionId,
+        expires_at: mockSessionData.expiresAt,
+      });
     });
 
     it('should handle invalid credentials', async () => {

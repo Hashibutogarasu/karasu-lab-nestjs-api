@@ -52,6 +52,7 @@ model User {
   extraProfiles      ExtraProfile[]
   passwordResets     PasswordReset[]
   authStates         AuthState[]
+  JWTState           JWTState[]
 
   @@map("users")
 }
@@ -179,4 +180,12 @@ model PasswordReset {
   @@index([resetCode])
   @@index([userId])
   @@map("password_resets")
+}
+
+model JWTState {
+  id      String  @id @default(cuid())
+  userId  String  @map("user_id")
+  revoked Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

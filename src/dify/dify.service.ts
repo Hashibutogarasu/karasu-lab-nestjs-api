@@ -43,11 +43,6 @@ export class DifyService {
         requestBody['trace_id'] = request.trace_id;
       }
 
-      console.log(
-        'Sending request to Dify API:',
-        JSON.stringify(requestBody, null, 2),
-      );
-
       const response = await fetch(`${this.baseUrl}/chat-messages`, {
         method: 'POST',
         headers: {
