@@ -27,8 +27,16 @@ export class CoinController {
    * GET /gmo/coin/ticker/stream
    */
   @Sse('ticker/stream')
-  getTickerStream(): Observable<MessageEvent<GmoCoinTickerResponseDto>> {
-    return this.coinService.getTickerSse();
+  getTickerStream(
+    @Query('symbols') symbols?: string,
+  ): Observable<MessageEvent<GmoCoinTickerResponseDto>> {
+    const list = symbols
+      ? symbols
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : undefined;
+    return this.coinService.getTickerSse(list);
   }
 
   /**

@@ -339,25 +339,39 @@ export class CoinService {
   /**
    * SSE用: DB のキャッシュされた最新ティッカーを Observable で返す（即時とその後1分ごと）
    */
-  getTickerSse(): Observable<MessageEvent<GmoCoinTicker>> {
+  getTickerSse(symbols?: string[]): Observable<MessageEvent<GmoCoinTicker>> {
     // DBポーリング Observable: 即時1回、その後30秒ごとにDBの最新キャッシュを取得
     const dbPolling$ = interval(30000).pipe(
       startWith(0),
       switchMap(() => from(getLatestGmoCoinTicker())),
       map((dbEntry) => {
-        const payload: any = dbEntry
-          ? {
-              status: dbEntry.statusCode,
-              data: dbEntry.data.map((d) => ({
-                symbol: d.symbol,
-                ask: d.ask,
-                bid: d.bid,
-                timestamp: d.timestamp.toISOString(),
-                status: d.status,
-              })),
-              responsetime: dbEntry.responsetime.toISOString(),
-            }
-          : { status: 0, data: [], responsetime: new Date().toISOString() };
+        let payload: any;
+        if (dbEntry) {
+          const items = dbEntry.data
+            .map((d) => ({
+              symbol: d.symbol,
+              ask: d.ask,
+              bid: d.bid,
+              timestamp: d.timestamp.toISOString(),
+              status: d.status,
+            }))
+            .filter(
+              (it) =>
+                !symbols || symbols.length === 0 || symbols.includes(it.symbol),
+            );
+
+          payload = {
+            status: dbEntry.statusCode,
+            data: items,
+            responsetime: dbEntry.responsetime.toISOString(),
+          };
+        } else {
+          payload = {
+            status: 0,
+            data: [],
+            responsetime: new Date().toISOString(),
+          };
+        }
 
         const msg: MessageEvent<GmoCoinTicker> = {
           // 新規接続時や定期ポーリングはスナップショットとして扱う
@@ -373,8 +387,20 @@ export class CoinService {
     // ライブ通知 Observable: getTicker() が成功した際に this.tickerSubject に next される
     const live$ = this.tickerSubject.pipe(
       map((parsed) => {
+        // If symbols filter provided, filter parsed.data accordingly
+        const filteredData = parsed.data.filter(
+          (d: any) =>
+            !symbols || symbols.length === 0 || symbols.includes(d.symbol),
+        );
+
+        const payload = {
+          status: parsed.status,
+          data: filteredData,
+          responsetime: parsed.responsetime,
+        } as GmoCoinTicker;
+
         const msg: MessageEvent<GmoCoinTicker> = {
-          data: parsed,
+          data: payload,
           // ライブ更新は 'ticker' イベント
           event: 'ticker',
         } as unknown as MessageEvent<GmoCoinTicker>;
