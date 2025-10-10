@@ -8,7 +8,7 @@ import {
   GmoCoinKline,
   GmoCoinRules,
 } from '../../types/gmo-coin';
-import { GetKlineDto, PriceType, Interval } from './dto/gmo-coin-request.dto';
+import { GetKlineDto, Interval, PriceType } from './dto/gmo-coin-request.dto';
 
 describe('CoinController', () => {
   let controller: CoinController;

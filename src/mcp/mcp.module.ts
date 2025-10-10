@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { McpService } from './mcp.service';
 import { McpModule } from '@nestjs-mcp/server';
+import { CoinService } from '../gmo/coin/coin.service';
 
 @Module({
   imports: [
@@ -12,6 +13,6 @@ import { McpModule } from '@nestjs-mcp/server';
       transports: { sse: { enabled: false } },
     }),
   ],
-  providers: [McpService],
+  providers: [McpService, CoinService],
 })
 export class McpServerModule {}

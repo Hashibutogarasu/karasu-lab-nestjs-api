@@ -491,6 +491,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
         email: 'test@example.com',
         passwordHash: null, // SNS users don't have passwords
         providers: ['google'],
+        extraProfiles: [],
         createdAt: new Date(),
         updatedAt: new Date(),
         role: 'user',
