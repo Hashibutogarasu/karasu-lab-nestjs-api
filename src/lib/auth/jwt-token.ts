@@ -106,7 +106,7 @@ export async function generateJWTToken(
     const token = sign(payload, jwtSecret);
 
     await updateJWTState(jwtState.id, {
-      tokenHint: `...${token.slice(-8)}`,
+      tokenHint: `${token.slice(-8)}`,
     });
 
     return {

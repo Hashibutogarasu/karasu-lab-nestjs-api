@@ -30,6 +30,7 @@ import { processDiscordOAuth } from '../lib/auth/discord-oauth';
 import { Google, Discord } from '../lib/auth/sns-decorators';
 import type { AuthStateDto, VerifyTokenDto } from './dto/auth.dto';
 import { generateJWTToken } from '../lib/auth/jwt-token';
+import { AuthState } from '@prisma/client';
 
 @Controller('auth')
 export class AuthController {
@@ -430,7 +431,7 @@ export class AuthController {
     @Res() res: Response,
     @Req() req: Request,
   ): Promise<void> {
-    let authState;
+    let authState: AuthState | null = null;
     try {
       // 認証ステートを取得してプロバイダーを確認
       authState = await this.authService.getAuthState(state);

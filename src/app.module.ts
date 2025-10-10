@@ -11,6 +11,7 @@ import { MarkdownModule } from './markdown/markdown.module';
 import { McpServerModule } from './mcp/mcp.module';
 import { DifyModule } from './dify/dify.module';
 import { JwtStateModule } from './jwt-state/jwt-state.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { JwtStateModule } from './jwt-state/jwt-state.module';
     McpServerModule,
     DifyModule,
     JwtStateModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService, ResendService],

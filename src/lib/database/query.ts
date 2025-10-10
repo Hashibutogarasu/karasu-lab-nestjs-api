@@ -156,6 +156,9 @@ export async function findUserByEmail(email: string) {
 export async function findUserById(userId: string) {
   return prisma.user.findUnique({
     where: { id: userId },
+    include: {
+      extraProfiles: true,
+    },
   });
 }
 
