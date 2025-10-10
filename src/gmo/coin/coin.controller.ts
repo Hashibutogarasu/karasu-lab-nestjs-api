@@ -10,6 +10,7 @@ import {
 import { GetKlineDto } from './dto/gmo-coin-request.dto';
 import { AdminGuard } from '../../auth/guards/admin.guard';
 
+@UseGuards(JwtAuthGuard)
 @Controller('gmo/coin')
 export class CoinController {
   constructor(private readonly coinService: CoinService) {}
