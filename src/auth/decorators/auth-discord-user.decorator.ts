@@ -1,10 +1,6 @@
-import {
-  createParamDecorator,
-  ExecutionContext,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { findUserById } from '../../lib';
+import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { DiscordUserSchema } from '../../types/discord-user';
+import { getAuthenticatedUserProfile } from './auth-base.decorator';
 
 /**
  * Discord ユーザーデコレーター
@@ -13,36 +9,8 @@ import { DiscordUserSchema } from '../../types/discord-user';
  */
 export const AuthDiscordUser = createParamDecorator(
   async (data: unknown, ctx: ExecutionContext) => {
-    const request = ctx.switchToHttp().getRequest();
-
-    if (!request.user?.id) {
-      throw new UnauthorizedException('User not authenticated');
-    }
-
-    // ユーザー情報を取得(ExtraProfileを含む)
-    const user = await findUserById(request.user.id);
-
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
-
-    // Discord の ExtraProfile を検索
-    const discordProfile = user.extraProfiles?.find(
-      (profile) => profile.provider === 'discord',
+    return getAuthenticatedUserProfile(ctx, 'discord', (rawProfile) =>
+      DiscordUserSchema.parse(rawProfile),
     );
-
-    if (!discordProfile) {
-      throw new UnauthorizedException(
-        'Discord profile not found for this user',
-      );
-    }
-
-    // raw_profile を Zod でパース
-    try {
-      const discordUser = DiscordUserSchema.parse(discordProfile.rawProfile);
-      return discordUser;
-    } catch (error) {
-      throw new UnauthorizedException('Invalid Discord profile data: ' + error);
-    }
   },
 );
