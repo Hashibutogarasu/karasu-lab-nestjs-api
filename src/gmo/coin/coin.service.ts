@@ -1,4 +1,5 @@
 import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
+import { Cron, CronExpression, SchedulerRegistry } from '@nestjs/schedule';
 import { Observable, interval, from } from 'rxjs';
 import { switchMap, map, startWith } from 'rxjs/operators';
 import { ZodError } from 'zod';
@@ -24,6 +25,13 @@ import { getLatestGmoCoinTicker } from '../../lib/database/query';
 @Injectable()
 export class CoinService {
   private readonly baseUrl = 'https://forex-api.coin.z.com/public';
+  private readonly logger = new Logger(CoinService.name);
+
+  // インメモリのティッカーヒストリキャッシュ（取得ごとに1エントリ）。最大169件（約1週間）保持
+  private tickerHistory: Array<{ fetchedAt: Date; payload: any }> = [];
+  private readonly maxHistoryItems = 169;
+  // データは最大7日分を保持（7日より古いデータは削除）
+  private readonly maxHistoryDays = 7;
 
   /**
    * 外国為替FXの稼働状態を取得
@@ -67,6 +75,8 @@ export class CoinService {
 
       const data = await response.json();
       const parsed = GmoCoinTickerSchema.parse(data);
+      // インメモリ履歴に追加
+      this.addTickerToHistory(parsed);
       await saveGmoCoinTicker(parsed);
       return parsed;
     } catch (error) {
@@ -81,6 +91,52 @@ export class CoinService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  /**
+   * ティッカーのペイロードをインメモリの履歴に追加し、件数と経過日数で古いデータを削除する
+   * - 最新を先頭に追加
+   * - 件数が maxHistoryItems を超えれば切り詰める
+   * - maxHistoryDays より古いデータは削除する
+   */
+  addTickerToHistory(parsed: GmoCoinTicker) {
+    try {
+      const now = new Date();
+      this.tickerHistory.unshift({ fetchedAt: now, payload: parsed });
+
+      // 件数上限で切り詰め
+      if (this.tickerHistory.length > this.maxHistoryItems) {
+        this.tickerHistory = this.tickerHistory.slice(0, this.maxHistoryItems);
+      }
+
+      // 日数上限で古いものを削除
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - this.maxHistoryDays);
+      this.tickerHistory = this.tickerHistory.filter(
+        (e) => e.fetchedAt >= cutoff,
+      );
+    } catch (err) {
+      this.logger.error('Failed to add ticker to history', err);
+    }
+  }
+
+  /**
+   * テスト用に公開: 指定した日付文字列 (YYYY-MM-DD) とレスポンスタイムが一致する履歴エントリを返す
+   */
+  getTickerByDate(dateStr: string) {
+    // responsetime の日付部分が一致するエントリを返す
+    return this.tickerHistory.filter((entry) => {
+      try {
+        const respTime = new Date(entry.payload.responsetime);
+        const y = respTime.getUTCFullYear();
+        const m = String(respTime.getUTCMonth() + 1).padStart(2, '0');
+        const d = String(respTime.getUTCDate()).padStart(2, '0');
+        const key = `${y}-${m}-${d}`;
+        return key === dateStr;
+      } catch (e) {
+        return false;
+      }
+    });
   }
 
   /**
@@ -151,16 +207,15 @@ export class CoinService {
   }
 
   /**
-   * SSE向け: DBのキャッシュされた最新ティッカーを1分ごとに返す
-   * Returns Observable of MessageEvent containing parsed GmoCoinTicker-like object
+   * SSE用: DB のキャッシュされた最新ティッカーを Observable で返す（即時とその後1分ごと）
    */
   getTickerSse(): Observable<MessageEvent<GmoCoinTicker>> {
-    // Emit immediately, then every 60 seconds
+    // 即時に1回、以降60秒ごとに emit
     return interval(60000).pipe(
       startWith(0),
       switchMap(() => from(getLatestGmoCoinTicker())),
       map((dbEntry) => {
-        // dbEntry is the prisma model including `statusCode`, `responsetime`, and `data` array
+        // dbEntry は Prisma モデルで、statusCode, responsetime, data 配列を含む想定
         const payload: any = dbEntry
           ? {
               status: dbEntry.statusCode,

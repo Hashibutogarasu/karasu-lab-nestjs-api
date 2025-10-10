@@ -13,7 +13,6 @@ jest.mock('../../lib/database/query', () => ({
   getLatestGmoCoinTicker: jest.fn().mockResolvedValue(null),
 }));
 
-// グローバルfetchのモック
 global.fetch = jest.fn();
 
 describe('CoinService', () => {
@@ -250,6 +249,179 @@ describe('CoinService', () => {
       expect(queryModule.getLatestGmoCoinTicker).toHaveBeenCalledTimes(2);
 
       sub.unsubscribe();
+    });
+  });
+
+  describe('history management', () => {
+    it('should keep at most 169 entries and prune older than 7 days', async () => {
+      // Create 200 mock entries with various fetchedAt times
+      const now = new Date('2025-10-10T03:00:00.000Z');
+      jest.useFakeTimers();
+      // setSystemTime exists on modern fake timers;
+      jest.setSystemTime(now.getTime());
+
+      // craft payload with responsetime set from now backwards
+      const makePayload = (d: Date) => ({
+        status: 0,
+        data: [
+          {
+            symbol: 'USD_JPY',
+            ask: '100',
+            bid: '99',
+            timestamp: d.toISOString(),
+            status: 'OPEN',
+          },
+        ],
+        responsetime: d.toISOString(),
+      });
+
+      // push 200 entries: some older than 7 days, some within 7 days
+      for (let i = 0; i < 200; i++) {
+        const d = new Date(now.getTime() - i * 60 * 60 * 1000); // each hour back
+        const payload = makePayload(d);
+        // call internal method to add
+        service.addTickerToHistory(payload as any);
+      }
+
+      // After insertion, history should be <= 169 and no entries older than 7 days
+      const hist = (service as any).tickerHistory as Array<any>;
+      expect(hist.length).toBeLessThanOrEqual(169);
+
+      const cutoff = new Date(now.getTime());
+      cutoff.setUTCDate(cutoff.getUTCDate() - 7);
+      for (const e of hist) {
+        expect(new Date(e.fetchedAt).getTime()).toBeGreaterThanOrEqual(
+          cutoff.getTime(),
+        );
+      }
+
+      jest.useRealTimers();
+    });
+
+    it('getTickerByDate should return only entries matching date', async () => {
+      // Prepare entries for two dates
+      (service as any).tickerHistory = [];
+      const d1 = new Date('2025-10-08T10:00:00.000Z');
+      const d2 = new Date('2025-10-09T11:00:00.000Z');
+
+      const p1 = {
+        status: 0,
+        data: [
+          {
+            symbol: 'USD_JPY',
+            ask: '1',
+            bid: '1',
+            timestamp: d1.toISOString(),
+            status: 'OPEN',
+          },
+        ],
+        responsetime: d1.toISOString(),
+      };
+      const p2 = {
+        status: 0,
+        data: [
+          {
+            symbol: 'USD_JPY',
+            ask: '2',
+            bid: '2',
+            timestamp: d2.toISOString(),
+            status: 'OPEN',
+          },
+        ],
+        responsetime: d2.toISOString(),
+      };
+
+      service.addTickerToHistory(p1 as any);
+      service.addTickerToHistory(p2 as any);
+
+      const res1 = service.getTickerByDate('2025-10-08');
+      expect(res1.length).toBeGreaterThanOrEqual(1);
+      // all returned entries must have responsetime date matching 2025-10-08
+      for (const e of res1) {
+        expect(e.payload.responsetime.startsWith('2025-10-08')).toBeTruthy();
+      }
+
+      const res2 = service.getTickerByDate('2025-10-09');
+      expect(res2.length).toBeGreaterThanOrEqual(1);
+      for (const e of res2) {
+        expect(e.payload.responsetime.startsWith('2025-10-09')).toBeTruthy();
+      }
+    });
+
+    it('should merge with DB entry and retain only last 7 days and max items when large bulk added', async () => {
+      // Simulate adding a large amount of historical data (hourly points) older than and within 7 days
+      const now = new Date('2025-10-10T03:00:00.000Z');
+      jest.useFakeTimers();
+      jest.setSystemTime(now.getTime());
+
+      // clear any existing history
+      (service as any).tickerHistory = [];
+
+      const maxItems = (service as any).maxHistoryItems ?? 169;
+      const maxDays = (service as any).maxHistoryDays ?? 7;
+      const hour = 60 * 60 * 1000;
+
+      // Insert 300 hourly entries going back in time. We advance the mocked system time for each
+      for (let i = 0; i < 300; i++) {
+        const time = now.getTime() - i * hour;
+        jest.setSystemTime(time);
+        const d = new Date(time);
+        const payload = {
+          status: 0,
+          data: [
+            {
+              symbol: 'USD_JPY',
+              ask: String(100 + i),
+              bid: String(99 + i),
+              timestamp: d.toISOString(),
+              status: 'OPEN',
+            },
+          ],
+          responsetime: d.toISOString(),
+        };
+
+        service.addTickerToHistory(payload as any);
+      }
+
+      // Now simulate a DB latest entry that is more recent than our 'now'
+      const dbTime = new Date(now.getTime() + 60 * 1000); // +1 minute
+      jest.setSystemTime(dbTime.getTime());
+      const dbPayload = {
+        status: 0,
+        data: [
+          {
+            symbol: 'USD_JPY',
+            ask: '999.9',
+            bid: '999.8',
+            timestamp: dbTime.toISOString(),
+            status: 'OPEN',
+          },
+        ],
+        responsetime: dbTime.toISOString(),
+      };
+
+      // Emulate merging DB latest by adding it to history as the newest entry
+      service.addTickerToHistory(dbPayload as any);
+
+      const hist = (service as any).tickerHistory as Array<any>;
+
+      // Should be trimmed to at most maxItems
+      expect(hist.length).toBeLessThanOrEqual(maxItems);
+
+      // All entries must be within the last `maxDays` days counted from the newest (dbTime)
+      const cutoff = new Date(dbTime.getTime());
+      cutoff.setUTCDate(cutoff.getUTCDate() - maxDays);
+
+      for (const e of hist) {
+        expect(new Date(e.fetchedAt).getTime()).toBeGreaterThanOrEqual(
+          cutoff.getTime(),
+        );
+      }
+
+      // The first (newest) entry should be the DB payload we just added
+      expect(hist[0].payload.responsetime).toEqual(dbPayload.responsetime);
+
+      jest.useRealTimers();
     });
   });
 });
