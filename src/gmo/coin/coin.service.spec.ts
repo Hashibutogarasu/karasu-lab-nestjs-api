@@ -393,7 +393,7 @@ describe('CoinService', () => {
       jest.useRealTimers();
     });
 
-    it('should emit cached ticker immediately and again after 10m', async () => {
+    it('should emit cached ticker immediately and again after 30s', async () => {
       const dbEntry = {
         statusCode: 0,
         responsetime: new Date('2025-10-10T02:47:36.025Z'),
@@ -436,8 +436,8 @@ describe('CoinService', () => {
         responsetime: '2025-10-10T02:47:36.025Z',
       });
 
-      // advance time by 10 minutes to trigger next emission
-      jest.advanceTimersByTime(600000);
+      // advance time by 30 seconds to trigger next emission
+      jest.advanceTimersByTime(30000);
       // allow promise resolution for the second emission
       await Promise.resolve();
 
@@ -494,7 +494,7 @@ describe('CoinService', () => {
   });
 
   describe('history management', () => {
-    it('should keep at most 169 entries and prune older than 7 days', async () => {
+    it('should keep at most maxHistoryItems entries and prune older than 7 days', async () => {
       // Create 200 mock entries with various fetchedAt times
       const now = new Date('2025-10-10T03:00:00.000Z');
       jest.useFakeTimers();
@@ -526,7 +526,8 @@ describe('CoinService', () => {
 
       // After insertion, history should be <= maxHistoryItems and no entries older than 7 days
       const hist = (service as any).tickerHistory as Array<any>;
-      const maxItems = (service as any).maxHistoryItems ?? 169;
+      const maxItems = (service as any).maxHistoryItems;
+      expect(maxItems).toBeDefined();
       expect(hist.length).toBeLessThanOrEqual(maxItems);
 
       const cutoff = new Date(now.getTime());

@@ -40,10 +40,10 @@ export class CoinService {
   private tickerSubject = new Subject<GmoCoinTicker>();
 
   // インメモリのティッカーヒストリキャッシュ（取得ごとに1エントリ）。
-  // 取得間隔を10分（EVERY_10_MINUTES）に変更したため、1週間分の上限を再計算します:
-  // 1週間 = 7日, 1日 = 24時間, 1時間あたり6回(10分毎) => 7 * 24 * 6 = 1008
+  // 取得間隔を30秒に変更したため、1週間分の上限を再計算します:
+  // 1週間 = 7日, 1日 = 24時間, 1時間あたり120回(30秒毎) => 7 * 24 * 120 = 20160
   private tickerHistory: Array<{ fetchedAt: Date; payload: any }> = [];
-  private readonly maxHistoryItems = 1008;
+  private readonly maxHistoryItems = 20160;
   // データは最大7日分を保持（7日より古いデータは削除）
   private readonly maxHistoryDays = 7;
 
@@ -139,13 +139,15 @@ export class CoinService {
         // インメモリ履歴に追加
         this.addTickerToHistory(parsed);
         await saveGmoCoinTicker(parsed);
+
+        // ライブ通知を行う（SSE リスナーへ即時配信）
+        try {
+          this.tickerSubject.next(parsed);
+        } catch (err) {
+          this.logger.error('Failed to emit ticker to subject', err);
+        }
       }
-      // ライブ通知を行う（SSE リスナーへ即時配信）
-      try {
-        this.tickerSubject.next(parsed);
-      } catch (err) {
-        this.logger.error('Failed to emit ticker to subject', err);
-      }
+
       return parsed;
     } catch (error) {
       if (error instanceof ZodError) {
@@ -338,8 +340,8 @@ export class CoinService {
    * SSE用: DB のキャッシュされた最新ティッカーを Observable で返す（即時とその後1分ごと）
    */
   getTickerSse(): Observable<MessageEvent<GmoCoinTicker>> {
-    // DBポーリング Observable: 即時1回、その後10分ごとにDBの最新キャッシュを取得
-    const dbPolling$ = interval(600000).pipe(
+    // DBポーリング Observable: 即時1回、その後30秒ごとにDBの最新キャッシュを取得
+    const dbPolling$ = interval(30000).pipe(
       startWith(0),
       switchMap(() => from(getLatestGmoCoinTicker())),
       map((dbEntry) => {

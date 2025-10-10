@@ -87,10 +87,7 @@ describe('CoinController', () => {
           useValue: mockCoinService,
         },
       ],
-    })
-      .overrideGuard(JwtAuthGuard)
-      .useValue({ canActivate: jest.fn(() => true) })
-      .compile();
+    }).compile();
 
     controller = module.get<CoinController>(CoinController);
     service = module.get<CoinService>(CoinService);
@@ -131,7 +128,10 @@ describe('CoinController', () => {
 
       const result = await controller.getKline(query);
       expect(result).toEqual(mockKline);
-      expect(mockCoinService.getKline).toHaveBeenCalledWith(query);
+      expect(mockCoinService.getKline).toHaveBeenCalledWith(query, {
+        updateDb: false,
+        cache: true,
+      });
     });
   });
 

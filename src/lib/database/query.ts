@@ -1105,6 +1105,19 @@ export async function getLatestGmoCoinTicker() {
 }
 
 /**
+ * GMOコイン - 複数のティッカーキャッシュを取得
+ * Returns the most recent parent records including their child items ordered by responsetime desc
+ * @param limit optional number of parent records to return (default 10)
+ */
+export async function getGmoCoinTickers(limit: number = 10) {
+  return prisma.gmoCoinTicker.findMany({
+    orderBy: { responsetime: 'desc' },
+    take: limit,
+    include: { data: true },
+  });
+}
+
+/**
  * GMOコイン - 最新のステータスキャッシュを取得
  */
 export async function getLatestGmoCoinStatus() {
