@@ -226,6 +226,7 @@ describe('CoinService', () => {
       await Promise.resolve();
 
       expect(emissions.length).toBe(1);
+      expect(emissions[0].event).toEqual('snapshot');
       expect(emissions[0].data).toEqual({
         status: 0,
         data: [
@@ -288,8 +289,9 @@ describe('CoinService', () => {
 
       // since Subject.next is synchronous inside getTicker after await save, we should have a new emission
       expect(emissions.length).toBeGreaterThanOrEqual(2);
-      // the last emission should be the live payload
+      // the last emission should be the live payload and event 'ticker'
       const last = emissions[emissions.length - 1];
+      expect(last.event).toEqual('ticker');
       expect(last.data).toEqual(mockResponse);
 
       sub.unsubscribe();

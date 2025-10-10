@@ -241,7 +241,10 @@ export class CoinService {
           : { status: 0, data: [], responsetime: new Date().toISOString() };
 
         const msg: MessageEvent<GmoCoinTicker> = {
+          // 新規接続時や定期ポーリングはスナップショットとして扱う
+          // Nest の Sse サポートでは { event?: string, data } を返せる
           data: payload,
+          event: 'snapshot',
         } as unknown as MessageEvent<GmoCoinTicker>;
 
         return msg;
@@ -253,6 +256,8 @@ export class CoinService {
       map((parsed) => {
         const msg: MessageEvent<GmoCoinTicker> = {
           data: parsed,
+          // ライブ更新は 'ticker' イベント
+          event: 'ticker',
         } as unknown as MessageEvent<GmoCoinTicker>;
         return msg;
       }),
