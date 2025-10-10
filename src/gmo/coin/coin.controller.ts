@@ -9,8 +9,8 @@ import {
 } from './dto/gmo-coin.dto-response';
 import { GetKlineDto } from './dto/gmo-coin-request.dto';
 
-@Controller('gmo/coin')
 @UseGuards(JwtAuthGuard)
+@Controller('gmo/coin')
 export class CoinController {
   constructor(private readonly coinService: CoinService) {}
 
