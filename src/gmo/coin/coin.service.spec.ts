@@ -3,6 +3,14 @@ import { CoinService } from './coin.service';
 import { HttpException } from '@nestjs/common';
 import { PriceType, Interval } from './dto/gmo-coin-request.dto';
 
+// Mock DB save functions to avoid contacting real database during unit tests
+jest.mock('../../lib/database/query', () => ({
+  saveGmoCoinStatus: jest.fn().mockResolvedValue(null),
+  saveGmoCoinTicker: jest.fn().mockResolvedValue(null),
+  saveGmoCoinKline: jest.fn().mockResolvedValue(null),
+  saveGmoCoinRules: jest.fn().mockResolvedValue(null),
+}));
+
 // グローバルfetchのモック
 global.fetch = jest.fn();
 

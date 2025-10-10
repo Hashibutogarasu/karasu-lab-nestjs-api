@@ -8,8 +8,8 @@ import {
   GmoCoinRulesResponseDto,
 } from './dto/gmo-coin.dto-response';
 import { GetKlineDto } from './dto/gmo-coin-request.dto';
+import { AdminGuard } from '../../auth/guards/admin.guard';
 
-@UseGuards(JwtAuthGuard)
 @Controller('gmo/coin')
 export class CoinController {
   constructor(private readonly coinService: CoinService) {}
@@ -18,6 +18,7 @@ export class CoinController {
    * 外国為替FXの稼働状態を取得
    * GET /gmo/coin/status
    */
+  @UseGuards(AdminGuard)
   @Get('status')
   async getStatus(): Promise<GmoCoinStatusResponseDto> {
     return this.coinService.getStatus();
@@ -27,6 +28,7 @@ export class CoinController {
    * 全銘柄分の最新レートを取得
    * GET /gmo/coin/ticker
    */
+  @UseGuards(AdminGuard)
   @Get('ticker')
   async getTicker(): Promise<GmoCoinTickerResponseDto> {
     return this.coinService.getTicker();
@@ -36,6 +38,7 @@ export class CoinController {
    * 指定した銘柄の四本値を取得
    * GET /gmo/coin/klines?symbol=USD_JPY&priceType=ASK&interval=1min&date=20251010
    */
+  @UseGuards(AdminGuard)
   @Get('klines')
   async getKline(
     @Query() query: GetKlineDto,
@@ -47,6 +50,7 @@ export class CoinController {
    * 取引ルールを取得
    * GET /gmo/coin/rules
    */
+  @UseGuards(AdminGuard)
   @Get('rules')
   async getRules(): Promise<GmoCoinRulesResponseDto> {
     return this.coinService.getRules();

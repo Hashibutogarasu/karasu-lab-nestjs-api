@@ -10,11 +10,16 @@ import {
   GmoCoinKline,
   GmoCoinRules,
 } from '../../types/gmo-coin';
+import {
+  saveGmoCoinStatus,
+  saveGmoCoinTicker,
+  saveGmoCoinKline,
+  saveGmoCoinRules,
+} from '../../lib/database/query';
 import { GetKlineDto } from './dto/gmo-coin-request.dto';
 
 @Injectable()
 export class CoinService {
-  private readonly logger = new Logger(CoinService.name);
   private readonly baseUrl = 'https://forex-api.coin.z.com/public';
 
   /**
@@ -30,19 +35,15 @@ export class CoinService {
 
       const data = await response.json();
       const parsed = GmoCoinStatusSchema.parse(data);
+      await saveGmoCoinStatus(parsed);
       return parsed;
     } catch (error) {
       if (error instanceof ZodError) {
-        // this.logger.error(
-        //   'Failed to parse GMO Coin status response',
-        //   error.issues,
-        // );
         throw new HttpException(
           'Invalid response format from GMO Coin status API',
           HttpStatus.INTERNAL_SERVER_ERROR,
         );
       }
-      // this.logger.error('Failed to fetch GMO Coin status', error);
       throw new HttpException(
         'Failed to fetch GMO Coin status',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -63,19 +64,15 @@ export class CoinService {
 
       const data = await response.json();
       const parsed = GmoCoinTickerSchema.parse(data);
+      await saveGmoCoinTicker(parsed);
       return parsed;
     } catch (error) {
       if (error instanceof ZodError) {
-        // this.logger.error(
-        //   'Failed to parse GMO Coin ticker response',
-        //   error.issues,
-        // );
         throw new HttpException(
           'Invalid response format from GMO Coin ticker API',
           HttpStatus.INTERNAL_SERVER_ERROR,
         );
       }
-      // this.logger.error('Failed to fetch GMO Coin ticker', error);
       throw new HttpException(
         'Failed to fetch GMO Coin ticker',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -105,19 +102,15 @@ export class CoinService {
 
       const data = await response.json();
       const parsed = GmoCoinKlineSchema.parse(data);
+      await saveGmoCoinKline(parsed);
       return parsed;
     } catch (error) {
       if (error instanceof ZodError) {
-        // this.logger.error(
-        //   'Failed to parse GMO Coin kline response',
-        //   error.issues,
-        // );
         throw new HttpException(
           'Invalid response format from GMO Coin kline API',
           HttpStatus.INTERNAL_SERVER_ERROR,
         );
       }
-      // this.logger.error('Failed to fetch GMO Coin kline data', error);
       throw new HttpException(
         'Failed to fetch GMO Coin kline data',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -138,19 +131,15 @@ export class CoinService {
 
       const data = await response.json();
       const parsed = GmoCoinRulesSchema.parse(data);
+      await saveGmoCoinRules(parsed);
       return parsed;
     } catch (error) {
       if (error instanceof ZodError) {
-        // this.logger.error(
-        //   'Failed to parse GMO Coin rules response',
-        //   error.issues,
-        // );
         throw new HttpException(
           'Invalid response format from GMO Coin rules API',
           HttpStatus.INTERNAL_SERVER_ERROR,
         );
       }
-      // this.logger.error('Failed to fetch GMO Coin rules', error);
       throw new HttpException(
         'Failed to fetch GMO Coin rules',
         HttpStatus.INTERNAL_SERVER_ERROR,

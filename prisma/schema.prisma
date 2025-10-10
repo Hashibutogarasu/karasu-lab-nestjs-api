@@ -193,3 +193,104 @@ model JWTState {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
+// GMO Coin (FX) related models
+// These models capture external API responses from gmo-coin for ticker, kline, rules and status.
+model GmoCoinStatus {
+  id           String   @id @default(cuid())
+  statusCode   Int      @map("status")
+  data         Json
+  responsetime DateTime @map("responsetime")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("gmo_coin_statuses")
+}
+
+model GmoCoinTickerItem {
+  id        String   @id @default(cuid())
+  symbol    String
+  ask       String
+  bid       String
+  timestamp DateTime
+  status    String
+
+  // relation back to parent ticker response
+  tickerId String        @map("ticker_id")
+  ticker   GmoCoinTicker @relation("Ticker_Items", fields: [tickerId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("gmo_coin_ticker_items")
+}
+
+model GmoCoinTicker {
+  id           String              @id @default(cuid())
+  statusCode   Int                 @map("status")
+  responsetime DateTime            @map("responsetime")
+  data         GmoCoinTickerItem[] @relation("Ticker_Items")
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@map("gmo_coin_tickers")
+}
+
+model GmoCoinKlineItem {
+  id       String   @id @default(cuid())
+  openTime DateTime
+  open     String
+  high     String
+  low      String
+  close    String
+
+  // relation back to parent kline response
+  klineId String       @map("kline_id")
+  kline   GmoCoinKline @relation("Kline_Items", fields: [klineId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("gmo_coin_kline_items")
+}
+
+model GmoCoinKline {
+  id           String             @id @default(cuid())
+  statusCode   Int                @map("status")
+  responsetime DateTime           @map("responsetime")
+  data         GmoCoinKlineItem[] @relation("Kline_Items")
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@map("gmo_coin_klines")
+}
+
+model GmoCoinSymbolRule {
+  id               String @id @default(cuid())
+  symbol           String
+  tickSize         String
+  minOpenOrderSize String
+  maxOrderSize     String
+  sizeStep         String
+
+  // relation back to parent rules response
+  rulesId String       @map("rules_id")
+  rules   GmoCoinRules @relation("Rules_Items", fields: [rulesId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("gmo_coin_symbol_rules")
+}
+
+model GmoCoinRules {
+  id           String              @id @default(cuid())
+  statusCode   Int                 @map("status")
+  responsetime DateTime            @map("responsetime")
+  data         GmoCoinSymbolRule[] @relation("Rules_Items")
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@map("gmo_coin_rules")
+}
+// End of gmo-coin related models

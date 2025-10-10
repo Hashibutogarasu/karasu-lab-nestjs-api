@@ -1041,3 +1041,118 @@ export async function isJWTStateRevoked(id: string): Promise<boolean> {
   });
   return jwtState ? jwtState.revoked : true;
 }
+
+// ===== GMOコイン関連クエリ =====
+
+/**
+ * GMOコイン - ステータスを保存
+ */
+export async function saveGmoCoinStatus(payload: {
+  status: number;
+  data: any;
+  responsetime: string;
+}) {
+  return prisma.gmoCoinStatus.create({
+    data: {
+      statusCode: payload.status,
+      data: payload.data,
+      responsetime: new Date(payload.responsetime),
+    },
+  });
+}
+
+/**
+ * GMOコイン - ティッカー（親 + items）を保存
+ */
+export async function saveGmoCoinTicker(payload: {
+  status: number;
+  data: Array<{
+    symbol: string;
+    ask: string;
+    bid: string;
+    timestamp: string;
+    status: string;
+  }>;
+  responsetime: string;
+}) {
+  return prisma.gmoCoinTicker.create({
+    data: {
+      statusCode: payload.status,
+      responsetime: new Date(payload.responsetime),
+      data: {
+        create: payload.data.map((item) => ({
+          symbol: item.symbol,
+          ask: item.ask,
+          bid: item.bid,
+          timestamp: new Date(item.timestamp),
+          status: item.status,
+        })),
+      },
+    },
+    include: { data: true },
+  });
+}
+
+/**
+ * GMOコイン - KLine（親 + items）を保存
+ */
+export async function saveGmoCoinKline(payload: {
+  status: number;
+  data: Array<{
+    openTime: string;
+    open: string;
+    high: string;
+    low: string;
+    close: string;
+  }>;
+  responsetime: string;
+}) {
+  return prisma.gmoCoinKline.create({
+    data: {
+      statusCode: payload.status,
+      responsetime: new Date(payload.responsetime),
+      data: {
+        create: payload.data.map((item) => ({
+          openTime: new Date(item.openTime),
+          open: item.open,
+          high: item.high,
+          low: item.low,
+          close: item.close,
+        })),
+      },
+    },
+    include: { data: true },
+  });
+}
+
+/**
+ * GMOコイン - 取引ルール（親 + items）を保存
+ */
+export async function saveGmoCoinRules(payload: {
+  status: number;
+  data: Array<{
+    symbol: string;
+    tickSize: string;
+    minOpenOrderSize: string;
+    maxOrderSize: string;
+    sizeStep: string;
+  }>;
+  responsetime: string;
+}) {
+  return prisma.gmoCoinRules.create({
+    data: {
+      statusCode: payload.status,
+      responsetime: new Date(payload.responsetime),
+      data: {
+        create: payload.data.map((item) => ({
+          symbol: item.symbol,
+          tickSize: item.tickSize,
+          minOpenOrderSize: item.minOpenOrderSize,
+          maxOrderSize: item.maxOrderSize,
+          sizeStep: item.sizeStep,
+        })),
+      },
+    },
+    include: { data: true },
+  });
+}
