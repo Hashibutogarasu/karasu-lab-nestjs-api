@@ -27,9 +27,11 @@ export class CoinService {
   private readonly baseUrl = 'https://forex-api.coin.z.com/public';
   private readonly logger = new Logger(CoinService.name);
 
-  // インメモリのティッカーヒストリキャッシュ（取得ごとに1エントリ）。最大169件（約1週間）保持
+  // インメモリのティッカーヒストリキャッシュ（取得ごとに1エントリ）。
+  // 取得間隔を10分（EVERY_10_MINUTES）に変更したため、1週間分の上限を再計算します:
+  // 1週間 = 7日, 1日 = 24時間, 1時間あたり6回(10分毎) => 7 * 24 * 6 = 1008
   private tickerHistory: Array<{ fetchedAt: Date; payload: any }> = [];
-  private readonly maxHistoryItems = 169;
+  private readonly maxHistoryItems = 1008;
   // データは最大7日分を保持（7日より古いデータは削除）
   private readonly maxHistoryDays = 7;
 
