@@ -198,7 +198,7 @@ describe('CoinService', () => {
       jest.useRealTimers();
     });
 
-    it('should emit cached ticker immediately and again after 60s', async () => {
+    it('should emit cached ticker immediately and again after 10m', async () => {
       const dbEntry = {
         statusCode: 0,
         responsetime: new Date('2025-10-10T02:47:36.025Z'),
