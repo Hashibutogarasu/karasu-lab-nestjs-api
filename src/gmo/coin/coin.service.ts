@@ -1,6 +1,6 @@
 import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { Cron, CronExpression, SchedulerRegistry } from '@nestjs/schedule';
-import { Observable, interval, from } from 'rxjs';
+import { Observable, interval, from, Subject, merge } from 'rxjs';
 import { switchMap, map, startWith } from 'rxjs/operators';
 import { ZodError } from 'zod';
 import {
@@ -26,6 +26,9 @@ import { getLatestGmoCoinTicker } from '../../lib/database/query';
 export class CoinService {
   private readonly baseUrl = 'https://forex-api.coin.z.com/public';
   private readonly logger = new Logger(CoinService.name);
+
+  // SSE 用ライブ通知チャネル。cron 等から getTicker() が呼ばれた際に通知する。
+  private tickerSubject = new Subject<GmoCoinTicker>();
 
   // インメモリのティッカーヒストリキャッシュ（取得ごとに1エントリ）。
   // 取得間隔を10分（EVERY_10_MINUTES）に変更したため、1週間分の上限を再計算します:
@@ -80,6 +83,12 @@ export class CoinService {
       // インメモリ履歴に追加
       this.addTickerToHistory(parsed);
       await saveGmoCoinTicker(parsed);
+      // ライブ通知を行う（SSE リスナーへ即時配信）
+      try {
+        this.tickerSubject.next(parsed);
+      } catch (err) {
+        this.logger.error('Failed to emit ticker to subject', err);
+      }
       return parsed;
     } catch (error) {
       if (error instanceof ZodError) {
@@ -212,12 +221,11 @@ export class CoinService {
    * SSE用: DB のキャッシュされた最新ティッカーを Observable で返す（即時とその後1分ごと）
    */
   getTickerSse(): Observable<MessageEvent<GmoCoinTicker>> {
-    // 即時に1回、以降10分（600,000ミリ秒）ごとに emit
-    return interval(600000).pipe(
+    // DBポーリング Observable: 即時1回、その後10分ごとにDBの最新キャッシュを取得
+    const dbPolling$ = interval(600000).pipe(
       startWith(0),
       switchMap(() => from(getLatestGmoCoinTicker())),
       map((dbEntry) => {
-        // dbEntry は Prisma モデルで、statusCode, responsetime, data 配列を含む想定
         const payload: any = dbEntry
           ? {
               status: dbEntry.statusCode,
@@ -239,5 +247,19 @@ export class CoinService {
         return msg;
       }),
     );
+
+    // ライブ通知 Observable: getTicker() が成功した際に this.tickerSubject に next される
+    const live$ = this.tickerSubject.pipe(
+      map((parsed) => {
+        const msg: MessageEvent<GmoCoinTicker> = {
+          data: parsed,
+        } as unknown as MessageEvent<GmoCoinTicker>;
+        return msg;
+      }),
+    );
+
+    // DBポーリングとライブ通知をマージして返す。これにより既存のDBポーリングの即時送信を維持しつつ、
+    // cronなどで getTicker() が呼ばれたときに接続済みクライアントへ即時配信される。
+    return merge(dbPolling$, live$);
   }
 }

@@ -250,6 +250,50 @@ describe('CoinService', () => {
 
       sub.unsubscribe();
     });
+
+    it('should send live update to SSE clients when getTicker is called', async () => {
+      // Prepare fetch to return a ticker payload
+      const mockResponse = {
+        status: 0,
+        data: [
+          {
+            symbol: 'USD_JPY',
+            ask: '152.956',
+            bid: '152.952',
+            timestamp: '2025-10-10T02:47:35.951Z',
+            status: 'OPEN',
+          },
+        ],
+        responsetime: '2025-10-10T02:47:36.025Z',
+      };
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: jest.fn().mockResolvedValue(mockResponse),
+      });
+
+      // subscribe to SSE stream
+      const emissions: any[] = [];
+      const sub = service
+        .getTickerSse()
+        .subscribe((msg) => emissions.push(msg));
+
+      // allow initial DB polling emission (getLatestGmoCoinTicker is mocked to null)
+      await Promise.resolve();
+      expect(emissions.length).toBeGreaterThanOrEqual(1);
+
+      // call getTicker() which should emit to the live subject
+      const result = await service.getTicker();
+      expect(result).toEqual(mockResponse);
+
+      // since Subject.next is synchronous inside getTicker after await save, we should have a new emission
+      expect(emissions.length).toBeGreaterThanOrEqual(2);
+      // the last emission should be the live payload
+      const last = emissions[emissions.length - 1];
+      expect(last.data).toEqual(mockResponse);
+
+      sub.unsubscribe();
+    });
   });
 
   describe('history management', () => {
