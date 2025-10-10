@@ -41,7 +41,9 @@ export class CoinService {
   /**
    * 外国為替FXの稼働状態を取得
    */
-  async getStatus(): Promise<GmoCoinStatus> {
+  async getStatus(
+    { updateDb }: { updateDb: boolean } = { updateDb: true },
+  ): Promise<GmoCoinStatus> {
     try {
       const response = await fetch(`${this.baseUrl}/v1/status`);
 
@@ -51,7 +53,9 @@ export class CoinService {
 
       const data = await response.json();
       const parsed = GmoCoinStatusSchema.parse(data);
-      await saveGmoCoinStatus(parsed);
+      if (updateDb) {
+        await saveGmoCoinStatus(parsed);
+      }
       return parsed;
     } catch (error) {
       if (error instanceof ZodError) {
@@ -70,7 +74,9 @@ export class CoinService {
   /**
    * 全銘柄分の最新レートを取得
    */
-  async getTicker(): Promise<GmoCoinTicker> {
+  async getTicker(
+    { updateDb }: { updateDb: boolean } = { updateDb: true },
+  ): Promise<GmoCoinTicker> {
     try {
       const response = await fetch(`${this.baseUrl}/v1/ticker`);
 
@@ -80,9 +86,11 @@ export class CoinService {
 
       const data = await response.json();
       const parsed = GmoCoinTickerSchema.parse(data);
-      // インメモリ履歴に追加
-      this.addTickerToHistory(parsed);
-      await saveGmoCoinTicker(parsed);
+      if (updateDb) {
+        // インメモリ履歴に追加
+        this.addTickerToHistory(parsed);
+        await saveGmoCoinTicker(parsed);
+      }
       // ライブ通知を行う（SSE リスナーへ即時配信）
       try {
         this.tickerSubject.next(parsed);
@@ -153,7 +161,10 @@ export class CoinService {
   /**
    * 指定した銘柄の四本値を取得
    */
-  async getKline(params: GetKlineDto): Promise<GmoCoinKline> {
+  async getKline(
+    params: GetKlineDto,
+    { updateDb }: { updateDb: boolean } = { updateDb: true },
+  ): Promise<GmoCoinKline> {
     try {
       const queryParams = new URLSearchParams({
         symbol: params.symbol,
@@ -172,7 +183,9 @@ export class CoinService {
 
       const data = await response.json();
       const parsed = GmoCoinKlineSchema.parse(data);
-      await saveGmoCoinKline(parsed);
+      if (updateDb) {
+        await saveGmoCoinKline(parsed);
+      }
       return parsed;
     } catch (error) {
       if (error instanceof ZodError) {
@@ -191,7 +204,9 @@ export class CoinService {
   /**
    * 取引ルールを取得
    */
-  async getRules(): Promise<GmoCoinRules> {
+  async getRules(
+    { updateDb }: { updateDb: boolean } = { updateDb: true },
+  ): Promise<GmoCoinRules> {
     try {
       const response = await fetch(`${this.baseUrl}/v1/symbols`);
 
@@ -201,7 +216,9 @@ export class CoinService {
 
       const data = await response.json();
       const parsed = GmoCoinRulesSchema.parse(data);
-      await saveGmoCoinRules(parsed);
+      if (updateDb) {
+        await saveGmoCoinRules(parsed);
+      }
       return parsed;
     } catch (error) {
       if (error instanceof ZodError) {

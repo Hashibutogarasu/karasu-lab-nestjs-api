@@ -35,7 +35,9 @@ export class McpService {
     description: 'GMO Coinの外国為替FX稼働状態を取得します。',
   })
   async gmoCoinStatus(): Promise<CallToolResult> {
-    const result = await this.coinService.getStatus();
+    const result = await this.coinService.getStatus({
+      updateDb: false,
+    });
     return {
       content: [
         {
@@ -54,7 +56,9 @@ export class McpService {
     description: 'GMO Coinの全銘柄分の最新レートを取得します。',
   })
   async gmoCoinTicker(): Promise<CallToolResult> {
-    const result = await this.coinService.getTicker();
+    const result = await this.coinService.getTicker({
+      updateDb: false,
+    });
     return {
       content: [
         {
@@ -74,7 +78,9 @@ export class McpService {
     paramsSchema: GetKlineSchema.shape,
   })
   async gmoCoinKline(params: GetKlineDto): Promise<CallToolResult> {
-    const result = await this.coinService.getKline(params);
+    const result = await this.coinService.getKline(params, {
+      updateDb: false,
+    });
     return {
       content: [
         {
