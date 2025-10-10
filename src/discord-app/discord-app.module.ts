@@ -4,6 +4,8 @@ import { DiscordAppController } from './discord-app.controller';
 import { NecordModule } from 'necord';
 import { IntentsBitField } from 'discord.js';
 import { AppCommands } from './app.commands';
+import { CoinService } from '../gmo/coin/coin.service';
+import { FxCommands } from './commands/fx.commands';
 
 @Module({
   imports: [
@@ -13,6 +15,6 @@ import { AppCommands } from './app.commands';
     }),
   ],
   controllers: [DiscordAppController],
-  providers: [DiscordAppService, AppCommands],
+  providers: [DiscordAppService, AppCommands, FxCommands, CoinService],
 })
 export class DiscordAppModule {}
