@@ -11,6 +11,9 @@ jest.mock('../../lib/database/query', () => ({
   saveGmoCoinKline: jest.fn().mockResolvedValue(null),
   saveGmoCoinRules: jest.fn().mockResolvedValue(null),
   getLatestGmoCoinTicker: jest.fn().mockResolvedValue(null),
+  getLatestGmoCoinStatus: jest.fn().mockResolvedValue(null),
+  getLatestGmoCoinKline: jest.fn().mockResolvedValue(null),
+  getLatestGmoCoinRules: jest.fn().mockResolvedValue(null),
 }));
 
 global.fetch = jest.fn();
@@ -52,6 +55,37 @@ describe('CoinService', () => {
       expect(result).toEqual(mockResponse);
     });
 
+    it('should return cached status when cache=true and DB has entry', async () => {
+      const dbEntry = {
+        statusCode: 0,
+        data: { status: 'OPEN' },
+        responsetime: new Date('2025-10-10T02:45:39.342Z'),
+      };
+
+      (queryModule.getLatestGmoCoinStatus as jest.Mock).mockResolvedValueOnce(
+        dbEntry,
+      );
+
+      const result = await service.getStatus({
+        cache: true,
+        updateDb: false,
+      } as any);
+      expect(result).toEqual({
+        status: 0,
+        data: { status: 'OPEN' },
+        responsetime: '2025-10-10T02:45:39.342Z',
+      });
+    });
+
+    it('should throw NotFoundException when cache=true and DB empty', async () => {
+      (queryModule.getLatestGmoCoinStatus as jest.Mock).mockResolvedValueOnce(
+        null,
+      );
+
+      await expect(
+        service.getStatus({ cache: true, updateDb: false } as any),
+      ).rejects.toThrow('No cached GMO Coin status available');
+    });
     it('should throw HttpException on error', async () => {
       (global.fetch as jest.Mock).mockRejectedValueOnce(
         new Error('Network error'),
@@ -96,6 +130,54 @@ describe('CoinService', () => {
       );
 
       await expect(service.getTicker()).rejects.toThrow(HttpException);
+    });
+
+    it('should return cached ticker when cache=true and DB has entry', async () => {
+      const dbEntry = {
+        statusCode: 0,
+        responsetime: new Date('2025-10-10T02:47:36.025Z'),
+        data: [
+          {
+            symbol: 'USD_JPY',
+            ask: '152.956',
+            bid: '152.952',
+            timestamp: new Date('2025-10-10T02:47:35.951Z'),
+            status: 'OPEN',
+          },
+        ],
+      };
+
+      (queryModule.getLatestGmoCoinTicker as jest.Mock).mockResolvedValueOnce(
+        dbEntry,
+      );
+
+      const result = await service.getTicker({
+        cache: true,
+        updateDb: false,
+      } as any);
+      expect(result).toEqual({
+        status: 0,
+        data: [
+          {
+            symbol: 'USD_JPY',
+            ask: '152.956',
+            bid: '152.952',
+            timestamp: '2025-10-10T02:47:35.951Z',
+            status: 'OPEN',
+          },
+        ],
+        responsetime: '2025-10-10T02:47:36.025Z',
+      });
+    });
+
+    it('should throw NotFoundException when ticker cache requested but DB empty', async () => {
+      (queryModule.getLatestGmoCoinTicker as jest.Mock).mockResolvedValueOnce(
+        null,
+      );
+
+      await expect(
+        service.getTicker({ cache: true, updateDb: false } as any),
+      ).rejects.toThrow('No cached GMO Coin ticker available');
     });
   });
 
@@ -149,6 +231,71 @@ describe('CoinService', () => {
 
       await expect(service.getKline(params)).rejects.toThrow(HttpException);
     });
+
+    it('should return cached kline when cache=true and DB has entry', async () => {
+      const dbEntry = {
+        statusCode: 0,
+        responsetime: new Date('2025-10-10T02:50:00.000Z'),
+        data: [
+          {
+            openTime: new Date('2025-10-10T00:00:00.000Z'),
+            open: '152.950',
+            high: '152.960',
+            low: '152.940',
+            close: '152.955',
+          },
+        ],
+      };
+
+      (queryModule.getLatestGmoCoinKline as jest.Mock).mockResolvedValueOnce(
+        dbEntry,
+      );
+
+      const params = {
+        symbol: 'USD_JPY',
+        priceType: PriceType.ASK,
+        interval: Interval.ONE_MIN,
+        date: '20251010',
+      };
+
+      const result = await service.getKline(
+        params as any,
+        { cache: true, updateDb: false } as any,
+      );
+      expect(result).toEqual({
+        status: 0,
+        data: [
+          {
+            openTime: '2025-10-10T00:00:00.000Z',
+            open: '152.950',
+            high: '152.960',
+            low: '152.940',
+            close: '152.955',
+          },
+        ],
+        responsetime: '2025-10-10T02:50:00.000Z',
+      });
+    });
+
+    it('should throw NotFoundException when kline cache requested but DB empty', async () => {
+      (queryModule.getLatestGmoCoinKline as jest.Mock).mockResolvedValueOnce(
+        null,
+      );
+
+      const params = {
+        symbol: 'USD_JPY',
+        priceType: PriceType.ASK,
+        interval: Interval.ONE_MIN,
+        date: '20251010',
+      };
+
+      await expect(
+        service.getKline(
+          params as any,
+          { cache: true, updateDb: false } as any,
+        ),
+      ).rejects.toThrow('No cached GMO Coin kline available');
+    });
   });
 
   describe('getRules', () => {
@@ -186,6 +333,54 @@ describe('CoinService', () => {
       );
 
       await expect(service.getRules()).rejects.toThrow(HttpException);
+    });
+
+    it('should return cached rules when cache=true and DB has entry', async () => {
+      const dbEntry = {
+        statusCode: 0,
+        responsetime: new Date('2025-10-10T02:50:00.000Z'),
+        data: [
+          {
+            symbol: 'USD_JPY',
+            tickSize: '0.001',
+            minOpenOrderSize: '100',
+            maxOrderSize: '500000',
+            sizeStep: '1',
+          },
+        ],
+      };
+
+      (queryModule.getLatestGmoCoinRules as jest.Mock).mockResolvedValueOnce(
+        dbEntry,
+      );
+
+      const result = await service.getRules({
+        cache: true,
+        updateDb: false,
+      } as any);
+      expect(result).toEqual({
+        status: 0,
+        data: [
+          {
+            symbol: 'USD_JPY',
+            tickSize: '0.001',
+            minOpenOrderSize: '100',
+            maxOrderSize: '500000',
+            sizeStep: '1',
+          },
+        ],
+        responsetime: '2025-10-10T02:50:00.000Z',
+      });
+    });
+
+    it('should throw NotFoundException when rules cache requested but DB empty', async () => {
+      (queryModule.getLatestGmoCoinRules as jest.Mock).mockResolvedValueOnce(
+        null,
+      );
+
+      await expect(
+        service.getRules({ cache: true, updateDb: false } as any),
+      ).rejects.toThrow('No cached GMO Coin rules available');
     });
   });
 

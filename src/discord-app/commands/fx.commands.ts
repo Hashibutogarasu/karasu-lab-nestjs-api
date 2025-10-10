@@ -1,6 +1,7 @@
 import * as necord from 'necord';
 import { CoinService } from '../../gmo/coin/coin.service';
 import { FxConvertCommandDto } from '../dto/fx-convert-command.dto';
+import { DiscordAppService } from '../discord-app.service';
 
 // Fx command group (subcommands)
 const FxCommand = necord.createCommandGroupDecorator({
@@ -10,7 +11,10 @@ const FxCommand = necord.createCommandGroupDecorator({
 
 @FxCommand()
 export class FxCommands {
-  constructor(private readonly coinService: CoinService) {}
+  constructor(
+    private readonly coinService: CoinService,
+    private readonly discordAppService: DiscordAppService,
+  ) {}
 
   @necord.Subcommand({
     name: 'convert',
@@ -41,8 +45,25 @@ export class FxCommands {
         });
       }
 
-      const ticker = await this.coinService.getTicker({ updateDb: false });
+      const ticker = await this.coinService.getTicker({
+        updateDb: false,
+        cache: true,
+      });
       const items = ticker.data;
+
+      // Convert DB responsetime to Discord timestamp (seconds)
+      let dbTimeStr = '';
+      try {
+        const dbTs = this.discordAppService.isoToDiscordTimestamp(
+          // ticker.responsetime is ISO string
+          // fallback to empty string if missing to let isoToDiscordTimestamp throw
+          ticker.responsetime as unknown as string,
+        );
+        dbTimeStr = `\nDB updated: <t:${dbTs}:F>`;
+      } catch (e) {
+        // If conversion fails, ignore and don't append timestamp
+        dbTimeStr = '';
+      }
 
       const findSymbol = (a: string, b: string) =>
         items.find((it) => it.symbol === `${a}_${b}`);
@@ -54,7 +75,7 @@ export class FxCommands {
         const mid = (ask + bid) / 2;
         const converted = mid * amount;
         return interaction.reply({
-          content: `${amount} ${from} = ${converted.toFixed(6)} ${to} (rate ${mid.toFixed(6)})`,
+          content: `${amount} ${from} = ${converted.toFixed(6)} ${to} (rate ${mid.toFixed(6)})${dbTimeStr}`,
         });
       }
 
@@ -66,7 +87,7 @@ export class FxCommands {
         const rate = 1 / mid;
         const converted = rate * amount;
         return interaction.reply({
-          content: `${amount} ${from} = ${converted.toFixed(6)} ${to} (rate ${rate.toFixed(6)} via inverse ${to}_${from})`,
+          content: `${amount} ${from} = ${converted.toFixed(6)} ${to} (rate ${rate.toFixed(6)} via inverse ${to}_${from})${dbTimeStr}`,
         });
       }
 
@@ -81,7 +102,7 @@ export class FxCommands {
           const rate = midA * midB;
           const converted = rate * amount;
           return interaction.reply({
-            content: `${amount} ${from} = ${converted.toFixed(6)} ${to} (via ${med}, rate ${rate.toFixed(6)})`,
+            content: `${amount} ${from} = ${converted.toFixed(6)} ${to} (via ${med}, rate ${rate.toFixed(6)})${dbTimeStr}`,
           });
         }
         const ai = findSymbol(med, from);
@@ -92,19 +113,19 @@ export class FxCommands {
           const rate = (1 / midAi) * (1 / midBi);
           const converted = rate * amount;
           return interaction.reply({
-            content: `${amount} ${from} = ${converted.toFixed(6)} ${to} (via ${med} using inverses)`,
+            content: `${amount} ${from} = ${converted.toFixed(6)} ${to} (via ${med} using inverses)${dbTimeStr}`,
           });
         }
       }
 
       return interaction.reply({
-        content: `Could not find conversion path between ${from} and ${to}`,
+        content: `Could not find conversion path between ${from} and ${to}${dbTimeStr}`,
         ephemeral: true,
       });
     } catch (err) {
       console.error(err);
       return interaction.reply({
-        content: 'Error while converting currencies',
+        content: `Error while converting currencies${'' /* don't reveal db time on error */}`,
         ephemeral: true,
       });
     }

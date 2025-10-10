@@ -14,7 +14,10 @@ export class GmoCoinCronService {
   @Cron(CronExpression.EVERY_10_MINUTES)
   async fetchTickerCron() {
     try {
-      await this.coinService.getTicker();
+      await this.coinService.getTicker({
+        cache: false,
+        updateDb: true,
+      });
       this.logger.debug('Fetched ticker via cron');
     } catch (e) {
       this.logger.error('Cron fetchTicker failed', e);
@@ -27,7 +30,10 @@ export class GmoCoinCronService {
   @Cron(CronExpression.EVERY_10_MINUTES)
   async fetchStatusCron() {
     try {
-      await this.coinService.getStatus();
+      await this.coinService.getStatus({
+        cache: false,
+        updateDb: true,
+      });
       this.logger.debug('Fetched status via cron');
     } catch (e) {
       this.logger.error('Cron fetchStatus failed', e);

@@ -1105,6 +1105,35 @@ export async function getLatestGmoCoinTicker() {
 }
 
 /**
+ * GMOコイン - 最新のステータスキャッシュを取得
+ */
+export async function getLatestGmoCoinStatus() {
+  return prisma.gmoCoinStatus.findFirst({
+    orderBy: { responsetime: 'desc' },
+  });
+}
+
+/**
+ * GMOコイン - 最新のKLineキャッシュを取得
+ */
+export async function getLatestGmoCoinKline() {
+  return prisma.gmoCoinKline.findFirst({
+    orderBy: { responsetime: 'desc' },
+    include: { data: true },
+  });
+}
+
+/**
+ * GMOコイン - 最新のルールキャッシュを取得
+ */
+export async function getLatestGmoCoinRules() {
+  return prisma.gmoCoinRules.findFirst({
+    orderBy: { responsetime: 'desc' },
+    include: { data: true },
+  });
+}
+
+/**
  * GMOコイン - KLine（親 + items）を保存
  */
 export async function saveGmoCoinKline(payload: {
