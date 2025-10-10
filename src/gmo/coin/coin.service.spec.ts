@@ -283,9 +283,10 @@ describe('CoinService', () => {
         service.addTickerToHistory(payload as any);
       }
 
-      // After insertion, history should be <= 169 and no entries older than 7 days
+      // After insertion, history should be <= maxHistoryItems and no entries older than 7 days
       const hist = (service as any).tickerHistory as Array<any>;
-      expect(hist.length).toBeLessThanOrEqual(169);
+      const maxItems = (service as any).maxHistoryItems ?? 169;
+      expect(hist.length).toBeLessThanOrEqual(maxItems);
 
       const cutoff = new Date(now.getTime());
       cutoff.setUTCDate(cutoff.getUTCDate() - 7);
