@@ -240,8 +240,8 @@ describe('CoinService', () => {
         responsetime: '2025-10-10T02:47:36.025Z',
       });
 
-      // advance time by 60 seconds to trigger next emission
-      jest.advanceTimersByTime(60000);
+      // advance time by 10 minutes to trigger next emission
+      jest.advanceTimersByTime(600000);
       // allow promise resolution for the second emission
       await Promise.resolve();
 
