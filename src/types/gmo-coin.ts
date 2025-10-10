@@ -51,7 +51,7 @@ export const GmoCoinKlineSchema = z.object({
 
 export type GmoCoinKline = z.infer<typeof GmoCoinKlineSchema>;
 
-// 取引ルール - 個別銘柄 (Postmanのレスポンス例に基づく実際のフィールド名)
+// 取引ルール - 個別銘柄
 export const GmoCoinSymbolRuleSchema = z.object({
   symbol: z.string(),
   tickSize: z.string(),
