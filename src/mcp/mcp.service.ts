@@ -99,7 +99,9 @@ export class McpService {
     description: 'GMO Coinの取引ルールを取得します。',
   })
   async gmoCoinRules(): Promise<CallToolResult> {
-    const result = await this.coinService.getRules();
+    const result = await this.coinService.getRules({
+      updateDb: false,
+    });
     return {
       content: [
         {
