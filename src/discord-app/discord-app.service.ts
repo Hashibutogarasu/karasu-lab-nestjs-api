@@ -3,6 +3,7 @@ import { CreateDiscordAppDto } from './dto/create-discord-app.dto';
 import { UpdateDiscordAppDto } from './dto/update-discord-app.dto';
 import * as necord from 'necord';
 import { Client } from 'discord.js';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class DiscordAppService {

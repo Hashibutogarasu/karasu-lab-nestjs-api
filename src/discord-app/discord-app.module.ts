@@ -6,6 +6,7 @@ import { IntentsBitField } from 'discord.js';
 import { AppCommands } from './app.commands';
 import { CoinService } from '../gmo/coin/coin.service';
 import { FxCommands } from './commands/fx.commands';
+import { DiscordAppCronService } from './discord-app-cron.service';
 
 @Module({
   imports: [
@@ -15,6 +16,12 @@ import { FxCommands } from './commands/fx.commands';
     }),
   ],
   controllers: [DiscordAppController],
-  providers: [DiscordAppService, AppCommands, FxCommands, CoinService],
+  providers: [
+    DiscordAppService,
+    AppCommands,
+    FxCommands,
+    CoinService,
+    DiscordAppCronService,
+  ],
 })
 export class DiscordAppModule {}
