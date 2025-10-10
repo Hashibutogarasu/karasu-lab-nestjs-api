@@ -212,8 +212,8 @@ export class CoinService {
    * SSE用: DB のキャッシュされた最新ティッカーを Observable で返す（即時とその後1分ごと）
    */
   getTickerSse(): Observable<MessageEvent<GmoCoinTicker>> {
-    // 即時に1回、以降60秒ごとに emit
-    return interval(60000).pipe(
+    // 即時に1回、以降10分（600,000ミリ秒）ごとに emit
+    return interval(600000).pipe(
       startWith(0),
       switchMap(() => from(getLatestGmoCoinTicker())),
       map((dbEntry) => {
