@@ -1,4 +1,6 @@
 import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
+import { Observable, interval, from } from 'rxjs';
+import { switchMap, map, startWith } from 'rxjs/operators';
 import { ZodError } from 'zod';
 import {
   GmoCoinStatusSchema,
@@ -17,6 +19,7 @@ import {
   saveGmoCoinRules,
 } from '../../lib/database/query';
 import { GetKlineDto } from './dto/gmo-coin-request.dto';
+import { getLatestGmoCoinTicker } from '../../lib/database/query';
 
 @Injectable()
 export class CoinService {
@@ -145,5 +148,39 @@ export class CoinService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  /**
+   * SSE向け: DBのキャッシュされた最新ティッカーを1分ごとに返す
+   * Returns Observable of MessageEvent containing parsed GmoCoinTicker-like object
+   */
+  getTickerSse(): Observable<MessageEvent<GmoCoinTicker>> {
+    // Emit immediately, then every 60 seconds
+    return interval(60000).pipe(
+      startWith(0),
+      switchMap(() => from(getLatestGmoCoinTicker())),
+      map((dbEntry) => {
+        // dbEntry is the prisma model including `statusCode`, `responsetime`, and `data` array
+        const payload: any = dbEntry
+          ? {
+              status: dbEntry.statusCode,
+              data: dbEntry.data.map((d) => ({
+                symbol: d.symbol,
+                ask: d.ask,
+                bid: d.bid,
+                timestamp: d.timestamp.toISOString(),
+                status: d.status,
+              })),
+              responsetime: dbEntry.responsetime.toISOString(),
+            }
+          : { status: 0, data: [], responsetime: new Date().toISOString() };
+
+        const msg: MessageEvent<GmoCoinTicker> = {
+          data: payload,
+        } as unknown as MessageEvent<GmoCoinTicker>;
+
+        return msg;
+      }),
+    );
   }
 }

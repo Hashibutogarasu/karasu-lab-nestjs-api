@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CoinService } from './coin.service';
 import { HttpException } from '@nestjs/common';
 import { PriceType, Interval } from './dto/gmo-coin-request.dto';
+import * as queryModule from '../../lib/database/query';
 
 // Mock DB save functions to avoid contacting real database during unit tests
 jest.mock('../../lib/database/query', () => ({
@@ -9,6 +10,7 @@ jest.mock('../../lib/database/query', () => ({
   saveGmoCoinTicker: jest.fn().mockResolvedValue(null),
   saveGmoCoinKline: jest.fn().mockResolvedValue(null),
   saveGmoCoinRules: jest.fn().mockResolvedValue(null),
+  getLatestGmoCoinTicker: jest.fn().mockResolvedValue(null),
 }));
 
 // グローバルfetchのモック
@@ -69,7 +71,7 @@ describe('CoinService', () => {
             symbol: 'USD_JPY',
             ask: '152.956',
             bid: '152.952',
-            timestamp: '2025-10-10T02:47:35.951602Z',
+            timestamp: '2025-10-10T02:47:35.951Z',
             status: 'OPEN',
           },
         ],
@@ -185,6 +187,69 @@ describe('CoinService', () => {
       );
 
       await expect(service.getRules()).rejects.toThrow(HttpException);
+    });
+  });
+
+  describe('getTickerSse', () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('should emit cached ticker immediately and again after 60s', async () => {
+      const dbEntry = {
+        statusCode: 0,
+        responsetime: new Date('2025-10-10T02:47:36.025Z'),
+        data: [
+          {
+            symbol: 'USD_JPY',
+            ask: '152.956',
+            bid: '152.952',
+            timestamp: new Date('2025-10-10T02:47:35.951Z'),
+            status: 'OPEN',
+          },
+        ],
+      };
+
+      (queryModule.getLatestGmoCoinTicker as jest.Mock).mockResolvedValueOnce(
+        dbEntry,
+      );
+
+      const emissions: any[] = [];
+      const sub = service
+        .getTickerSse()
+        .subscribe((msg) => emissions.push(msg));
+
+      // allow pending microtasks (Promise resolution)
+      await Promise.resolve();
+
+      expect(emissions.length).toBe(1);
+      expect(emissions[0].data).toEqual({
+        status: 0,
+        data: [
+          {
+            symbol: 'USD_JPY',
+            ask: '152.956',
+            bid: '152.952',
+            timestamp: '2025-10-10T02:47:35.951Z',
+            status: 'OPEN',
+          },
+        ],
+        responsetime: '2025-10-10T02:47:36.025Z',
+      });
+
+      // advance time by 60 seconds to trigger next emission
+      jest.advanceTimersByTime(60000);
+      // allow promise resolution for the second emission
+      await Promise.resolve();
+
+      expect(emissions.length).toBe(2);
+      expect(queryModule.getLatestGmoCoinTicker).toHaveBeenCalledTimes(2);
+
+      sub.unsubscribe();
     });
   });
 });

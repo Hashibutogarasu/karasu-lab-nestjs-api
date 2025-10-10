@@ -1,4 +1,5 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards, Sse } from '@nestjs/common';
+import { Observable } from 'rxjs';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { CoinService } from './coin.service';
 import {
@@ -10,10 +11,24 @@ import {
 import { GetKlineDto } from './dto/gmo-coin-request.dto';
 import { AdminGuard } from '../../auth/guards/admin.guard';
 
+/**
+ * GMOコインの外国為替FXに関するAPIエンドポイント
+ * 管理者権限を必要とするエンドポイントは、主にデータベースの更新を伴う操作です。
+ */
 @UseGuards(JwtAuthGuard)
 @Controller('gmo/coin')
 export class CoinController {
   constructor(private readonly coinService: CoinService) {}
+
+  /**
+   * 認証された一般ユーザー用エンドポイント
+   * SSEストリーム: DBのキャッシュされたティッカーを1分おきに送信
+   * GET /gmo/coin/ticker/stream
+   */
+  @Sse('ticker/stream')
+  getTickerStream(): Observable<MessageEvent<GmoCoinTickerResponseDto>> {
+    return this.coinService.getTickerSse();
+  }
 
   /**
    * 外国為替FXの稼働状態を取得

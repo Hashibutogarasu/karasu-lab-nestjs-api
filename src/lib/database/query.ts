@@ -1094,6 +1094,17 @@ export async function saveGmoCoinTicker(payload: {
 }
 
 /**
+ * GMOコイン - 最新のティッカーキャッシュを取得
+ * Returns the most recent parent record including its child items ordered by responsetime desc
+ */
+export async function getLatestGmoCoinTicker() {
+  return prisma.gmoCoinTicker.findFirst({
+    orderBy: { responsetime: 'desc' },
+    include: { data: true },
+  });
+}
+
+/**
  * GMOコイン - KLine（親 + items）を保存
  */
 export async function saveGmoCoinKline(payload: {
