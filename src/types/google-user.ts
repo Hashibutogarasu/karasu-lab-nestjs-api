@@ -4,8 +4,8 @@ import { z } from 'zod';
 export const GoogleUserSchema = z.object({
   id: z.string(),
   name: z.string(),
-  email: z.email(),
-  picture: z.url(),
+  email: z.string().email(),
+  picture: z.string().url(),
   given_name: z.string(),
   family_name: z.string(),
   verified_email: z.boolean(),

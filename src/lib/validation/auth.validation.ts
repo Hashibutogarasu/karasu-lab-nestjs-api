@@ -15,6 +15,7 @@ export const RegisterSchema = z.object({
       'ユーザー名は英数字、アンダースコア、ハイフンのみ使用可能です',
     ),
   email: z
+    .string()
     .email('有効なメールアドレスを入力してください')
     .max(255, 'メールアドレスは255文字以内で入力してください'),
   password: z
@@ -77,7 +78,7 @@ export const UpdateAuthSchema = z.object({
 export const UserResponseSchema = z.object({
   id: z.string(),
   username: z.string(),
-  email: z.email(),
+  email: z.string().email(),
   created_at: z.date().optional(),
   updated_at: z.date().optional(),
 });

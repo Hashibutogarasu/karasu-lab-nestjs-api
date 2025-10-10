@@ -71,7 +71,7 @@ export class McpService {
   @Tool({
     name: 'gmo_coin_kline',
     description: 'GMO Coinの指定銘柄の四本値(KLine)を取得します。',
-    paramsSchema: GetKlineSchema.shape as any,
+    paramsSchema: GetKlineSchema.shape,
   })
   async gmoCoinKline(params: GetKlineDto): Promise<CallToolResult> {
     const result = await this.coinService.getKline(params);
