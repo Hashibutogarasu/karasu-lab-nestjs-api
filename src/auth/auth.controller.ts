@@ -504,6 +504,7 @@ export class AuthController {
       await this.externalProviderAccessTokenService.upsert(
         {
           userId: processResult.userId,
+          provider: authState.provider,
         },
         {
           provider: authState.provider,
