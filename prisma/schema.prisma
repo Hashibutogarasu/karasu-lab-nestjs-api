@@ -207,6 +207,8 @@ model ExternalProviderAccessToken {
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("external_provider_access_tokens")
 }
 
 // GMO Coin (FX) related models
