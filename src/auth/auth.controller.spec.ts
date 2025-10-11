@@ -10,6 +10,8 @@ import type { Request, Response } from 'express';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { RegisterDto, LoginDto } from './dto/create-auth.dto';
+import { ExternalProviderAccessTokenService } from '../encryption/external-provider-access-token/external-provider-access-token.service';
+import { ExternalProviderAccessTokenService } from '../encryption/external-provider-access-token/external-provider-access-token.service';
 
 // Mock the JWT token generation function
 jest.mock('../lib/auth/jwt-token', () => ({
@@ -66,6 +68,16 @@ describe('AuthController', () => {
     cleanupExpiredSessions: jest.fn(),
   };
 
+  const mockExternalProviderAccessTokenService = {
+    save: jest.fn(),
+    getById: jest.fn(),
+    getByUserId: jest.fn(),
+    getDecryptedById: jest.fn(),
+    update: jest.fn(),
+    upsert: jest.fn(),
+    delete: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
@@ -73,6 +85,10 @@ describe('AuthController', () => {
         {
           provide: AuthService,
           useValue: mockAuthService,
+        },
+        {
+          provide: ExternalProviderAccessTokenService,
+          useValue: mockExternalProviderAccessTokenService,
         },
       ],
     }).compile();

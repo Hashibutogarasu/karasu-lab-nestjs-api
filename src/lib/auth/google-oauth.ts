@@ -107,7 +107,10 @@ export function convertGoogleProfileToSnsProfile(
 export async function processGoogleOAuth(
   code: string,
   redirectUri: string,
-): Promise<SnsProfile> {
+): Promise<{
+  snsProfile: SnsProfile;
+  accessToken: string;
+}> {
   // 1. 認可コードをアクセストークンに交換
   const tokenResponse = await exchangeGoogleCode(code, redirectUri);
 
@@ -115,5 +118,8 @@ export async function processGoogleOAuth(
   const googleProfile = await getGoogleProfile(tokenResponse.access_token);
 
   // 3. 共通のSnsProfile形式に変換
-  return convertGoogleProfileToSnsProfile(googleProfile);
+  return {
+    snsProfile: convertGoogleProfileToSnsProfile(googleProfile),
+    accessToken: tokenResponse.access_token,
+  };
 }

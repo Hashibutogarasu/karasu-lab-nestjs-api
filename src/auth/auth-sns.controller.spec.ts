@@ -13,6 +13,7 @@ import * as snsAuth from '../lib/auth/sns-auth';
 import * as googleOAuth from '../lib/auth/google-oauth';
 import * as discordOAuth from '../lib/auth/discord-oauth';
 import * as query from '../lib/database/query';
+import { ExternalProviderAccessTokenService } from '../encryption/external-provider-access-token/external-provider-access-token.service';
 
 // Mock implementations
 jest.mock('../lib/auth/sns-auth');
@@ -48,6 +49,16 @@ describe('AuthController - SNS OAuth Authentication', () => {
     logout: jest.fn(),
     getAuthState: jest.fn(),
     getUserProfileById: jest.fn(),
+  };
+
+  const mockExternalProviderAccessTokenService = {
+    save: jest.fn(),
+    getById: jest.fn(),
+    getByUserId: jest.fn(),
+    getDecryptedById: jest.fn(),
+    update: jest.fn(),
+    upsert: jest.fn(),
+    delete: jest.fn(),
   };
 
   // Mock functions
@@ -99,6 +110,10 @@ describe('AuthController - SNS OAuth Authentication', () => {
         {
           provide: AuthService,
           useValue: mockAuthService,
+        },
+        {
+          provide: ExternalProviderAccessTokenService,
+          useValue: mockExternalProviderAccessTokenService,
         },
       ],
     }).compile();
@@ -258,8 +273,11 @@ describe('AuthController - SNS OAuth Authentication', () => {
 
       mockAuthService.getAuthState.mockResolvedValue(mockAuthState);
 
-      // Mock successful Google OAuth flow
-      mockProcessGoogleOAuth.mockResolvedValue(mockSnsProfile);
+      // Mock successful Google OAuth flow (controller expects { snsProfile, accessToken })
+      mockProcessGoogleOAuth.mockResolvedValue({
+        snsProfile: mockSnsProfile,
+        accessToken: 'access_token_123',
+      });
       mockProcessSnsCProfile.mockResolvedValue({
         success: true,
         userId: 'user_123',
@@ -444,7 +462,10 @@ describe('AuthController - SNS OAuth Authentication', () => {
       };
 
       mockAuthService.getAuthState.mockResolvedValue(mockAuthState);
-      mockProcessGoogleOAuth.mockResolvedValue(mockSnsProfile);
+      mockProcessGoogleOAuth.mockResolvedValue({
+        snsProfile: mockSnsProfile,
+        accessToken: 'access_token_123',
+      });
       mockProcessSnsCProfile.mockResolvedValue({
         success: false,
         error: 'server_error',
@@ -755,7 +776,10 @@ describe('AuthController - SNS OAuth Authentication', () => {
       };
 
       mockAuthService.getAuthState.mockResolvedValue(mockAuthState);
-      mockProcessGoogleOAuth.mockResolvedValue(mockGoogleProfile);
+      mockProcessGoogleOAuth.mockResolvedValue({
+        snsProfile: mockGoogleProfile,
+        accessToken: 'access_token_123',
+      });
       mockProcessSnsCProfile.mockResolvedValue({
         success: true,
         userId: 'new_user_123',
@@ -792,7 +816,10 @@ describe('AuthController - SNS OAuth Authentication', () => {
       };
 
       mockAuthService.getAuthState.mockResolvedValue(mockAuthState);
-      mockProcessGoogleOAuth.mockResolvedValue(mockGoogleProfile);
+      mockProcessGoogleOAuth.mockResolvedValue({
+        snsProfile: mockGoogleProfile,
+        accessToken: 'access_token_123',
+      });
       mockProcessSnsCProfile.mockResolvedValue({
         success: true,
         userId: 'existing_user_123',
@@ -835,7 +862,10 @@ describe('AuthController - SNS OAuth Authentication', () => {
       };
 
       mockAuthService.getAuthState.mockResolvedValue(mockAuthState);
-      mockProcessGoogleOAuth.mockResolvedValue(updatedProfile);
+      mockProcessGoogleOAuth.mockResolvedValue({
+        snsProfile: updatedProfile,
+        accessToken: 'access_token_123',
+      });
       mockProcessSnsCProfile.mockResolvedValue({
         success: true,
         userId: 'existing_user_123',
@@ -1028,7 +1058,10 @@ describe('AuthController - SNS OAuth Authentication', () => {
       };
 
       mockAuthService.getAuthState.mockResolvedValue(mockAuthState);
-      mockProcessGoogleOAuth.mockResolvedValue(snsProfile);
+      mockProcessGoogleOAuth.mockResolvedValue({
+        snsProfile: snsProfile,
+        accessToken: 'access_token_123',
+      });
       mockProcessSnsCProfile.mockResolvedValue({
         success: true,
         userId: 'user_123',

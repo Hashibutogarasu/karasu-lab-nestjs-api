@@ -58,5 +58,9 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 /src/generated/prisma
 
+docs/
 design/
 *.code-workspace
+
+private_key.pem
+public_key.pem

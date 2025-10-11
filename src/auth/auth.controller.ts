@@ -24,6 +24,7 @@ import {
   verifyAndCreateToken,
   processSnsCProfile,
   SnsAuthCallback,
+  SnsProfile,
 } from '../lib/auth/sns-auth';
 import { processGoogleOAuth } from '../lib/auth/google-oauth';
 import { processDiscordOAuth } from '../lib/auth/discord-oauth';
@@ -31,6 +32,7 @@ import { Google, Discord } from '../lib/auth/sns-decorators';
 import type { AuthStateDto, VerifyTokenDto } from './dto/auth.dto';
 import { generateJWTToken } from '../lib/auth/jwt-token';
 import { AuthState } from '@prisma/client';
+import { ExternalProviderAccessTokenService } from '../encryption/external-provider-access-token/external-provider-access-token.service';
 
 @Controller('auth')
 export class AuthController {
@@ -44,7 +46,10 @@ export class AuthController {
     process.env.FRONTEND_CALLBACK_URL ||
     'http://localhost:3000/api/auth/signin';
 
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly externalProviderAccessTokenService: ExternalProviderAccessTokenService,
+  ) {}
 
   /**
    * ユーザー登録エンドポイント
@@ -472,21 +477,40 @@ export class AuthController {
       const redirectUri = `${baseUrl}/auth/callback`;
 
       // プロバイダーに応じてOAuth処理を実行
-      let snsProfile;
+      let snsProfile: SnsProfile;
+      let accessToken: string;
 
       switch (authState.provider) {
-        case 'google':
-          snsProfile = await processGoogleOAuth(code, redirectUri);
+        case 'google': {
+          const authResult = await processGoogleOAuth(code, redirectUri);
+          snsProfile = authResult.snsProfile;
+          accessToken = authResult.accessToken;
           break;
-        case 'discord':
-          snsProfile = await processDiscordOAuth(code, redirectUri);
+        }
+        case 'discord': {
+          const authResult = await processDiscordOAuth(code, redirectUri);
+          snsProfile = authResult.snsProfile;
+          accessToken = authResult.accessToken;
           break;
+        }
         default:
           throw new Error(`Unsupported provider: ${authState.provider}`);
       }
 
       // プロファイル処理
       const processResult = await processSnsCProfile(snsProfile, state);
+
+      // アクセストークンを暗号化してデータベースに保存または更新
+      await this.externalProviderAccessTokenService.upsert(
+        {
+          id: processResult.userId,
+        },
+        {
+          provider: authState.provider,
+          token: accessToken,
+          userId: processResult.userId!,
+        },
+      );
 
       if (!processResult.success) {
         const errorType = processResult.error || 'authentication_failed';

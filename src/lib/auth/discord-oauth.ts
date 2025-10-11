@@ -114,7 +114,10 @@ export function convertDiscordProfileToSnsProfile(
 export async function processDiscordOAuth(
   code: string,
   redirectUri: string,
-): Promise<SnsProfile> {
+): Promise<{
+  snsProfile: SnsProfile;
+  accessToken: string;
+}> {
   // 1. 認可コードをアクセストークンに交換
   const tokenResponse = await exchangeDiscordCode(code, redirectUri);
 
@@ -122,5 +125,8 @@ export async function processDiscordOAuth(
   const discordProfile = await getDiscordProfile(tokenResponse.access_token);
 
   // 3. 共通のSnsProfile形式に変換
-  return convertDiscordProfileToSnsProfile(discordProfile);
+  return {
+    snsProfile: convertDiscordProfileToSnsProfile(discordProfile),
+    accessToken: tokenResponse.access_token,
+  };
 }

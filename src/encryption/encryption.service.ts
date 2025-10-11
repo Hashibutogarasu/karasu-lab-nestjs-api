@@ -13,9 +13,8 @@ export class EncryptionService {
 
   // Accept keys via constructor for easier testing; fall back to env if not provided
   constructor(keys?: Partial<KeyPair>) {
-    this.publicKey = keys?.publicKey ?? process.env.ENCRYPTION_PUBLIC_KEY ?? '';
-    this.privateKey =
-      keys?.privateKey ?? process.env.ENCRYPTION_PRIVATE_KEY ?? '';
+    this.publicKey = keys?.publicKey ?? process.env.ENCRYPTION_PUBLIC_KEY!;
+    this.privateKey = keys?.privateKey ?? process.env.ENCRYPTION_PRIVATE_KEY!;
 
     // Validate keys are present and are valid PEMs by attempting to import
     try {
