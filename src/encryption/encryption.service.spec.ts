@@ -46,10 +46,10 @@ describe('EncryptionService', () => {
     expect(() => service.decrypt(bad)).toThrow();
   });
 
-  it('should encrypt and decrypt a long string within RSA limits', () => {
+  it('should encrypt and decrypt a long string using AES-256-GCM', () => {
     const service = new EncryptionService({ publicKey, privateKey });
-    // Create a string that's close to RSA-OAEP limit (190 bytes) but still valid
-    const longString = 'a'.repeat(180); // 180 characters, well within the 190-byte limit
+    // Create a very long string that would exceed RSA limits but should work with AES
+    const longString = 'a'.repeat(1000); // 1000 characters, much larger than RSA limits
 
     const cipher = service.encrypt(longString);
     expect(typeof cipher).toBe('string');
@@ -59,13 +59,34 @@ describe('EncryptionService', () => {
     expect(decrypted).toBe(longString);
   });
 
-  it('should throw when trying to encrypt data too large for RSA', () => {
+  it('should encrypt and decrypt a very long access token string', () => {
     const service = new EncryptionService({ publicKey, privateKey });
-    // Create a string that exceeds RSA-OAEP limit (190 bytes)
-    const tooLongString = 'a'.repeat(200); // 200 characters, exceeds the limit
+    // Simulate a very long access token (much longer than RSA limits)
+    const longAccessToken =
+      'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.' +
+      'EkN-DOsnsuRjRO6BxXemmJDm3HbxrbRzXglbN2S4sOkopdU4IsDxTI8jO19W_A4K8ZPJijNLis4EZsHeY559a4DFOd50_OqgHs_CjI2vM' +
+      'VkF3NruZBDKNlKlLBOl5XZ0y4x8xWGkQ9L6LyPv9k7bXhkM8nHvHKm-ZcJyTKJxQ1AJjqGaZ2VZFF8H5XaF1xZfCdSdYHk-cQ' +
+      'AdditionalVeryLongTokenDataThatWouldExceedRSALimitsButShouldWorkWithAESEncryption' +
+      'MoreTokenDataToMakeItEvenLongerAndTestTheAESEncryptionCapabilityWithVeryLongStrings';
 
-    expect(() => service.encrypt(tooLongString)).toThrow(
-      'Data too large for RSA encryption',
-    );
+    const cipher = service.encrypt(longAccessToken);
+    expect(typeof cipher).toBe('string');
+    expect(cipher.length).toBeGreaterThan(0);
+
+    const decrypted = service.decrypt(cipher);
+    expect(decrypted).toBe(longAccessToken);
+  });
+
+  it('should handle very large data without size limitations', () => {
+    const service = new EncryptionService({ publicKey, privateKey });
+    // Create a very large string (10KB)
+    const largeString = 'x'.repeat(10240);
+
+    const cipher = service.encrypt(largeString);
+    expect(typeof cipher).toBe('string');
+    expect(cipher.length).toBeGreaterThan(0);
+
+    const decrypted = service.decrypt(cipher);
+    expect(decrypted).toBe(largeString);
   });
 });

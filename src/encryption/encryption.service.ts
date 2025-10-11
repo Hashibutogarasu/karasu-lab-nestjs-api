@@ -33,38 +33,51 @@ export class EncryptionService {
     }
   }
 
-  // Encrypt a utf8 string and return base64 encoded ciphertext
+  // Encrypt a utf8 string using AES-256-GCM with RSA-encrypted key and return base64 encoded result
   encrypt(plain: string | null): string {
     if (plain === null || plain === undefined) {
       throw new BadRequestException('plain text must be provided');
     }
 
+    // Generate random AES key and IV
+    const aesKey = crypto.randomBytes(32); // 256-bit key for AES-256
+    const iv = crypto.randomBytes(16); // 128-bit IV for GCM mode
+
+    // Encrypt data with AES-256-GCM
+    const cipher = crypto.createCipheriv('aes-256-gcm', aesKey, iv);
+    const aad = Buffer.from('karasu-lab-encryption', 'utf8');
+    cipher.setAAD(aad); // Additional authenticated data
+
+    let encrypted = cipher.update(plain, 'utf8');
+    encrypted = Buffer.concat([encrypted, cipher.final()]);
+    const authTag = cipher.getAuthTag();
+
+    // Encrypt the AES key with RSA
     const pubKeyObj = crypto.createPublicKey(this.publicKey);
-    const plainBuffer = Buffer.from(plain, 'utf8');
-
-    // RSA-OAEP with 2048-bit key can encrypt up to 190 bytes (2048/8 - 2*32 - 2)
-    // where 32 is SHA-256 hash length
-    const maxDataSize = 190;
-
-    if (plainBuffer.length > maxDataSize) {
-      throw new BadRequestException(
-        `Data too large for RSA encryption. Maximum size is ${maxDataSize} bytes, got ${plainBuffer.length} bytes`,
-      );
-    }
-
-    const encrypted = crypto.publicEncrypt(
+    const encryptedAesKey = crypto.publicEncrypt(
       {
         key: pubKeyObj,
         padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
         oaepHash: 'sha256',
       },
-      plainBuffer,
+      aesKey,
     );
 
-    return encrypted.toString('base64');
-  }
+    // Combine encrypted AES key, IV, auth tag, and encrypted data
+    // Format: [keyLength(2 bytes)][encryptedAesKey][iv(16 bytes)][authTag(16 bytes)][encryptedData]
+    const keyLengthBuffer = Buffer.allocUnsafe(2);
+    keyLengthBuffer.writeUInt16BE(encryptedAesKey.length, 0);
 
-  // Decrypt a base64 encoded ciphertext and return utf8 string
+    const result = Buffer.concat([
+      keyLengthBuffer,
+      encryptedAesKey,
+      iv,
+      authTag,
+      encrypted,
+    ]);
+
+    return result.toString('base64');
+  } // Decrypt a base64 encoded ciphertext (AES-256-GCM with RSA-encrypted key) and return utf8 string
   decrypt(cipherBase64: string | null): string {
     if (cipherBase64 === null || cipherBase64 === undefined) {
       throw new BadRequestException('cipher text must be provided');
@@ -78,15 +91,43 @@ export class EncryptionService {
     }
 
     try {
+      // Parse the encrypted data format
+      // Format: [keyLength(2 bytes)][encryptedAesKey][iv(16 bytes)][authTag(16 bytes)][encryptedData]
+
+      if (buffer.length < 2 + 16 + 16) {
+        throw new BadRequestException('invalid encrypted data format');
+      }
+
+      const keyLength = buffer.readUInt16BE(0);
+
+      if (buffer.length < 2 + keyLength + 16 + 16) {
+        throw new BadRequestException('invalid encrypted data format');
+      }
+
+      const encryptedAesKey = buffer.subarray(2, 2 + keyLength);
+      const iv = buffer.subarray(2 + keyLength, 2 + keyLength + 16);
+      const authTag = buffer.subarray(2 + keyLength + 16, 2 + keyLength + 32);
+      const encryptedData = buffer.subarray(2 + keyLength + 32);
+
+      // Decrypt the AES key with RSA
       const privKeyObj = crypto.createPrivateKey(this.privateKey);
-      const decrypted = crypto.privateDecrypt(
+      const aesKey = crypto.privateDecrypt(
         {
           key: privKeyObj,
           padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
           oaepHash: 'sha256',
         },
-        buffer,
+        encryptedAesKey,
       );
+
+      // Decrypt data with AES-256-GCM
+      const decipher = crypto.createDecipheriv('aes-256-gcm', aesKey, iv);
+      const aad = Buffer.from('karasu-lab-encryption', 'utf8');
+      decipher.setAAD(aad);
+      decipher.setAuthTag(authTag);
+
+      let decrypted = decipher.update(encryptedData);
+      decrypted = Buffer.concat([decrypted, decipher.final()]);
 
       return decrypted.toString('utf8');
     } catch (err) {
