@@ -503,7 +503,7 @@ export class AuthController {
       // アクセストークンを暗号化してデータベースに保存または更新
       await this.externalProviderAccessTokenService.upsert(
         {
-          id: processResult.userId,
+          userId: processResult.userId,
         },
         {
           provider: authState.provider,
