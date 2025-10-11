@@ -500,18 +500,20 @@ export class AuthController {
       // プロファイル処理
       const processResult = await processSnsCProfile(snsProfile, state);
 
-      // アクセストークンを暗号化してデータベースに保存または更新
-      await this.externalProviderAccessTokenService.upsert(
-        {
-          userId: processResult.userId,
-          provider: authState.provider,
-        },
-        {
-          provider: authState.provider,
-          token: accessToken,
-          userId: processResult.userId!,
-        },
-      );
+      if (accessToken) {
+        // アクセストークンを暗号化してデータベースに保存または更新
+        await this.externalProviderAccessTokenService.upsert(
+          {
+            userId: processResult.userId,
+            provider: authState.provider,
+          },
+          {
+            provider: authState.provider,
+            token: accessToken,
+            userId: processResult.userId!,
+          },
+        );
+      }
 
       if (!processResult.success) {
         const errorType = processResult.error || 'authentication_failed';
