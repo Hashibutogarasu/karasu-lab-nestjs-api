@@ -40,6 +40,17 @@ export class EncryptionService {
     }
 
     const pubKeyObj = crypto.createPublicKey(this.publicKey);
+    const plainBuffer = Buffer.from(plain, 'utf8');
+
+    // RSA-OAEP with 2048-bit key can encrypt up to 190 bytes (2048/8 - 2*32 - 2)
+    // where 32 is SHA-256 hash length
+    const maxDataSize = 190;
+
+    if (plainBuffer.length > maxDataSize) {
+      throw new BadRequestException(
+        `Data too large for RSA encryption. Maximum size is ${maxDataSize} bytes, got ${plainBuffer.length} bytes`,
+      );
+    }
 
     const encrypted = crypto.publicEncrypt(
       {
@@ -47,7 +58,7 @@ export class EncryptionService {
         padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
         oaepHash: 'sha256',
       },
-      Buffer.from(plain, 'utf8'),
+      plainBuffer,
     );
 
     return encrypted.toString('base64');
