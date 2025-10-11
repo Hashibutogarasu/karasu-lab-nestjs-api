@@ -11,7 +11,6 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { RegisterDto, LoginDto } from './dto/create-auth.dto';
 import { ExternalProviderAccessTokenService } from '../encryption/external-provider-access-token/external-provider-access-token.service';
-import { ExternalProviderAccessTokenService } from '../encryption/external-provider-access-token/external-provider-access-token.service';
 
 // Mock the JWT token generation function
 jest.mock('../lib/auth/jwt-token', () => ({
