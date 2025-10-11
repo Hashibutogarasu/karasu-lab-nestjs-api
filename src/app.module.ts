@@ -14,6 +14,7 @@ import { DifyModule } from './dify/dify.module';
 import { JwtStateModule } from './jwt-state/jwt-state.module';
 import { UsersModule } from './users/users.module';
 import { GmoModule } from './gmo/gmo.module';
+import { EncryptionService } from './encryption/encryption.service';
 
 @Module({
   imports: [
@@ -31,6 +32,6 @@ import { GmoModule } from './gmo/gmo.module';
     GmoModule,
   ],
   controllers: [AppController],
-  providers: [AppService, ResendService],
+  providers: [AppService, ResendService, EncryptionService],
 })
 export class AppModule {}

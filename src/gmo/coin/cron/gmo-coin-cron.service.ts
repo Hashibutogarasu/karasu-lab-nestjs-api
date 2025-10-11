@@ -18,7 +18,6 @@ export class GmoCoinCronService {
         cache: false,
         updateDb: true,
       });
-      this.logger.debug('Fetched ticker via cron');
     } catch (e) {
       this.logger.error('Cron fetchTicker failed', e);
     }
@@ -34,7 +33,6 @@ export class GmoCoinCronService {
         cache: false,
         updateDb: true,
       });
-      this.logger.debug('Fetched status via cron');
     } catch (e) {
       this.logger.error('Cron fetchStatus failed', e);
     }

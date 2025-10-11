@@ -45,14 +45,15 @@ model User {
   role         String   @default("user") // "user" or "admin"
 
   // Relations
-  authorizationCodes AuthorizationCode[]
-  accessTokens       AccessToken[]
-  refreshTokens      RefreshToken[]
-  userConsents       UserConsent[]
-  extraProfiles      ExtraProfile[]
-  passwordResets     PasswordReset[]
-  authStates         AuthState[]
-  JWTState           JWTState[]
+  authorizationCodes          AuthorizationCode[]
+  accessTokens                AccessToken[]
+  refreshTokens               RefreshToken[]
+  userConsents                UserConsent[]
+  extraProfiles               ExtraProfile[]
+  passwordResets              PasswordReset[]
+  authStates                  AuthState[]
+  JWTState                    JWTState[]
+  ExternalProviderAccessToken ExternalProviderAccessToken[]
 
   @@map("users")
 }
@@ -194,6 +195,20 @@ model JWTState {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+// Manage external provider access tokens (e.g., for SNS providers)
+model ExternalProviderAccessToken {
+  id String @id @default(cuid())
+
+  userId         String @map("user_id")
+  encryptedToken String @map("encrypted_token")
+  provider       String
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
 // GMO Coin (FX) related models
 // These models capture external API responses from gmo-coin for ticker, kline, rules and status.
 model GmoCoinStatus {
@@ -293,4 +308,5 @@ model GmoCoinRules {
 
   @@map("gmo_coin_rules")
 }
+
 // End of gmo-coin related models
