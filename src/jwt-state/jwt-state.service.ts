@@ -58,6 +58,10 @@ export class JwtStateService {
   async remove(id: string, user: User, isAdmin: boolean) {
     const state = await getJWTStateById(id);
 
+    if (!state) {
+      throw new HttpException('JWT state not found', HttpStatus.NOT_FOUND);
+    }
+
     if (state?.userId == user.id || isAdmin) {
       return deleteJWTState(id);
     }
