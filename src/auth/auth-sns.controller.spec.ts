@@ -10,15 +10,11 @@ import {
 import { Request, Response } from 'express';
 import { RegisterDto, LoginDto } from './dto/create-auth.dto';
 import * as snsAuth from '../lib/auth/sns-auth';
-import * as googleOAuth from '../lib/auth/google-oauth';
-import * as discordOAuth from '../lib/auth/discord-oauth';
 import * as query from '../lib/database/query';
 import { ExternalProviderAccessTokenService } from '../encryption/external-provider-access-token/external-provider-access-token.service';
 
 // Mock implementations
 jest.mock('../lib/auth/sns-auth');
-jest.mock('../lib/auth/google-oauth');
-jest.mock('../lib/auth/discord-oauth');
 jest.mock('../lib/database/query');
 
 import { OAuthProviderFactory } from '../lib/auth/oauth-provider.factory';
@@ -108,14 +104,6 @@ describe('AuthController - SNS OAuth Authentication', () => {
   const mockSnsAuthCallback = snsAuth.SnsAuthCallback as jest.MockedClass<
     typeof snsAuth.SnsAuthCallback
   >;
-  const mockProcessGoogleOAuth =
-    googleOAuth.processGoogleOAuth as jest.MockedFunction<
-      typeof googleOAuth.processGoogleOAuth
-    >;
-  const mockProcessDiscordOAuth =
-    discordOAuth.processDiscordOAuth as jest.MockedFunction<
-      typeof discordOAuth.processDiscordOAuth
-    >;
   const mockFindAuthState = query.findAuthState as jest.MockedFunction<
     typeof query.findAuthState
   >;
