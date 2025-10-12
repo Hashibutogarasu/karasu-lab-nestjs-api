@@ -7,6 +7,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
 import { Observable } from 'rxjs';
 import { JwtService } from '@nestjs/jwt';
+import { AppErrorCodes } from '../types/error-codes';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
@@ -20,7 +21,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     const request = context.switchToHttp().getRequest();
     const token = this.extractTokenFromHeader(request);
     if (!token) {
-      throw new UnauthorizedException();
+      throw AppErrorCodes.UNAUTHORIZED;
     }
 
     try {
@@ -30,7 +31,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
       request.user = payload;
     } catch (err) {
-      throw new UnauthorizedException('Invalid or expired token');
+      throw AppErrorCodes.INVALID_TOKEN;
     }
 
     return super.canActivate(context);

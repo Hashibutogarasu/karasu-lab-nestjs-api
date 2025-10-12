@@ -49,6 +49,20 @@ export const AppErrorCodes = {
   MISSING_SESSION: new AppErrorCode(401, 'Session ID is required', true),
   INVALID_SESSION: new AppErrorCode(401, 'Invalid or expired session', true),
   INVALID_TOKEN: new AppErrorCode(401, 'Invalid or expired token', true),
+  USER_GET_DATABASE_ERROR: new AppErrorCode(
+    500,
+    'Failed to get user from database',
+    true,
+  ),
+  USER_UPDATE_DATABASE_ERROR: new AppErrorCode(
+    500,
+    'Failed to update user in database',
+    true,
+  ),
+  INVALID_EMAIL_FORMAT: new AppErrorCode(400, 'Invalid email format', true),
+  INVALID_USER_NAME: new AppErrorCode(400, 'Invalid username format', true),
+  REVOKED_TOKEN: new AppErrorCode(401, 'Token has been revoked', true),
+  EXPIRED_TOKEN: new AppErrorCode(401, 'Token has expired', true),
 
   // OAuth Errors
   UNSUPPORTED_PROVIDER: new AppErrorCode(

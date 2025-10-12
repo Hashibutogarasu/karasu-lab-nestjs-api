@@ -25,6 +25,7 @@ import type {
   UserResponse,
 } from '../lib/validation/auth.validation';
 import { JwtPayload } from './jwt.strategy';
+import { AppErrorCodes } from '../types/error-codes';
 
 interface SessionResponse {
   sessionId: string;
@@ -233,7 +234,7 @@ export class AuthService {
         updated_at: user.updatedAt,
       }));
     } catch (error) {
-      throw new Error('Failed to retrieve users');
+      throw AppErrorCodes.USER_GET_DATABASE_ERROR;
     }
   }
 
@@ -255,7 +256,7 @@ export class AuthService {
         updated_at: user.updatedAt,
       };
     } catch (error) {
-      return null;
+      throw AppErrorCodes.USER_GET_DATABASE_ERROR;
     }
   }
 
@@ -275,16 +276,14 @@ export class AuthService {
           updateAuthDto.username,
         );
         if (!usernameValidation.isValid) {
-          throw new Error(
-            `Invalid username: ${usernameValidation.errors.join(', ')}`,
-          );
+          throw AppErrorCodes.INVALID_USER_NAME;
         }
         updateData.username = updateAuthDto.username;
       }
 
       if (updateAuthDto.email) {
         if (!validateEmailFormat(updateAuthDto.email)) {
-          throw new Error('Invalid email format');
+          throw AppErrorCodes.INVALID_EMAIL_FORMAT;
         }
         updateData.email = updateAuthDto.email;
       }
@@ -294,9 +293,7 @@ export class AuthService {
           updateAuthDto.password,
         );
         if (!passwordValidation.isValid) {
-          throw new Error(
-            `Weak password: ${passwordValidation.errors.join(', ')}`,
-          );
+          throw AppErrorCodes.WEAK_PASSWORD;
         }
         updateData.password = updateAuthDto.password;
       }
@@ -311,7 +308,7 @@ export class AuthService {
         updated_at: updatedUser.updatedAt,
       };
     } catch (error) {
-      throw new Error(`Failed to update user: ${error.message}`);
+      throw AppErrorCodes.USER_UPDATE_DATABASE_ERROR;
     }
   }
 
