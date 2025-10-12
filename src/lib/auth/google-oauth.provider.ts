@@ -24,7 +24,7 @@ export class GoogleOAuthProvider implements IOAuthProvider {
     const clientId = process.env.GOOGLE_CLIENT_ID;
     if (!clientId) {
       throw new ProviderUnavailableError(
-        'google',
+        this.getProvider(),
         'GOOGLE_CLIENT_ID not configured',
       );
     }

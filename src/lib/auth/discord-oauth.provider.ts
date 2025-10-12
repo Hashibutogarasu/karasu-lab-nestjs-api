@@ -24,7 +24,7 @@ export class DiscordOAuthProvider implements IOAuthProvider {
     const clientId = process.env.DISCORD_CLIENT_ID;
     if (!clientId) {
       throw new ProviderUnavailableError(
-        'discord',
+        this.getProvider(),
         'DISCORD_CLIENT_ID not configured',
       );
     }
