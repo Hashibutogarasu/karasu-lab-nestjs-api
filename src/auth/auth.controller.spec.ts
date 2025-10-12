@@ -14,6 +14,7 @@ import { ExternalProviderAccessTokenService } from '../encryption/external-provi
 import { OAuthProviderFactory } from '../lib/auth/oauth-provider.factory';
 import { GoogleOAuthProvider } from '../lib/auth/google-oauth.provider';
 import { DiscordOAuthProvider } from '../lib/auth/discord-oauth.provider';
+import { AppErrorCode, AppErrorCodes } from '../types/error-codes';
 
 // Mock the JWT token generation function
 jest.mock('../lib/auth/jwt-token', () => ({
@@ -182,7 +183,7 @@ describe('AuthController', () => {
 
       await expect(
         controller.register(invalidRegisterDto, mockResponse),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(AppErrorCodes.VALIDATION_FAILED);
     });
 
     it('should handle user already exists error', async () => {
@@ -196,7 +197,7 @@ describe('AuthController', () => {
 
       await expect(
         controller.register(validRegisterDto, mockResponse),
-      ).rejects.toThrow(ConflictException);
+      ).rejects.toThrow(AppErrorCodes.USER_EXISTS);
     });
 
     it('should handle weak password error', async () => {
@@ -210,7 +211,7 @@ describe('AuthController', () => {
 
       await expect(
         controller.register(validRegisterDto, mockResponse),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(AppErrorCodes.WEAK_PASSWORD);
     });
 
     it('should handle server errors', async () => {
@@ -224,7 +225,7 @@ describe('AuthController', () => {
 
       await expect(
         controller.register(validRegisterDto, mockResponse),
-      ).rejects.toThrow(HttpException);
+      ).rejects.toThrow(AppErrorCodes.INTERNAL_SERVER_ERROR);
     });
 
     it('should handle unexpected exceptions', async () => {
@@ -234,14 +235,14 @@ describe('AuthController', () => {
 
       await expect(
         controller.register(validRegisterDto, mockResponse),
-      ).rejects.toThrow(HttpException);
+      ).rejects.toThrow(AppErrorCodes.INTERNAL_SERVER_ERROR);
     });
 
     it('should handle empty request body', async () => {
       const emptyDto = {} as RegisterDto;
 
       await expect(controller.register(emptyDto, mockResponse)).rejects.toThrow(
-        BadRequestException,
+        AppErrorCodes.VALIDATION_FAILED,
       );
     });
 
@@ -253,7 +254,7 @@ describe('AuthController', () => {
 
       await expect(
         controller.register(invalidUsernameDto, mockResponse),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(AppErrorCodes.VALIDATION_FAILED);
     });
 
     it('should validate email format', async () => {
@@ -264,7 +265,7 @@ describe('AuthController', () => {
 
       await expect(
         controller.register(invalidEmailDto, mockResponse),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(AppErrorCodes.VALIDATION_FAILED);
     });
 
     it('should validate password requirements', async () => {
@@ -275,7 +276,7 @@ describe('AuthController', () => {
 
       await expect(
         controller.register(weakPasswordDto, mockResponse),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(AppErrorCodes.VALIDATION_FAILED);
     });
   });
 
@@ -368,7 +369,7 @@ describe('AuthController', () => {
 
       await expect(
         controller.login(validLoginDto, mockResponse, mockRequest),
-      ).rejects.toThrow(UnauthorizedException);
+      ).rejects.toThrow(AppErrorCodes.INVALID_CREDENTIALS);
     });
 
     it('should handle validation errors', async () => {
@@ -379,7 +380,7 @@ describe('AuthController', () => {
 
       await expect(
         controller.login(invalidLoginDto, mockResponse, mockRequest),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(AppErrorCodes.VALIDATION_FAILED);
     });
 
     it('should handle server errors during login', async () => {
@@ -393,7 +394,7 @@ describe('AuthController', () => {
 
       await expect(
         controller.login(validLoginDto, mockResponse, mockRequest),
-      ).rejects.toThrow(HttpException);
+      ).rejects.toThrow(AppErrorCodes.INTERNAL_SERVER_ERROR);
     });
 
     it('should handle unexpected exceptions during login', async () => {
@@ -403,7 +404,7 @@ describe('AuthController', () => {
 
       await expect(
         controller.login(validLoginDto, mockResponse, mockRequest),
-      ).rejects.toThrow(HttpException);
+      ).rejects.toThrow(AppErrorCodes.INTERNAL_SERVER_ERROR);
     });
 
     it('should handle session creation failure', async () => {
@@ -423,7 +424,7 @@ describe('AuthController', () => {
 
       await expect(
         controller.login(validLoginDto, mockResponse, mockRequest),
-      ).rejects.toThrow(HttpException);
+      ).rejects.toThrow(AppErrorCodes.INTERNAL_SERVER_ERROR);
     });
 
     it('should validate minimum password length', async () => {
@@ -434,7 +435,7 @@ describe('AuthController', () => {
 
       await expect(
         controller.login(shortPasswordDto, mockResponse, mockRequest),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(AppErrorCodes.VALIDATION_FAILED);
     });
 
     it('should validate maximum input lengths', async () => {
@@ -445,7 +446,7 @@ describe('AuthController', () => {
 
       await expect(
         controller.login(longInputDto, mockResponse, mockRequest),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(AppErrorCodes.VALIDATION_FAILED);
     });
   });
 
@@ -482,7 +483,7 @@ describe('AuthController', () => {
 
       await expect(
         controller.getProfile(mockRequest, mockResponse),
-      ).rejects.toThrow(UnauthorizedException);
+      ).rejects.toThrow(AppErrorCodes.MISSING_SESSION);
     });
 
     it('should handle invalid session', async () => {
@@ -490,7 +491,7 @@ describe('AuthController', () => {
 
       await expect(
         controller.getProfile(mockRequest, mockResponse),
-      ).rejects.toThrow(UnauthorizedException);
+      ).rejects.toThrow(AppErrorCodes.INVALID_SESSION);
     });
 
     it('should handle expired session', async () => {
@@ -498,7 +499,7 @@ describe('AuthController', () => {
 
       await expect(
         controller.getProfile(mockRequest, mockResponse),
-      ).rejects.toThrow(UnauthorizedException);
+      ).rejects.toThrow(AppErrorCodes.INVALID_SESSION);
     });
 
     it('should handle server errors during profile retrieval', async () => {
@@ -506,7 +507,7 @@ describe('AuthController', () => {
 
       await expect(
         controller.getProfile(mockRequest, mockResponse),
-      ).rejects.toThrow(HttpException);
+      ).rejects.toThrow(AppErrorCodes.INTERNAL_SERVER_ERROR);
     });
 
     it('should handle empty session ID header', async () => {
@@ -514,7 +515,7 @@ describe('AuthController', () => {
 
       await expect(
         controller.getProfile(mockRequest, mockResponse),
-      ).rejects.toThrow(UnauthorizedException);
+      ).rejects.toThrow(AppErrorCodes.MISSING_SESSION);
     });
 
     it('should handle session ID from different header formats', async () => {
@@ -585,7 +586,7 @@ describe('AuthController', () => {
 
       await expect(
         controller.logout(mockRequest, mockResponse),
-      ).rejects.toThrow(HttpException);
+      ).rejects.toThrow(AppErrorCodes.INTERNAL_SERVER_ERROR);
     });
 
     it('should handle empty session ID gracefully', async () => {
@@ -617,7 +618,7 @@ describe('AuthController', () => {
 
       await expect(
         controller.register(malformedDto, mockResponse),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(AppErrorCodes.VALIDATION_FAILED);
     });
 
     it('should handle SQL injection attempts in username', async () => {
@@ -630,7 +631,7 @@ describe('AuthController', () => {
       // Should fail validation before reaching the service
       await expect(
         controller.register(maliciousDto, mockResponse),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(AppErrorCodes.VALIDATION_FAILED);
     });
 
     it('should handle XSS attempts in input fields', async () => {
@@ -642,11 +643,11 @@ describe('AuthController', () => {
 
       // Should fail validation due to invalid characters
       await expect(controller.register(xssDto, mockResponse)).rejects.toThrow(
-        BadRequestException,
+        AppErrorCodes.VALIDATION_FAILED,
       );
     });
 
-    it('should validate input sanitization', async () => {
+    it('should handle input sanitization', async () => {
       const unsafeDto: RegisterDto = {
         username: 'test\x00user', // Null byte injection
         email: 'test@example.com',
@@ -655,7 +656,7 @@ describe('AuthController', () => {
 
       await expect(
         controller.register(unsafeDto, mockResponse),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(AppErrorCodes.VALIDATION_FAILED);
     });
 
     it('should handle concurrent session requests', async () => {
@@ -715,7 +716,7 @@ describe('AuthController', () => {
       // Should fail validation - only alphanumeric, underscore, hyphen allowed
       await expect(
         controller.register(unicodeDto, mockResponse),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(AppErrorCodes.VALIDATION_FAILED);
     });
 
     it('should handle extremely long inputs', async () => {
@@ -726,7 +727,7 @@ describe('AuthController', () => {
       };
 
       await expect(controller.register(longDto, mockResponse)).rejects.toThrow(
-        BadRequestException,
+        AppErrorCodes.VALIDATION_FAILED,
       );
     });
 
@@ -739,7 +740,7 @@ describe('AuthController', () => {
 
       await expect(
         controller.register(boundaryDto, mockResponse),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(AppErrorCodes.VALIDATION_FAILED);
     });
 
     it('should handle valid minimum length inputs', async () => {
@@ -804,7 +805,7 @@ describe('AuthController', () => {
 
       await expect(
         controller.getProfile(mockRequest, mockResponse),
-      ).rejects.toThrow(UnauthorizedException);
+      ).rejects.toThrow(AppErrorCodes.INVALID_SESSION);
     });
 
     it('should handle session validation during profile access', async () => {

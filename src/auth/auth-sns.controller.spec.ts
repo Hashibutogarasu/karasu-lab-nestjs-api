@@ -17,6 +17,7 @@ jest.mock('../lib/auth/sns-auth');
 jest.mock('../lib/database/query');
 
 import { OAuthProviderFactory } from '../lib/auth/oauth-provider.factory';
+import { AppErrorCodes } from '../types/error-codes';
 
 describe('AuthController - SNS OAuth Authentication', () => {
   let controller: AuthController;
@@ -206,7 +207,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
 
       await expect(
         controller.createAuthState(invalidDto, mockResponse),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(AppErrorCodes.INVALID_REQUEST);
     });
 
     it('should handle missing callback URL parameter', async () => {
@@ -217,7 +218,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
 
       await expect(
         controller.createAuthState(invalidDto, mockResponse),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(AppErrorCodes.INVALID_REQUEST);
     });
 
     it('should handle authentication state creation failure', async () => {
@@ -231,7 +232,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
 
       await expect(
         controller.createAuthState(validAuthStateDto, mockResponse),
-      ).rejects.toThrow(HttpException);
+      ).rejects.toThrow(AppErrorCodes.INTERNAL_SERVER_ERROR);
     });
 
     it('should handle unsupported provider', async () => {
@@ -250,7 +251,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
 
       await expect(
         controller.createAuthState(unsupportedDto, mockResponse),
-      ).rejects.toThrow(HttpException);
+      ).rejects.toThrow(AppErrorCodes.INTERNAL_SERVER_ERROR);
     });
   });
 
@@ -629,7 +630,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
 
       await expect(
         controller.verifyToken(invalidDto, mockResponse),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(AppErrorCodes.INVALID_REQUEST);
     });
 
     it('should handle missing one-time token', async () => {
@@ -640,7 +641,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
 
       await expect(
         controller.verifyToken(invalidDto, mockResponse),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(AppErrorCodes.INVALID_REQUEST);
     });
 
     it('should handle invalid or expired token', async () => {
@@ -654,7 +655,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
 
       await expect(
         controller.verifyToken(validVerifyDto, mockResponse),
-      ).rejects.toThrow(UnauthorizedException);
+      ).rejects.toThrow(AppErrorCodes.INVALID_TOKEN);
     });
 
     it('should handle server error during token verification', async () => {
@@ -668,7 +669,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
 
       await expect(
         controller.verifyToken(validVerifyDto, mockResponse),
-      ).rejects.toThrow(HttpException);
+      ).rejects.toThrow(AppErrorCodes.INTERNAL_SERVER_ERROR);
     });
 
     it('should prevent token reuse after verification', async () => {
@@ -698,7 +699,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
 
       await expect(
         controller.verifyToken(validVerifyDto, mockResponse),
-      ).rejects.toThrow(UnauthorizedException);
+      ).rejects.toThrow(AppErrorCodes.INVALID_TOKEN);
     });
 
     it('should handle missing user ID in authentication state', async () => {
@@ -713,7 +714,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
 
       await expect(
         controller.verifyToken(validVerifyDto, mockResponse),
-      ).rejects.toThrow(HttpException);
+      ).rejects.toThrow(AppErrorCodes.INTERNAL_SERVER_ERROR);
     });
 
     it('should handle user not found after verification', async () => {
@@ -727,7 +728,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
 
       await expect(
         controller.verifyToken(validVerifyDto, mockResponse),
-      ).rejects.toThrow(HttpException);
+      ).rejects.toThrow(AppErrorCodes.INTERNAL_SERVER_ERROR);
     });
   });
 
@@ -766,7 +767,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
 
       await expect(
         controller.verifyToken(verifyDto, mockResponse),
-      ).rejects.toThrow(UnauthorizedException);
+      ).rejects.toThrow(AppErrorCodes.INVALID_TOKEN);
     });
 
     it('should prevent state code reuse', async () => {
@@ -802,7 +803,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
 
       await expect(
         controller.verifyToken(verifyDto, mockResponse),
-      ).rejects.toThrow(UnauthorizedException);
+      ).rejects.toThrow(AppErrorCodes.INVALID_TOKEN);
     });
 
     it('should handle non-existent state code', async () => {
@@ -823,7 +824,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
 
       await expect(
         controller.verifyToken(verifyDto, mockResponse),
-      ).rejects.toThrow(UnauthorizedException);
+      ).rejects.toThrow(AppErrorCodes.INVALID_TOKEN);
     });
   });
 
@@ -1020,7 +1021,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
 
       await expect(
         controller.createAuthState(authStateDto, mockResponse),
-      ).rejects.toThrow(HttpException);
+      ).rejects.toThrow(AppErrorCodes.INTERNAL_SERVER_ERROR);
 
       // Restore environment
       process.env = originalEnv;
@@ -1097,7 +1098,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
 
       await expect(
         controller.loginWithProvider('discord', validCallbackUrl, mockResponse),
-      ).rejects.toThrow(HttpException);
+      ).rejects.toThrow(AppErrorCodes.PROVIDER_UNAVAILABLE);
     });
 
     it('should use default callback URL when none provided', async () => {

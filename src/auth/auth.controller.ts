@@ -37,6 +37,7 @@ import {
   ProviderNotImplementedError,
   ProviderUnavailableError,
 } from '../lib/auth/oauth-provider.interface';
+import { AppErrorCode, AppErrorCodes } from '../types/error-codes';
 
 @Controller('auth')
 export class AuthController {
@@ -61,12 +62,7 @@ export class AuthController {
       // 入力データのバリデーション
       const validationResult = safeParseRegisterInput(registerDto);
       if (!validationResult.success) {
-        const errorDetails = validationResult.error?.issues;
-        throw new BadRequestException({
-          error: 'invalid_request',
-          error_description: 'Validation failed',
-          details: errorDetails,
-        });
+        throw AppErrorCodes.VALIDATION_FAILED;
       }
 
       // ユーザー登録処理
@@ -75,23 +71,11 @@ export class AuthController {
       if (!result.success) {
         // エラーレスポンスの処理
         if (result.error === 'user_exists') {
-          throw new ConflictException({
-            error: result.error,
-            error_description: result.errorDescription,
-          });
+          throw AppErrorCodes.USER_EXISTS;
         } else if (result.error === 'weak_password') {
-          throw new BadRequestException({
-            error: result.error,
-            error_description: result.errorDescription,
-          });
+          throw AppErrorCodes.WEAK_PASSWORD;
         } else {
-          throw new HttpException(
-            {
-              error: result.error,
-              error_description: result.errorDescription,
-            },
-            HttpStatus.INTERNAL_SERVER_ERROR,
-          );
+          throw AppErrorCodes.INTERNAL_SERVER_ERROR;
         }
       }
 
@@ -101,16 +85,10 @@ export class AuthController {
         user: result.user,
       });
     } catch (error) {
-      if (error instanceof HttpException) {
+      if (error instanceof AppErrorCode) {
         throw error;
       }
-      throw new HttpException(
-        {
-          error: 'server_error',
-          error_description: 'An unexpected error occurred',
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw AppErrorCodes.INTERNAL_SERVER_ERROR;
     }
   }
 
@@ -130,10 +108,7 @@ export class AuthController {
 
       // プロバイダーが利用可能かチェック
       if (!oauthProvider.isAvailable()) {
-        throw new ProviderUnavailableError(
-          provider,
-          'Provider credentials not configured',
-        );
+        throw AppErrorCodes.PROVIDER_UNAVAILABLE;
       }
 
       // コールバックURLが指定されていない場合はデフォルトを使用
@@ -153,13 +128,7 @@ export class AuthController {
       );
 
       if (!result.success) {
-        throw new HttpException(
-          {
-            error: result.error,
-            error_description: result.errorDescription,
-          },
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
+        throw AppErrorCodes.INTERNAL_SERVER_ERROR;
       }
 
       // AuthStateからcode_challengeを取得(X用)
@@ -177,30 +146,15 @@ export class AuthController {
       res.redirect(authUrl);
     } catch (error) {
       if (error instanceof ProviderNotImplementedError) {
-        throw new BadRequestException({
-          error: 'unsupported_provider',
-          error_description: error.message,
-        });
+        throw AppErrorCodes.UNSUPPORTED_PROVIDER;
       }
       if (error instanceof ProviderUnavailableError) {
-        throw new HttpException(
-          {
-            error: 'provider_unavailable',
-            error_description: error.message,
-          },
-          HttpStatus.SERVICE_UNAVAILABLE,
-        );
+        throw AppErrorCodes.PROVIDER_UNAVAILABLE;
       }
-      if (error instanceof HttpException) {
+      if (error instanceof AppErrorCode) {
         throw error;
       }
-      throw new HttpException(
-        {
-          error: 'server_error',
-          error_description: `Failed to initiate ${provider} authentication`,
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw AppErrorCodes.INTERNAL_SERVER_ERROR;
     }
   }
 
@@ -218,12 +172,7 @@ export class AuthController {
       // 入力データのバリデーション
       const validationResult = safeParseLoginInput(loginDto);
       if (!validationResult.success) {
-        const errorDetails = validationResult.error?.issues || [];
-        throw new BadRequestException({
-          error: 'invalid_request',
-          error_description: 'Validation failed',
-          details: errorDetails,
-        });
+        throw AppErrorCodes.VALIDATION_FAILED;
       }
 
       // ログイン処理
@@ -231,18 +180,9 @@ export class AuthController {
 
       if (!result.success) {
         if (result.error === 'invalid_credentials') {
-          throw new UnauthorizedException({
-            error: result.error,
-            error_description: result.errorDescription,
-          });
+          throw AppErrorCodes.INVALID_CREDENTIALS;
         } else {
-          throw new HttpException(
-            {
-              error: result.error,
-              error_description: result.errorDescription,
-            },
-            HttpStatus.INTERNAL_SERVER_ERROR,
-          );
+          throw AppErrorCodes.INTERNAL_SERVER_ERROR;
         }
       }
 
@@ -253,14 +193,7 @@ export class AuthController {
       });
 
       if (!tokenResult.success) {
-        throw new HttpException(
-          {
-            error: tokenResult.error || 'token_generation_failed',
-            error_description:
-              tokenResult.errorDescription || 'Failed to generate JWT token',
-          },
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
+        throw AppErrorCodes.TOKEN_GENERATION_FAILED;
       }
 
       // 成功レスポンス
@@ -273,23 +206,10 @@ export class AuthController {
         expires_at: sessionData.expiresAt,
       });
     } catch (error) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof UnauthorizedException ||
-        error instanceof ConflictException
-      ) {
+      if (error instanceof AppErrorCode) {
         throw error;
       }
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      throw new HttpException(
-        {
-          error: 'server_error',
-          error_description: 'An unexpected error occurred',
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw AppErrorCodes.INTERNAL_SERVER_ERROR;
     }
   }
 
@@ -305,20 +225,14 @@ export class AuthController {
         req.headers['X-Session-ID'] ||
         req.headers['X-Session-Id']) as string;
       if (!sessionId || sessionId.trim() === '') {
-        throw new UnauthorizedException({
-          error: 'missing_session',
-          error_description: 'Session ID is required',
-        });
+        throw AppErrorCodes.MISSING_SESSION;
       }
 
       // セッション検証とユーザー情報取得
       const userProfile = await this.authService.getProfile(sessionId);
 
       if (!userProfile) {
-        throw new UnauthorizedException({
-          error: 'invalid_session',
-          error_description: 'Invalid or expired session',
-        });
+        throw AppErrorCodes.INVALID_SESSION;
       }
 
       // 成功レスポンス
@@ -327,16 +241,10 @@ export class AuthController {
         user: userProfile,
       });
     } catch (error) {
-      if (error instanceof HttpException) {
+      if (error instanceof AppErrorCode) {
         throw error;
       }
-      throw new HttpException(
-        {
-          error: 'server_error',
-          error_description: 'An unexpected error occurred',
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw AppErrorCodes.INTERNAL_SERVER_ERROR;
     }
   }
 
@@ -358,13 +266,7 @@ export class AuthController {
         message: 'Logout successful',
       });
     } catch (error) {
-      throw new HttpException(
-        {
-          error: 'server_error',
-          error_description: 'An unexpected error occurred',
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw AppErrorCodes.INTERNAL_SERVER_ERROR;
     }
   }
 
@@ -380,10 +282,7 @@ export class AuthController {
     try {
       // 入力検証
       if (!authStateDto.provider || !authStateDto.callbackUrl) {
-        throw new BadRequestException({
-          error: 'invalid_request',
-          error_description: 'Provider and callbackUrl are required',
-        });
+        throw AppErrorCodes.INVALID_REQUEST;
       }
 
       // プロバイダーを取得
@@ -398,13 +297,7 @@ export class AuthController {
       );
 
       if (!result.success) {
-        throw new HttpException(
-          {
-            error: result.error,
-            error_description: result.errorDescription,
-          },
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
+        throw AppErrorCodes.INTERNAL_SERVER_ERROR;
       }
 
       res.status(HttpStatus.OK).json({
@@ -413,16 +306,10 @@ export class AuthController {
         redirect_url: result.redirectUrl,
       });
     } catch (error) {
-      if (error instanceof HttpException) {
+      if (error instanceof AppErrorCode) {
         throw error;
       }
-      throw new HttpException(
-        {
-          error: 'server_error',
-          error_description: 'An unexpected error occurred',
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw AppErrorCodes.INTERNAL_SERVER_ERROR;
     }
   }
 
@@ -563,10 +450,7 @@ export class AuthController {
     try {
       // 入力検証
       if (!verifyTokenDto.stateCode || !verifyTokenDto.oneTimeToken) {
-        throw new BadRequestException({
-          error: 'invalid_request',
-          error_description: 'State code and one-time token are required',
-        });
+        throw AppErrorCodes.INVALID_REQUEST;
       }
 
       // トークンを検証してJWTを発行
@@ -574,18 +458,9 @@ export class AuthController {
 
       if (!result.success) {
         if (result.error === 'invalid_token') {
-          throw new UnauthorizedException({
-            error: result.error,
-            error_description: result.errorDescription,
-          });
+          throw AppErrorCodes.INVALID_TOKEN;
         } else {
-          throw new HttpException(
-            {
-              error: result.error,
-              error_description: result.errorDescription,
-            },
-            HttpStatus.INTERNAL_SERVER_ERROR,
-          );
+          throw AppErrorCodes.INTERNAL_SERVER_ERROR;
         }
       }
 
@@ -597,16 +472,10 @@ export class AuthController {
         role: result.user?.role,
       });
     } catch (error) {
-      if (error instanceof HttpException) {
+      if (error instanceof AppErrorCode) {
         throw error;
       }
-      throw new HttpException(
-        {
-          error: 'server_error',
-          error_description: 'An unexpected error occurred',
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw AppErrorCodes.INTERNAL_SERVER_ERROR;
     }
   }
 }
