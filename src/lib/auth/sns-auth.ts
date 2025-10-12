@@ -89,6 +89,21 @@ export async function createAuthenticationState(
     // 有効期限を設定（15分）
     const expiresAt = calculateExpiration(15);
 
+    // PKCE対応（X用）
+    let codeVerifier: string | undefined;
+    let codeChallenge: string | undefined;
+    let codeChallengeMethod: string | undefined;
+
+    if (
+      request.provider === 'x' &&
+      oauthProvider.generateCodeVerifier &&
+      oauthProvider.generateCodeChallenge
+    ) {
+      codeVerifier = oauthProvider.generateCodeVerifier();
+      codeChallenge = oauthProvider.generateCodeChallenge(codeVerifier);
+      codeChallengeMethod = 'S256';
+    }
+
     // データベースに保存（callbackUrlはフロントエンドのコールバックURL）
     await createAuthState({
       stateCode,
@@ -96,6 +111,9 @@ export async function createAuthenticationState(
       provider: request.provider,
       callbackUrl: request.callbackUrl,
       expiresAt,
+      codeVerifier,
+      codeChallenge,
+      codeChallengeMethod,
     });
 
     // 注意: この関数ではリダイレクトURLを返しますが、

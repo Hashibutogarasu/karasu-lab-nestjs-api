@@ -20,7 +20,11 @@ export class GoogleOAuthProvider implements IOAuthProvider {
     return 'google';
   }
 
-  getAuthorizationUrl(redirectUri: string, state: string): string {
+  getAuthorizationUrl(
+    redirectUri: string,
+    state: string,
+    _codeChallenge?: string,
+  ): string {
     const clientId = process.env.GOOGLE_CLIENT_ID;
     if (!clientId) {
       throw new ProviderUnavailableError(
@@ -42,7 +46,11 @@ export class GoogleOAuthProvider implements IOAuthProvider {
     return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
   }
 
-  async processOAuth(code: string, redirectUri: string): Promise<OAuthResult> {
+  async processOAuth(
+    code: string,
+    redirectUri: string,
+    _codeVerifier?: string,
+  ): Promise<OAuthResult> {
     // 1. 認可コードをアクセストークンに交換
     const tokenResponse = await exchangeGoogleCode(code, redirectUri);
 

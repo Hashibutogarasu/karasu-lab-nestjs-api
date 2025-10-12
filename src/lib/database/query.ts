@@ -684,6 +684,9 @@ export async function createAuthState(data: {
   callbackUrl: string;
   expiresAt: Date;
   userId?: string;
+  codeVerifier?: string;
+  codeChallenge?: string;
+  codeChallengeMethod?: string;
 }) {
   return prisma.authState.create({
     data,

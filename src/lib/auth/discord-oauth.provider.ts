@@ -20,7 +20,11 @@ export class DiscordOAuthProvider implements IOAuthProvider {
     return 'discord';
   }
 
-  getAuthorizationUrl(redirectUri: string, state: string): string {
+  getAuthorizationUrl(
+    redirectUri: string,
+    state: string,
+    _codeChallenge?: string,
+  ): string {
     const clientId = process.env.DISCORD_CLIENT_ID;
     if (!clientId) {
       throw new ProviderUnavailableError(
@@ -40,7 +44,11 @@ export class DiscordOAuthProvider implements IOAuthProvider {
     return `https://discord.com/api/oauth2/authorize?${params.toString()}`;
   }
 
-  async processOAuth(code: string, redirectUri: string): Promise<OAuthResult> {
+  async processOAuth(
+    code: string,
+    redirectUri: string,
+    _codeVerifier?: string,
+  ): Promise<OAuthResult> {
     // 1. 認可コードをアクセストークンに交換
     const tokenResponse = await exchangeDiscordCode(code, redirectUri);
 

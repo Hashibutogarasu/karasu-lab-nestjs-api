@@ -308,6 +308,9 @@ describe('AuthController - SNS OAuth Authentication', () => {
         provider: 'google',
         callbackUrl: 'https://frontend.example.com/auth/callback/google', // Different URL to trigger frontend callback
         userId: null, // Initially null, will be updated after profile processing
+        codeVerifier: null,
+        codeChallenge: null,
+        codeChallengeMethod: null,
         expiresAt: new Date(Date.now() + 15 * 60 * 1000),
         used: false,
         createdAt: new Date(),
@@ -342,6 +345,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
       expect(mockGoogleProvider.processOAuth).toHaveBeenCalledWith(
         validCode,
         'http://localhost:3000/auth/callback/google',
+        undefined,
       );
       expect(mockProcessSnsCProfile).toHaveBeenCalledWith(
         mockSnsProfile,
@@ -463,6 +467,9 @@ describe('AuthController - SNS OAuth Authentication', () => {
         provider: 'google',
         callbackUrl: frontendCallbackUrl,
         userId: null,
+        codeVerifier: null,
+        codeChallenge: null,
+        codeChallengeMethod: null,
         expiresAt: new Date(Date.now() + 15 * 60 * 1000),
         used: false,
         createdAt: new Date(),
@@ -489,6 +496,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
       expect(mockGoogleProvider.processOAuth).toHaveBeenCalledWith(
         validCode,
         'http://localhost:3000/auth/callback/google',
+        undefined,
       );
       expect(console.error).toHaveBeenCalledWith(
         'OAuth callback error:',
@@ -515,6 +523,9 @@ describe('AuthController - SNS OAuth Authentication', () => {
         provider: 'google',
         callbackUrl: frontendCallbackUrl,
         userId: null,
+        codeVerifier: null,
+        codeChallenge: null,
+        codeChallengeMethod: null,
         expiresAt: new Date(Date.now() + 15 * 60 * 1000),
         used: false,
         createdAt: new Date(),
@@ -546,6 +557,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
       expect(mockGoogleProvider.processOAuth).toHaveBeenCalledWith(
         validCode,
         'http://localhost:3000/auth/callback/google',
+        undefined,
       );
       expect(mockProcessSnsCProfile).toHaveBeenCalledWith(
         mockSnsProfile,
@@ -729,6 +741,9 @@ describe('AuthController - SNS OAuth Authentication', () => {
         provider: 'google',
         callbackUrl: 'http://localhost:3000/auth/callback/google',
         userId: 'user_123',
+        codeVerifier: null,
+        codeChallenge: null,
+        codeChallengeMethod: null,
         expiresAt: expiredDate,
         used: false,
         createdAt: new Date(),
@@ -762,6 +777,9 @@ describe('AuthController - SNS OAuth Authentication', () => {
         provider: 'google',
         callbackUrl: 'http://localhost:3000/auth/callback/google',
         userId: 'user_123',
+        codeVerifier: null,
+        codeChallenge: null,
+        codeChallengeMethod: null,
         expiresAt: new Date(Date.now() + 15 * 60 * 1000),
         used: true, // Already used
         createdAt: new Date(),
@@ -833,6 +851,9 @@ describe('AuthController - SNS OAuth Authentication', () => {
         provider: 'google',
         callbackUrl: 'http://localhost:3000/auth/callback/google',
         userId: null,
+        codeVerifier: null,
+        codeChallenge: null,
+        codeChallengeMethod: null,
         expiresAt: new Date(Date.now() + 15 * 60 * 1000),
         used: false,
         createdAt: new Date(),
@@ -874,6 +895,9 @@ describe('AuthController - SNS OAuth Authentication', () => {
         provider: 'google',
         callbackUrl: 'http://localhost:3000/auth/callback/google',
         userId: null,
+        codeVerifier: null,
+        codeChallenge: null,
+        codeChallengeMethod: null,
         expiresAt: new Date(Date.now() + 15 * 60 * 1000),
         used: false,
         createdAt: new Date(),
@@ -921,6 +945,9 @@ describe('AuthController - SNS OAuth Authentication', () => {
         provider: 'google',
         callbackUrl: 'http://localhost:3000/auth/callback/google',
         userId: null,
+        codeVerifier: null,
+        codeChallenge: null,
+        codeChallengeMethod: null,
         expiresAt: new Date(Date.now() + 15 * 60 * 1000),
         used: false,
         createdAt: new Date(),
@@ -1127,6 +1154,9 @@ describe('AuthController - SNS OAuth Authentication', () => {
         provider: 'google',
         callbackUrl: 'http://localhost:3000/auth/callback/google',
         userId: null,
+        codeVerifier: null,
+        codeChallenge: null,
+        codeChallengeMethod: null,
         expiresAt: new Date(Date.now() + 15 * 60 * 1000),
         used: false,
         createdAt: new Date(),

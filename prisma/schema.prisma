@@ -147,15 +147,18 @@ model ExtraProfile {
 
 // SNS認証用のステート管理
 model AuthState {
-  id           String   @id @default(cuid())
-  stateCode    String   @unique @map("state_code")
-  oneTimeToken String   @unique @map("one_time_token")
-  provider     String
-  callbackUrl  String   @map("callback_url")
-  userId       String?  @map("user_id") // 認証完了後にユーザーIDを保存
-  expiresAt    DateTime @map("expires_at")
-  used         Boolean  @default(false)
-  createdAt    DateTime @default(now()) @map("created_at")
+  id                  String   @id @default(cuid())
+  stateCode           String   @unique @map("state_code")
+  oneTimeToken        String   @unique @map("one_time_token")
+  provider            String
+  callbackUrl         String   @map("callback_url")
+  userId              String?  @map("user_id") // 認証完了後にユーザーIDを保存
+  codeVerifier        String?  @map("code_verifier") // PKCE code_verifier
+  codeChallenge       String?  @map("code_challenge") // PKCE code_challenge
+  codeChallengeMethod String?  @map("code_challenge_method") // PKCE method (S256 or plain)
+  expiresAt           DateTime @map("expires_at")
+  used                Boolean  @default(false)
+  createdAt           DateTime @default(now()) @map("created_at")
 
   // Relations
   user User? @relation(fields: [userId], references: [id], onDelete: Cascade)

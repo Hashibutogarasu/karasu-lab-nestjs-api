@@ -29,6 +29,7 @@ import {
 } from '../lib/auth/sns-auth';
 import type { AuthStateDto, VerifyTokenDto } from './dto/auth.dto';
 import { generateJWTToken } from '../lib/auth/jwt-token';
+import { findAuthState } from '../lib/database/query';
 import { AuthState } from '@prisma/client';
 import { ExternalProviderAccessTokenService } from '../encryption/external-provider-access-token/external-provider-access-token.service';
 import { OAuthProviderFactory } from '../lib/auth/oauth-provider.factory';
@@ -39,9 +40,7 @@ import {
 
 @Controller('auth')
 export class AuthController {
-  private readonly DEFAULT_CALLBACK_URL =
-    process.env.FRONTEND_CALLBACK_URL ||
-    'http://localhost:3000/api/auth/signin';
+  private readonly DEFAULT_CALLBACK_URL = process.env.FRONTEND_CALLBACK_URL!;
 
   constructor(
     private readonly authService: AuthService,
@@ -163,10 +162,15 @@ export class AuthController {
         );
       }
 
-      // プロバイダーの認証URLを生成（バックエンドのコールバックURIを使用）
+      // AuthStateからcode_challengeを取得(X用)
+      const authState = await findAuthState(result.stateCode!);
+      const codeChallenge = authState?.codeChallenge || undefined;
+
+      // プロバイダーの認証URLを生成(バックエンドのコールバックURIを使用)
       const authUrl = oauthProvider.getAuthorizationUrl(
         backendRedirectUri,
         result.stateCode!,
+        codeChallenge,
       );
 
       // 認証URLにリダイレクト
@@ -489,10 +493,14 @@ export class AuthController {
       const baseUrl = process.env.BASE_URL!;
       const redirectUri = `${baseUrl}/auth/callback/${provider}`;
 
+      // code_verifierを取得（X用）
+      const codeVerifier = authState.codeVerifier || undefined;
+
       // プロバイダー経由でOAuth処理を実行 (1行で処理)
       const { snsProfile, accessToken } = await oauthProvider.processOAuth(
         code,
         redirectUri,
+        codeVerifier,
       );
 
       // プロファイル処理

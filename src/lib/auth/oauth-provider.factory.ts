@@ -10,7 +10,7 @@ import {
 } from './oauth-provider.interface';
 import { GoogleOAuthProvider } from './google-oauth.provider';
 import { DiscordOAuthProvider } from './discord-oauth.provider';
-
+import { XOAuthProvider } from './x-oauth.provider';
 @Injectable()
 export class OAuthProviderFactory {
   private providers: Map<string, IOAuthProvider>;
@@ -18,10 +18,12 @@ export class OAuthProviderFactory {
   constructor(
     private readonly googleProvider: GoogleOAuthProvider,
     private readonly discordProvider: DiscordOAuthProvider,
+    private readonly xOAuthProvider: XOAuthProvider,
   ) {
     this.providers = new Map([
       ['google', this.googleProvider],
       ['discord', this.discordProvider],
+      ['x', this.xOAuthProvider],
     ]);
   }
 
