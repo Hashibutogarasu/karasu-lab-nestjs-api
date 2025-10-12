@@ -43,14 +43,17 @@ export async function exchangeXCode(
     code,
     redirect_uri: redirectUri,
     client_id: clientId,
-    client_secret: clientSecret,
     code_verifier: codeVerifier,
   });
+
+  // X requires client authentication via Basic Authorization header.
+  const basicAuth = `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`;
 
   const response = await fetch(tokenEndpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
+      Authorization: basicAuth,
     },
     body: body.toString(),
   });
