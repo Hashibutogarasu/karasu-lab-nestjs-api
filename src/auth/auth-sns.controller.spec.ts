@@ -162,7 +162,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
   describe('SNS Authentication State Management - POST /auth/state', () => {
     const validAuthStateDto = {
       provider: 'google',
-      callbackUrl: 'http://localhost:3000/auth/callback',
+      callbackUrl: 'http://localhost:3000/auth/callback/google',
     };
 
     it('should create authentication state successfully for Google', async () => {
@@ -226,7 +226,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
     it('should handle unsupported provider', async () => {
       const unsupportedDto = {
         provider: 'facebook', // Unsupported provider
-        callbackUrl: 'http://localhost:3000/auth/callback',
+        callbackUrl: 'http://localhost:3000/auth/callback/facebook',
       };
 
       const errorResult = {
@@ -243,7 +243,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
     });
   });
 
-  describe('SNS OAuth Callback Processing - GET /auth/callback', () => {
+  describe('SNS OAuth Callback Processing - GET /auth/callback/google', () => {
     const validCode = 'google_auth_code_123';
     const validState = 'state_abc123';
     const mockSnsProfile = {
@@ -295,7 +295,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
         stateCode: validState,
         oneTimeToken: 'one_time_token_123',
         provider: 'google',
-        callbackUrl: 'https://frontend.example.com/auth/callback', // Different URL to trigger frontend callback
+        callbackUrl: 'https://frontend.example.com/auth/callback/google', // Different URL to trigger frontend callback
         userId: null, // Initially null, will be updated after profile processing
         expiresAt: new Date(Date.now() + 15 * 60 * 1000),
         used: false,
@@ -334,7 +334,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
         validState,
       );
       expect(mockRedirectFn).toHaveBeenCalledWith(
-        'https://frontend.example.com/auth/callback?token=one_time_token_123&state=state_abc123&success=true',
+        'https://frontend.example.com/auth/callback/google?token=one_time_token_123&state=state_abc123&success=true',
       );
     });
 
@@ -367,7 +367,8 @@ describe('AuthController - SNS OAuth Authentication', () => {
     });
 
     it('should handle missing authorization code', async () => {
-      const frontendCallbackUrl = 'https://frontend.example.com/auth/callback';
+      const frontendCallbackUrl =
+        'https://frontend.example.com/auth/callback/google';
 
       // Mock auth state for callback URL
       mockAuthService.getAuthState.mockResolvedValue({
@@ -391,7 +392,8 @@ describe('AuthController - SNS OAuth Authentication', () => {
     });
 
     it('should handle missing state parameter (CSRF attack protection)', async () => {
-      const frontendCallbackUrl = 'https://frontend.example.com/auth/callback';
+      const frontendCallbackUrl =
+        'https://frontend.example.com/auth/callback/google';
 
       await controller.handleProviderCallback(
         'google', // provider
@@ -410,7 +412,8 @@ describe('AuthController - SNS OAuth Authentication', () => {
     });
 
     it('should handle invalid state code', async () => {
-      const frontendCallbackUrl = 'https://frontend.example.com/auth/callback';
+      const frontendCallbackUrl =
+        'https://frontend.example.com/auth/callback/google';
 
       // Mock auth state not found
       mockAuthService.getAuthState.mockResolvedValue(null);
@@ -435,7 +438,8 @@ describe('AuthController - SNS OAuth Authentication', () => {
     });
 
     it('should handle Google OAuth API failure', async () => {
-      const frontendCallbackUrl = 'https://frontend.example.com/auth/callback';
+      const frontendCallbackUrl =
+        'https://frontend.example.com/auth/callback/google';
 
       // Mock auth state for frontend callback
       const mockAuthState = {
@@ -483,7 +487,8 @@ describe('AuthController - SNS OAuth Authentication', () => {
     });
 
     it('should handle profile processing failure', async () => {
-      const frontendCallbackUrl = 'https://frontend.example.com/auth/callback';
+      const frontendCallbackUrl =
+        'https://frontend.example.com/auth/callback/google';
 
       // Mock auth state for frontend callback
       const mockAuthState = {
@@ -702,7 +707,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
         stateCode: 'expired_state_123',
         oneTimeToken: 'one_time_token_123',
         provider: 'google',
-        callbackUrl: 'http://localhost:3000/auth/callback',
+        callbackUrl: 'http://localhost:3000/auth/callback/google',
         userId: 'user_123',
         expiresAt: expiredDate,
         used: false,
@@ -735,7 +740,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
         stateCode: 'used_state_123',
         oneTimeToken: 'one_time_token_123',
         provider: 'google',
-        callbackUrl: 'http://localhost:3000/auth/callback',
+        callbackUrl: 'http://localhost:3000/auth/callback/google',
         userId: 'user_123',
         expiresAt: new Date(Date.now() + 15 * 60 * 1000),
         used: true, // Already used
@@ -806,7 +811,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
         stateCode: 'state_abc123',
         oneTimeToken: 'one_time_token_123',
         provider: 'google',
-        callbackUrl: 'http://localhost:3000/auth/callback',
+        callbackUrl: 'http://localhost:3000/auth/callback/google',
         userId: null,
         expiresAt: new Date(Date.now() + 15 * 60 * 1000),
         used: false,
@@ -847,7 +852,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
         stateCode: 'state_abc123',
         oneTimeToken: 'one_time_token_123',
         provider: 'google',
-        callbackUrl: 'http://localhost:3000/auth/callback',
+        callbackUrl: 'http://localhost:3000/auth/callback/google',
         userId: null,
         expiresAt: new Date(Date.now() + 15 * 60 * 1000),
         used: false,
@@ -894,7 +899,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
         stateCode: 'state_abc123',
         oneTimeToken: 'one_time_token_123',
         provider: 'google',
-        callbackUrl: 'http://localhost:3000/auth/callback',
+        callbackUrl: 'http://localhost:3000/auth/callback/google',
         userId: null,
         expiresAt: new Date(Date.now() + 15 * 60 * 1000),
         used: false,
@@ -954,7 +959,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
 
       const authStateDto = {
         provider: 'google',
-        callbackUrl: 'http://localhost:3000/auth/callback',
+        callbackUrl: 'http://localhost:3000/auth/callback/google',
       };
 
       const errorResult = {
@@ -1096,7 +1101,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
         stateCode: 'state_abc123',
         oneTimeToken: 'one_time_token_123',
         provider: 'google',
-        callbackUrl: 'http://localhost:3000/auth/callback',
+        callbackUrl: 'http://localhost:3000/auth/callback/google',
         userId: null,
         expiresAt: new Date(Date.now() + 15 * 60 * 1000),
         used: false,
