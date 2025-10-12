@@ -141,10 +141,13 @@ export class AuthController {
       const finalCallbackUrl = callbackUrl || this.DEFAULT_CALLBACK_URL;
 
       // 認証ステートを作成
-      const result = await createAuthenticationState({
-        provider,
-        callbackUrl: finalCallbackUrl,
-      });
+      const result = await createAuthenticationState(
+        {
+          provider,
+          callbackUrl: finalCallbackUrl,
+        },
+        oauthProvider,
+      );
 
       if (!result.success) {
         throw new HttpException(
@@ -379,8 +382,16 @@ export class AuthController {
         });
       }
 
+      // プロバイダーを取得
+      const oauthProvider = this.oauthProviderFactory.getProvider(
+        authStateDto.provider,
+      );
+
       // 認証ステートを作成
-      const result = await createAuthenticationState(authStateDto);
+      const result = await createAuthenticationState(
+        authStateDto,
+        oauthProvider,
+      );
 
       if (!result.success) {
         throw new HttpException(

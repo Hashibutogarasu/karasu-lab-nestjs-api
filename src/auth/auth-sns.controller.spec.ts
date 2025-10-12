@@ -188,6 +188,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
 
       expect(mockCreateAuthenticationState).toHaveBeenCalledWith(
         validAuthStateDto,
+        mockGoogleProvider,
       );
       expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
       expect(mockJsonFn).toHaveBeenCalledWith({
@@ -1021,7 +1022,10 @@ describe('AuthController - SNS OAuth Authentication', () => {
 
       await controller.createAuthState(authStateDto, mockResponse);
 
-      expect(mockCreateAuthenticationState).toHaveBeenCalledWith(authStateDto);
+      expect(mockCreateAuthenticationState).toHaveBeenCalledWith(
+        authStateDto,
+        mockGoogleProvider,
+      );
 
       // Restore environment
       process.env = originalEnv;
@@ -1172,7 +1176,10 @@ describe('AuthController - SNS OAuth Authentication', () => {
       await controller.verifyToken(verifyDto, mockResponse);
 
       // Verify all steps were called correctly
-      expect(mockCreateAuthenticationState).toHaveBeenCalledWith(authStateDto);
+      expect(mockCreateAuthenticationState).toHaveBeenCalledWith(
+        authStateDto,
+        mockGoogleProvider,
+      );
       expect(mockGoogleProvider.processOAuth).toHaveBeenCalled();
       expect(mockProcessSnsCProfile).toHaveBeenCalledWith(
         snsProfile,

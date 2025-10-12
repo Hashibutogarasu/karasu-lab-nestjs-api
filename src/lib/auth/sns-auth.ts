@@ -20,6 +20,7 @@ import {
 } from '../database/query';
 import { generateJWTToken } from './jwt-token';
 import * as bcrypt from 'bcrypt';
+import { IOAuthProvider } from './oauth-provider.interface';
 
 export interface SnsProfile {
   providerId: string;
@@ -72,6 +73,7 @@ export interface VerifyTokenResponse {
  */
 export async function createAuthenticationState(
   request: AuthStateRequest,
+  oauthProvider: IOAuthProvider,
 ): Promise<AuthStateResponse> {
   try {
     // ランダムなステートコードとワンタイムトークンを生成
@@ -96,7 +98,10 @@ export async function createAuthenticationState(
     return {
       success: true,
       stateCode,
-      redirectUrl: generateProviderRedirectUrl(request.provider, stateCode),
+      redirectUrl: oauthProvider.getAuthorizationUrl(
+        request.callbackUrl,
+        stateCode,
+      ),
     };
   } catch (error) {
     console.error(error);
@@ -105,54 +110,6 @@ export async function createAuthenticationState(
       error: 'server_error',
       errorDescription: 'Failed to create authentication state',
     };
-  }
-}
-
-/**
- * プロバイダー別のリダイレクトURL生成
- */
-function generateProviderRedirectUrl(
-  provider: string,
-  stateCode: string,
-): string {
-  const baseUrl = process.env.BASE_URL!;
-  // APIのコールバックエンドポイントを使用
-  const apiCallbackUrl = `${baseUrl}/auth/callback`;
-
-  switch (provider) {
-    case 'google': {
-      const googleClientId = process.env.GOOGLE_CLIENT_ID;
-      const scopes = 'openid profile email';
-      return (
-        `https://accounts.google.com/o/oauth2/v2/auth?` +
-        `response_type=code&` +
-        `client_id=${googleClientId}&` +
-        `redirect_uri=${encodeURIComponent(apiCallbackUrl)}&` +
-        `scope=${encodeURIComponent(scopes)}&` +
-        `state=${stateCode}`
-      );
-    }
-
-    case 'discord': {
-      const discordClientId = process.env.DISCORD_CLIENT_ID;
-      const scopes = 'identify email'; // デフォルトスコープ
-      return (
-        `https://discord.com/oauth2/authorize?` +
-        `response_type=code&` +
-        `client_id=${discordClientId}&` +
-        `redirect_uri=${encodeURIComponent(apiCallbackUrl)}&` +
-        `scope=${encodeURIComponent(scopes)}&` +
-        `state=${stateCode}`
-      );
-    }
-
-    // 将来的に他のプロバイダーを追加可能
-    case 'x':
-      // Twitter/X OAuth implementation would go here
-      throw new Error('X OAuth not implemented yet');
-
-    default:
-      throw new Error(`Unsupported provider: ${provider}`);
   }
 }
 
