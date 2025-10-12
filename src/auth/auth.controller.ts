@@ -140,7 +140,11 @@ export class AuthController {
       // コールバックURLが指定されていない場合はデフォルトを使用
       const finalCallbackUrl = callbackUrl || this.DEFAULT_CALLBACK_URL;
 
-      // 認証ステートを作成
+      // APIのベースURLを取得してバックエンドのコールバックURIを構築
+      const baseUrl = process.env.BASE_URL!;
+      const backendRedirectUri = `${baseUrl}/auth/callback/${provider}`;
+
+      // 認証ステートを作成（フロントエンドのコールバックURLを保存）
       const result = await createAuthenticationState(
         {
           provider,
@@ -159,13 +163,9 @@ export class AuthController {
         );
       }
 
-      // APIのベースURLを取得してリダイレクトURIを構築
-      const baseUrl = process.env.BASE_URL!;
-      const redirectUri = `${baseUrl}/auth/callback/${provider}`;
-
-      // プロバイダーの認証URLを生成
+      // プロバイダーの認証URLを生成（バックエンドのコールバックURIを使用）
       const authUrl = oauthProvider.getAuthorizationUrl(
-        redirectUri,
+        backendRedirectUri,
         result.stateCode!,
       );
 

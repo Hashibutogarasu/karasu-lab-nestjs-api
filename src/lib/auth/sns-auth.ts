@@ -70,6 +70,9 @@ export interface VerifyTokenResponse {
 
 /**
  * 認証ステートを作成し、リダイレクトURLを生成
+ * @param request.callbackUrl フロントエンドのコールバックURL（認証完了後の最終リダイレクト先）
+ * @param oauthProvider OAuthプロバイダー
+ * @returns 認証ステートとリダイレクトURL（この関数ではリダイレクトURLは返すが、実際の使用はコントローラー側で行う）
  */
 export async function createAuthenticationState(
   request: AuthStateRequest,
@@ -86,7 +89,7 @@ export async function createAuthenticationState(
     // 有効期限を設定（15分）
     const expiresAt = calculateExpiration(15);
 
-    // データベースに保存
+    // データベースに保存（callbackUrlはフロントエンドのコールバックURL）
     await createAuthState({
       stateCode,
       oneTimeToken,
@@ -95,13 +98,13 @@ export async function createAuthenticationState(
       expiresAt,
     });
 
+    // 注意: この関数ではリダイレクトURLを返しますが、
+    // 実際の外部プロバイダーへのリダイレクトURLはコントローラー側で
+    // バックエンドのコールバックURIを使って生成されます
     return {
       success: true,
       stateCode,
-      redirectUrl: oauthProvider.getAuthorizationUrl(
-        request.callbackUrl,
-        stateCode,
-      ),
+      redirectUrl: '', // コントローラー側で再生成されるため空文字列
     };
   } catch (error) {
     console.error(error);

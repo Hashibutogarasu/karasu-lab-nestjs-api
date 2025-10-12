@@ -179,7 +179,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
       const expectedResult = {
         success: true,
         stateCode: 'state_abc123',
-        redirectUrl: 'https://accounts.google.com/o/oauth2/v2/auth?...',
+        redirectUrl: '', // コントローラー側で再生成されるため空文字列
       };
 
       mockCreateAuthenticationState.mockResolvedValue(expectedResult);
