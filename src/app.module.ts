@@ -39,5 +39,6 @@ import { DiscordTokenModule } from './tokens/discord-token/discord-token.module'
   ],
   controllers: [AppController],
   providers: [AppService, ResendService],
+  exports: [AppService],
 })
 export class AppModule {}

@@ -7,6 +7,9 @@ import { JwtStrategy } from './jwt.strategy';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { ExternalProviderAccessTokenService } from '../encryption/external-provider-access-token/external-provider-access-token.service';
 import { EncryptionModule } from '../encryption/encryption.module';
+import { GoogleOAuthProvider } from '../lib/auth/google-oauth.provider';
+import { DiscordOAuthProvider } from '../lib/auth/discord-oauth.provider';
+import { OAuthProviderFactory } from '../lib/auth/oauth-provider.factory';
 
 @Module({
   imports: [
@@ -26,7 +29,10 @@ import { EncryptionModule } from '../encryption/encryption.module';
     JwtStrategy,
     JwtAuthGuard,
     ExternalProviderAccessTokenService,
+    GoogleOAuthProvider,
+    DiscordOAuthProvider,
+    OAuthProviderFactory,
   ],
-  exports: [AuthService, JwtModule, JwtAuthGuard],
+  exports: [AuthService, JwtModule, JwtAuthGuard, OAuthProviderFactory],
 })
 export class AuthModule {}

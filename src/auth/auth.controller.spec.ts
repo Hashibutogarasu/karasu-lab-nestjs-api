@@ -11,6 +11,9 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { RegisterDto, LoginDto } from './dto/create-auth.dto';
 import { ExternalProviderAccessTokenService } from '../encryption/external-provider-access-token/external-provider-access-token.service';
+import { OAuthProviderFactory } from '../lib/auth/oauth-provider.factory';
+import { GoogleOAuthProvider } from '../lib/auth/google-oauth.provider';
+import { DiscordOAuthProvider } from '../lib/auth/discord-oauth.provider';
 
 // Mock the JWT token generation function
 jest.mock('../lib/auth/jwt-token', () => ({
@@ -77,6 +80,35 @@ describe('AuthController', () => {
     delete: jest.fn(),
   };
 
+  const mockGoogleProvider = {
+    getProvider: jest.fn().mockReturnValue('google'),
+    getAuthorizationUrl: jest.fn(),
+    processOAuth: jest.fn(),
+    isAvailable: jest.fn().mockReturnValue(true),
+  };
+
+  const mockDiscordProvider = {
+    getProvider: jest.fn().mockReturnValue('discord'),
+    getAuthorizationUrl: jest.fn(),
+    processOAuth: jest.fn(),
+    isAvailable: jest.fn().mockReturnValue(true),
+  };
+
+  const mockOAuthProviderFactory = {
+    getProvider: jest.fn((provider: string) => {
+      if (provider === 'google') return mockGoogleProvider;
+      if (provider === 'discord') return mockDiscordProvider;
+      throw new Error(`Provider ${provider} not found`);
+    }),
+    getAllProviders: jest
+      .fn()
+      .mockReturnValue([mockGoogleProvider, mockDiscordProvider]),
+    getAvailableProviderNames: jest.fn().mockReturnValue(['google', 'discord']),
+    getConfiguredProviders: jest
+      .fn()
+      .mockReturnValue([mockGoogleProvider, mockDiscordProvider]),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
@@ -88,6 +120,10 @@ describe('AuthController', () => {
         {
           provide: ExternalProviderAccessTokenService,
           useValue: mockExternalProviderAccessTokenService,
+        },
+        {
+          provide: OAuthProviderFactory,
+          useValue: mockOAuthProviderFactory,
         },
       ],
     }).compile();
