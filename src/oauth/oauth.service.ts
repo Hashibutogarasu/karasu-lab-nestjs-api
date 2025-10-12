@@ -323,10 +323,7 @@ export class OauthService {
    * ログインリダイレクトURIを構築
    */
   private buildLoginRedirectUri(request: AuthorizeRequest): string {
-    const loginUrl = new URL(
-      '/auth/login',
-      process.env.BASE_URL || 'http://localhost:3000',
-    );
+    const loginUrl = new URL('/auth/login', process.env.BASE_URL);
 
     // 認証後に元のOAuth認可フローに戻るためのパラメータを保存
     loginUrl.searchParams.set('return_to', '/oauth/authorize');

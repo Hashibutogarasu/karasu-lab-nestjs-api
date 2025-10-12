@@ -115,7 +115,7 @@ function generateProviderRedirectUrl(
   provider: string,
   stateCode: string,
 ): string {
-  const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+  const baseUrl = process.env.BASE_URL!;
   // APIのコールバックエンドポイントを使用
   const apiCallbackUrl = `${baseUrl}/auth/callback`;
 

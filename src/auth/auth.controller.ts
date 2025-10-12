@@ -157,7 +157,7 @@ export class AuthController {
       }
 
       // APIのベースURLを取得してリダイレクトURIを構築
-      const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+      const baseUrl = process.env.BASE_URL!;
       const redirectUri = `${baseUrl}/auth/callback/${provider}`;
 
       // プロバイダーの認証URLを生成
@@ -475,7 +475,7 @@ export class AuthController {
       const oauthProvider = this.oauthProviderFactory.getProvider(provider);
 
       // APIのベースURLを取得してリダイレクトURIを構築
-      const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+      const baseUrl = process.env.BASE_URL!;
       const redirectUri = `${baseUrl}/auth/callback/${provider}`;
 
       // プロバイダー経由でOAuth処理を実行 (1行で処理)

@@ -8,7 +8,6 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { RegisterDto, LoginDto } from './dto/create-auth.dto';
 import * as snsAuth from '../lib/auth/sns-auth';
 import * as query from '../lib/database/query';
 import { ExternalProviderAccessTokenService } from '../encryption/external-provider-access-token/external-provider-access-token.service';
@@ -22,6 +21,7 @@ import { OAuthProviderFactory } from '../lib/auth/oauth-provider.factory';
 describe('AuthController - SNS OAuth Authentication', () => {
   let controller: AuthController;
   let service: AuthService;
+  let _savedBaseUrl: string | undefined;
 
   // Mock Response object
   const mockStatusFn = jest.fn();
@@ -123,6 +123,11 @@ describe('AuthController - SNS OAuth Authentication', () => {
   >;
 
   beforeEach(async () => {
+    // Ensure BASE_URL is defined before creating the testing module so controller
+    // and providers that read it during initialization get a defined value.
+    _savedBaseUrl = process.env.BASE_URL;
+    process.env.BASE_URL = process.env.BASE_URL ?? 'http://localhost:3000';
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
       providers: [
@@ -157,6 +162,11 @@ describe('AuthController - SNS OAuth Authentication', () => {
 
     // Mock console.error to prevent test output pollution
     jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    // restore original BASE_URL
+    process.env.BASE_URL = _savedBaseUrl;
   });
 
   describe('SNS Authentication State Management - POST /auth/state', () => {
@@ -315,6 +325,9 @@ describe('AuthController - SNS OAuth Authentication', () => {
         oneTimeToken: 'one_time_token_123',
       });
 
+      // Ensure BASE_URL is defined for this invocation
+      process.env.BASE_URL = 'http://localhost:3000';
+
       await controller.handleProviderCallback(
         'google', // provider
         validCode,
@@ -459,6 +472,9 @@ describe('AuthController - SNS OAuth Authentication', () => {
         new Error('Google token exchange failed'),
       );
 
+      // Ensure BASE_URL is defined for this invocation
+      process.env.BASE_URL = 'http://localhost:3000';
+
       await controller.handleProviderCallback(
         'google', // provider
         validCode,
@@ -512,6 +528,9 @@ describe('AuthController - SNS OAuth Authentication', () => {
         success: false,
         error: 'server_error',
       });
+
+      // Ensure BASE_URL is defined for this invocation
+      process.env.BASE_URL = 'http://localhost:3000';
 
       await controller.handleProviderCallback(
         'google', // provider
@@ -953,6 +972,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
       const originalEnv = process.env;
       process.env = {
         ...originalEnv,
+        BASE_URL: 'http://localhost:3000',
         GOOGLE_CLIENT_ID: undefined,
         GOOGLE_CLIENT_SECRET: undefined,
       };
