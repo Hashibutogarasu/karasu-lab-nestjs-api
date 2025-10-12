@@ -13,6 +13,7 @@ import {
   deleteClient,
   generateRandomString,
 } from '../lib/database/query';
+import { AppErrorCodes } from '../types/error-codes';
 
 @Injectable()
 export class DeveloperService {
@@ -63,7 +64,7 @@ export class DeveloperService {
         'code' in error &&
         error.code === 'P2002'
       ) {
-        throw new ConflictException('Client ID already exists');
+        throw AppErrorCodes.CLIENT_ID_ALREADY_EXISTS;
       }
       throw error;
     }
@@ -82,7 +83,7 @@ export class DeveloperService {
   async findOne(clientId: string) {
     const client = await findClientById(clientId);
     if (!client) {
-      throw new NotFoundException('Client not found');
+      throw AppErrorCodes.CLIENT_NOT_FOUND;
     }
     return client;
   }
@@ -93,7 +94,7 @@ export class DeveloperService {
   async update(clientId: string, updateDeveloperDto: UpdateDeveloperDto) {
     const existingClient = await findClientById(clientId);
     if (!existingClient) {
-      throw new NotFoundException('Client not found');
+      throw AppErrorCodes.CLIENT_NOT_FOUND;
     }
 
     const updateData: Parameters<typeof updateClient>[1] = {};
@@ -120,7 +121,7 @@ export class DeveloperService {
   async remove(clientId: string) {
     const existingClient = await findClientById(clientId);
     if (!existingClient) {
-      throw new NotFoundException('Client not found');
+      throw AppErrorCodes.CLIENT_NOT_FOUND;
     }
 
     return await deleteClient(clientId);

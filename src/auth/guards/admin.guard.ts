@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { findUserById } from '../../lib';
+import { AppErrorCodes } from '../../types/error-codes';
 
 /**
  * 管理者権限を持つユーザーのみ通過させるガード
@@ -30,11 +31,11 @@ export class AdminGuard implements CanActivate {
     const dbUser = await findUserById(user.id);
 
     if (!dbUser) {
-      throw new ForbiddenException('User not found');
+      throw AppErrorCodes.USER_NOT_FOUND;
     }
 
     if (dbUser?.role !== 'admin') {
-      throw new ForbiddenException('Admin access required');
+      throw AppErrorCodes.FORBIDDEN;
     }
 
     return true;

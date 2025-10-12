@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { ChatMessageRequestDto, DifyStreamResponse } from './dify/dify.dto';
 import { Readable } from 'stream';
+import { AppErrorCodes } from '../types/error-codes';
 
 @Injectable()
 export class DifyService {
@@ -13,7 +14,7 @@ export class DifyService {
 
   constructor() {
     if (!this.apiKey) {
-      throw new Error('DIFY_API_KEY environment variable is required');
+      throw AppErrorCodes.INVALID_DIFY_API_KEY;
     }
     console.log('DifyService initialized with base URL:', this.baseUrl);
   }
@@ -70,15 +71,13 @@ export class DifyService {
           headers: Object.fromEntries(response.headers.entries()),
         });
 
-        throw new BadRequestException(
+        throw AppErrorCodes.DIFY_API_ERROR.setCustomMesage(
           `Dify API error (${response.status}): ${errorData.message || errorData.code || response.statusText}`,
         );
       }
 
       if (!response.body) {
-        throw new InternalServerErrorException(
-          'No response body received from Dify API',
-        );
+        throw AppErrorCodes.NO_RESNPONSE_BODY;
       }
 
       // ReadableStreamを手動でNode.js Readableに変換
@@ -114,8 +113,7 @@ export class DifyService {
       ) {
         throw error;
       }
-      console.error('Dify service error:', error);
-      throw new InternalServerErrorException(
+      throw AppErrorCodes.CONNECTION_ERROR.setCustomMesage(
         `Failed to connect to Dify API: ${error.message}`,
       );
     }

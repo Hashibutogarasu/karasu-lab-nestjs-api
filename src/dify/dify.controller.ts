@@ -11,6 +11,7 @@ import type { Response } from 'express';
 import { DifyService } from './dify.service';
 import { ChatMessageRequestDto } from './dify/dify.dto';
 import { DomainProtected } from '../lib/domain';
+import { AppErrorCodes } from '../types/error-codes';
 
 @Controller('dify')
 export class DifyController {
@@ -27,7 +28,7 @@ export class DifyController {
       // JWTトークンからユーザーIDを取得してuserフィールドに設定
       const userId = req.user?.sub || req.user?.id;
       if (!userId) {
-        throw new HttpException('User ID not found', HttpStatus.UNAUTHORIZED);
+        throw AppErrorCodes.USER_NOT_FOUND;
       }
 
       // リクエストにユーザーIDを設定

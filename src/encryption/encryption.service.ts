@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import * as crypto from 'crypto';
+import { AppErrorCodes } from '../types/error-codes';
 
 export type KeyPair = {
   publicKey: string;
@@ -19,7 +20,7 @@ export class EncryptionService {
     // Validate keys are present and are valid PEMs by attempting to import
     try {
       if (!this.publicKey || !this.privateKey) {
-        throw new Error('Missing RSA keys');
+        throw AppErrorCodes.MISSING_RSA;
       }
 
       // Quick validation: create KeyObject
@@ -27,8 +28,15 @@ export class EncryptionService {
       crypto.createPrivateKey(this.privateKey);
     } catch (err) {
       // Throw a clearer error for invalid configuration
-      throw new Error(
-        `Invalid RSA key configuration: ${String((err as Error).message)}`,
+      // If the caught error is our MISSING_RSA sentinel, rethrow it
+      if (err === AppErrorCodes.MISSING_RSA) {
+        throw err;
+      }
+
+      // Otherwise wrap as INVALID_RSA_KEY with additional message
+      const message = String((err as Error).message || err);
+      throw AppErrorCodes.INVALID_RSA_KEY.setCustomMesage(
+        `Invalid RSA key configuration: ${message}`,
       );
     }
   }
@@ -36,7 +44,7 @@ export class EncryptionService {
   // Encrypt a utf8 string using AES-256-GCM with RSA-encrypted key and return base64 encoded result
   encrypt(plain: string | null): string {
     if (plain === null || plain === undefined) {
-      throw new BadRequestException('plain text must be provided');
+      throw AppErrorCodes.MISSING_PLAIN_TEXT;
     }
 
     // Generate random AES key and IV
@@ -76,18 +84,26 @@ export class EncryptionService {
       encrypted,
     ]);
 
-    return result.toString('base64');
-  } // Decrypt a base64 encoded ciphertext (AES-256-GCM with RSA-encrypted key) and return utf8 string
+    try {
+      return result.toString('base64');
+    } catch (err) {
+      throw AppErrorCodes.ENCRYPTION_FAILED.setCustomMesage(
+        String((err as Error).message || err),
+      );
+    }
+  }
+
+  // Decrypt a base64 encoded ciphertext (AES-256-GCM with RSA-encrypted key) and return utf8 string
   decrypt(cipherBase64: string | null): string {
     if (cipherBase64 === null || cipherBase64 === undefined) {
-      throw new BadRequestException('cipher text must be provided');
+      throw AppErrorCodes.MISSING_CIPHER_TEXT;
     }
 
     let buffer: Buffer;
     try {
       buffer = Buffer.from(cipherBase64, 'base64');
     } catch (err) {
-      throw new BadRequestException('invalid base64 input');
+      throw AppErrorCodes.INVALID_BASE64_INPUT;
     }
 
     try {
@@ -95,13 +111,13 @@ export class EncryptionService {
       // Format: [keyLength(2 bytes)][encryptedAesKey][iv(16 bytes)][authTag(16 bytes)][encryptedData]
 
       if (buffer.length < 2 + 16 + 16) {
-        throw new BadRequestException('invalid encrypted data format');
+        throw AppErrorCodes.INVALID_BASE64_INPUT;
       }
 
       const keyLength = buffer.readUInt16BE(0);
 
       if (buffer.length < 2 + keyLength + 16 + 16) {
-        throw new BadRequestException('invalid encrypted data format');
+        throw AppErrorCodes.INVALID_BASE64_INPUT;
       }
 
       const encryptedAesKey = buffer.subarray(2, 2 + keyLength);
@@ -131,8 +147,10 @@ export class EncryptionService {
 
       return decrypted.toString('utf8');
     } catch (err) {
-      // Expose a generic error for decryption failures
-      throw new BadRequestException('decryption failed');
+      // Expose a categorized decryption error with message
+      throw AppErrorCodes.DECRYPTION_FAILED.setCustomMesage(
+        String((err as Error).message || err),
+      );
     }
   }
 }

@@ -1,4 +1,5 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
+import { AppErrorCodes } from '../../types/error-codes';
 import { EncryptionService } from '../encryption.service';
 import {
   ExternalProviderAccessTokenCreateDto,
@@ -24,7 +25,7 @@ export class ExternalProviderAccessTokenService {
    */
   async save(data: { userId: string; token: string; provider: string }) {
     if (!data || !data.userId || !data.token || !data.provider) {
-      throw new BadRequestException('userId, token and provider are required');
+      throw AppErrorCodes.EXTERNAL_PROVIDER_TOKEN_MISSING_FIELDS;
     }
 
     const encryptedToken = this.encryptionService.encrypt(data.token);
@@ -39,12 +40,12 @@ export class ExternalProviderAccessTokenService {
   }
 
   async getById(id: string) {
-    if (!id) throw new BadRequestException('id is required');
+    if (!id) throw AppErrorCodes.EXTERNAL_PROVIDER_TOKEN_ID_REQUIRED;
     return getExternalProviderAccessTokenById(id);
   }
 
   async getByUserId(userId: string) {
-    if (!userId) throw new BadRequestException('userId is required');
+    if (!userId) throw AppErrorCodes.EXTERNAL_PROVIDER_TOKEN_USERID_REQUIRED;
     return getExternalProviderAccessTokensByUserId(userId);
   }
 
@@ -54,7 +55,7 @@ export class ExternalProviderAccessTokenService {
   async getDecryptedById(
     id: string,
   ): Promise<ExternalProviderAccessTokenDecryptedRecord | null> {
-    if (!id) throw new BadRequestException('id is required');
+    if (!id) throw AppErrorCodes.EXTERNAL_PROVIDER_TOKEN_ID_REQUIRED;
 
     const record = await getExternalProviderAccessTokenById(id);
     if (!record) return null;
@@ -90,7 +91,7 @@ export class ExternalProviderAccessTokenService {
     id: string,
     data: { encryptedToken?: string; token?: string; provider?: string },
   ) {
-    if (!id) throw new BadRequestException('id is required');
+    if (!id) throw AppErrorCodes.EXTERNAL_PROVIDER_TOKEN_ID_REQUIRED;
 
     const updatePayload: Partial<ExternalProviderAccessTokenUpdateDto> = {};
 
@@ -116,9 +117,7 @@ export class ExternalProviderAccessTokenService {
     data: { userId: string; token: string; provider: string },
   ) {
     if (!data || !data.userId || !data.token || !data.provider) {
-      throw new BadRequestException(
-        'userId, token and provider are required for upsert',
-      );
+      throw AppErrorCodes.EXTERNAL_PROVIDER_TOKEN_ID_USERID_REQUIRED;
     }
 
     const encryptedToken = this.encryptionService.encrypt(data.token);
@@ -138,7 +137,7 @@ export class ExternalProviderAccessTokenService {
   }
 
   async delete(id: string) {
-    if (!id) throw new BadRequestException('id is required');
+    if (!id) throw AppErrorCodes.EXTERNAL_PROVIDER_TOKEN_ID_REQUIRED;
     return deleteExternalProviderAccessToken(id);
   }
 }

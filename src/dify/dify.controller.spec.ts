@@ -14,6 +14,7 @@ import {
 import { createMock } from '@golevelup/ts-jest';
 import type { Response } from 'express';
 import { Readable } from 'stream';
+import { AppErrorCodes } from '../types/error-codes';
 
 describe('DifyController', () => {
   let controller: DifyController;
@@ -152,7 +153,7 @@ describe('DifyController', () => {
         mockRequest.user = null;
 
         expect(() => domainGuard.canActivate(mockExecutionContext)).toThrow(
-          UnauthorizedException,
+          AppErrorCodes.UNAUTHORIZED,
         );
       });
 
@@ -160,10 +161,7 @@ describe('DifyController', () => {
         mockRequest.user = { id: 'user-123', username: 'testuser' };
 
         expect(() => domainGuard.canActivate(mockExecutionContext)).toThrow(
-          ForbiddenException,
-        );
-        expect(() => domainGuard.canActivate(mockExecutionContext)).toThrow(
-          'User email is required for domain validation',
+          AppErrorCodes.INVALID_DOMAIN_EMAIL,
         );
       });
 
@@ -174,9 +172,6 @@ describe('DifyController', () => {
           username: 'testuser',
         };
 
-        expect(() => domainGuard.canActivate(mockExecutionContext)).toThrow(
-          ForbiddenException,
-        );
         expect(() => domainGuard.canActivate(mockExecutionContext)).toThrow(
           /Domain 'unauthorized.com' is not allowed/,
         );
@@ -328,7 +323,7 @@ describe('DifyController', () => {
       expect(mockResponse.status).toHaveBeenCalledWith(500);
       expect(mockResponse.json).toHaveBeenCalledWith({
         error: 'Internal server error',
-        message: 'User ID not found',
+        message: 'User not found',
       });
     });
 

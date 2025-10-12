@@ -3,6 +3,8 @@ import { CoinService } from './coin.service';
 import { HttpException } from '@nestjs/common';
 import { PriceType, Interval } from './dto/gmo-coin-request.dto';
 import * as queryModule from '../../lib/database/query';
+import { AppErrorCodes } from '../../types/error-codes';
+import fetchJson from '../../utils/network-utils';
 
 // Mock DB save functions to avoid contacting real database during unit tests
 jest.mock('../../lib/database/query', () => ({
@@ -16,7 +18,11 @@ jest.mock('../../lib/database/query', () => ({
   getLatestGmoCoinRules: jest.fn().mockResolvedValue(null),
 }));
 
-global.fetch = jest.fn();
+// Mock fetchJson helper instead of global.fetch to avoid changing network-utils
+jest.mock('../../utils/network-utils', () => ({
+  __esModule: true,
+  default: jest.fn(),
+}));
 
 describe('CoinService', () => {
   let service: CoinService;
@@ -42,15 +48,14 @@ describe('CoinService', () => {
         responsetime: '2025-10-10T02:45:39.342Z',
       };
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: jest.fn().mockResolvedValue(mockResponse),
-      });
+      (fetchJson as jest.Mock).mockResolvedValueOnce(mockResponse);
 
       const result = await service.getStatus();
 
-      expect(fetch).toHaveBeenCalledWith(
+      expect(fetchJson).toHaveBeenCalledWith(
         'https://forex-api.coin.z.com/public/v1/status',
+        {},
+        expect.any(Object),
       );
       expect(result).toEqual(mockResponse);
     });
@@ -84,14 +89,16 @@ describe('CoinService', () => {
 
       await expect(
         service.getStatus({ cache: true, updateDb: false } as any),
-      ).rejects.toThrow('No cached GMO Coin status available');
+      ).rejects.toThrow(AppErrorCodes.EXTERNAL_API_REQUEST_FAILED);
     });
-    it('should throw HttpException on error', async () => {
-      (global.fetch as jest.Mock).mockRejectedValueOnce(
-        new Error('Network error'),
+    it('should throw AppErrorCode on error', async () => {
+      (fetchJson as jest.Mock).mockRejectedValueOnce(
+        AppErrorCodes.EXTERNAL_API_REQUEST_FAILED,
       );
 
-      await expect(service.getStatus()).rejects.toThrow(HttpException);
+      await expect(service.getStatus()).rejects.toThrow(
+        AppErrorCodes.EXTERNAL_API_REQUEST_FAILED,
+      );
     });
   });
 
@@ -111,25 +118,26 @@ describe('CoinService', () => {
         responsetime: '2025-10-10T02:47:36.025Z',
       };
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: jest.fn().mockResolvedValue(mockResponse),
-      });
+      (fetchJson as jest.Mock).mockResolvedValueOnce(mockResponse);
 
       const result = await service.getTicker();
 
-      expect(fetch).toHaveBeenCalledWith(
+      expect(fetchJson).toHaveBeenCalledWith(
         'https://forex-api.coin.z.com/public/v1/ticker',
+        {},
+        expect.any(Object),
       );
       expect(result).toEqual(mockResponse);
     });
 
-    it('should throw HttpException on error', async () => {
-      (global.fetch as jest.Mock).mockRejectedValueOnce(
-        new Error('Network error'),
+    it('should throw AppErrorCode on error', async () => {
+      (fetchJson as jest.Mock).mockRejectedValueOnce(
+        AppErrorCodes.EXTERNAL_API_REQUEST_FAILED,
       );
 
-      await expect(service.getTicker()).rejects.toThrow(HttpException);
+      await expect(service.getTicker()).rejects.toThrow(
+        AppErrorCodes.EXTERNAL_API_REQUEST_FAILED,
+      );
     });
 
     it('should return cached ticker when cache=true and DB has entry', async () => {
@@ -177,7 +185,7 @@ describe('CoinService', () => {
 
       await expect(
         service.getTicker({ cache: true, updateDb: false } as any),
-      ).rejects.toThrow('No cached GMO Coin ticker available');
+      ).rejects.toThrow(AppErrorCodes.EXTERNAL_API_REQUEST_FAILED);
     });
   });
 
@@ -197,10 +205,7 @@ describe('CoinService', () => {
         responsetime: '2025-10-10T02:50:00.000Z',
       };
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: jest.fn().mockResolvedValue(mockResponse),
-      });
+      (fetchJson as jest.Mock).mockResolvedValueOnce(mockResponse);
 
       const params = {
         symbol: 'USD_JPY',
@@ -211,15 +216,17 @@ describe('CoinService', () => {
 
       const result = await service.getKline(params);
 
-      expect(fetch).toHaveBeenCalledWith(
+      expect(fetchJson).toHaveBeenCalledWith(
         'https://forex-api.coin.z.com/public/v1/klines?symbol=USD_JPY&priceType=ASK&interval=1min&date=20251010',
+        {},
+        expect.any(Object),
       );
       expect(result).toEqual(mockResponse);
     });
 
     it('should throw HttpException on error', async () => {
-      (global.fetch as jest.Mock).mockRejectedValueOnce(
-        new Error('Network error'),
+      (fetchJson as jest.Mock).mockRejectedValueOnce(
+        AppErrorCodes.EXTERNAL_API_REQUEST_FAILED,
       );
 
       const params = {
@@ -229,7 +236,9 @@ describe('CoinService', () => {
         date: '20251010',
       };
 
-      await expect(service.getKline(params)).rejects.toThrow(HttpException);
+      await expect(service.getKline(params)).rejects.toThrow(
+        AppErrorCodes.EXTERNAL_API_REQUEST_FAILED,
+      );
     });
 
     it('should return cached kline when cache=true and DB has entry', async () => {
@@ -294,7 +303,7 @@ describe('CoinService', () => {
           params as any,
           { cache: true, updateDb: false } as any,
         ),
-      ).rejects.toThrow('No cached GMO Coin kline available');
+      ).rejects.toThrow(AppErrorCodes.EXTERNAL_API_REQUEST_FAILED);
     });
   });
 
@@ -314,25 +323,26 @@ describe('CoinService', () => {
         responsetime: '2025-10-10T02:50:00.000Z',
       };
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: jest.fn().mockResolvedValue(mockResponse),
-      });
+      (fetchJson as jest.Mock).mockResolvedValueOnce(mockResponse);
 
       const result = await service.getRules();
 
-      expect(fetch).toHaveBeenCalledWith(
+      expect(fetchJson).toHaveBeenCalledWith(
         'https://forex-api.coin.z.com/public/v1/symbols',
+        {},
+        expect.any(Object),
       );
       expect(result).toEqual(mockResponse);
     });
 
     it('should throw HttpException on error', async () => {
-      (global.fetch as jest.Mock).mockRejectedValueOnce(
-        new Error('Network error'),
+      (fetchJson as jest.Mock).mockRejectedValueOnce(
+        AppErrorCodes.EXTERNAL_API_REQUEST_FAILED,
       );
 
-      await expect(service.getRules()).rejects.toThrow(HttpException);
+      await expect(service.getRules()).rejects.toThrow(
+        AppErrorCodes.EXTERNAL_API_REQUEST_FAILED,
+      );
     });
 
     it('should return cached rules when cache=true and DB has entry', async () => {
@@ -380,7 +390,7 @@ describe('CoinService', () => {
 
       await expect(
         service.getRules({ cache: true, updateDb: false } as any),
-      ).rejects.toThrow('No cached GMO Coin rules available');
+      ).rejects.toThrow(AppErrorCodes.EXTERNAL_API_REQUEST_FAILED);
     });
   });
 
@@ -463,10 +473,7 @@ describe('CoinService', () => {
         responsetime: '2025-10-10T02:47:36.025Z',
       };
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: jest.fn().mockResolvedValue(mockResponse),
-      });
+      (fetchJson as jest.Mock).mockResolvedValueOnce(mockResponse);
 
       // subscribe to SSE stream
       const emissions: any[] = [];

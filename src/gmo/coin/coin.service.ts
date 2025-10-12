@@ -1,14 +1,7 @@
-import {
-  Injectable,
-  HttpException,
-  HttpStatus,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
-import { Cron, CronExpression, SchedulerRegistry } from '@nestjs/schedule';
+import { Injectable, Logger } from '@nestjs/common';
 import { Observable, interval, from, Subject, merge } from 'rxjs';
 import { switchMap, map, startWith } from 'rxjs/operators';
-import { ZodError } from 'zod';
+import fetchJson from '../../utils/network-utils';
 import {
   GmoCoinStatusSchema,
   GmoCoinTickerSchema,
@@ -30,6 +23,7 @@ import {
   getLatestGmoCoinRules,
 } from '../../lib/database/query';
 import { GetKlineDto } from './dto/gmo-coin-request.dto';
+import { AppErrorCodes } from '../../types/error-codes';
 
 @Injectable()
 export class CoinService {
@@ -56,47 +50,29 @@ export class CoinService {
       cache: false,
     },
   ): Promise<GmoCoinStatus> {
-    try {
-      // If caller requests cached value, return DB latest or throw NotFound
-      if (cache) {
-        const dbEntry = await getLatestGmoCoinStatus();
-        if (!dbEntry) {
-          throw new NotFoundException('No cached GMO Coin status available');
-        }
-
-        return {
-          status: dbEntry.statusCode,
-          data: dbEntry.data,
-          responsetime: dbEntry.responsetime.toISOString(),
-        } as GmoCoinStatus;
-      }
-      const response = await fetch(`${this.baseUrl}/v1/status`);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+    if (cache) {
+      const dbEntry = await getLatestGmoCoinStatus();
+      if (!dbEntry) {
+        throw AppErrorCodes.EXTERNAL_API_REQUEST_FAILED;
       }
 
-      const data = await response.json();
-      const parsed = GmoCoinStatusSchema.parse(data);
-      if (updateDb) {
-        await saveGmoCoinStatus(parsed);
-      }
-      return parsed;
-    } catch (error) {
-      if (error instanceof ZodError) {
-        throw new HttpException(
-          'Invalid response format from GMO Coin status API',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-      throw new HttpException(
-        'Failed to fetch GMO Coin status',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      return {
+        status: dbEntry.statusCode,
+        data: dbEntry.data,
+        responsetime: dbEntry.responsetime.toISOString(),
+      } as GmoCoinStatus;
     }
+
+    const parsed = await fetchJson<GmoCoinStatus>(
+      `${this.baseUrl}/v1/status`,
+      {},
+      { validate: GmoCoinStatusSchema },
+    );
+
+    if (updateDb) {
+      await saveGmoCoinStatus(parsed);
+    }
+    return parsed;
   }
 
   /**
@@ -108,62 +84,45 @@ export class CoinService {
       cache: false,
     },
   ): Promise<GmoCoinTicker> {
-    try {
-      if (cache) {
-        const dbEntry = await getLatestGmoCoinTicker();
-        if (!dbEntry) {
-          throw new NotFoundException('No cached GMO Coin ticker available');
-        }
-
-        return {
-          status: dbEntry.statusCode,
-          data: dbEntry.data.map((d) => ({
-            symbol: d.symbol,
-            ask: d.ask,
-            bid: d.bid,
-            timestamp: d.timestamp.toISOString(),
-            status: d.status,
-          })),
-          responsetime: dbEntry.responsetime.toISOString(),
-        } as GmoCoinTicker;
-      }
-      const response = await fetch(`${this.baseUrl}/v1/ticker`);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+    if (cache) {
+      const dbEntry = await getLatestGmoCoinTicker();
+      if (!dbEntry) {
+        throw AppErrorCodes.EXTERNAL_API_REQUEST_FAILED;
       }
 
-      const data = await response.json();
-      const parsed = GmoCoinTickerSchema.parse(data);
-      if (updateDb) {
-        // インメモリ履歴に追加
-        this.addTickerToHistory(parsed);
-        await saveGmoCoinTicker(parsed);
-
-        // ライブ通知を行う（SSE リスナーへ即時配信）
-        try {
-          this.tickerSubject.next(parsed);
-        } catch (err) {
-          this.logger.error('Failed to emit ticker to subject', err);
-        }
-      }
-
-      return parsed;
-    } catch (error) {
-      if (error instanceof ZodError) {
-        throw new HttpException(
-          'Invalid response format from GMO Coin ticker API',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-      throw new HttpException(
-        'Failed to fetch GMO Coin ticker',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      return {
+        status: dbEntry.statusCode,
+        data: dbEntry.data.map((d) => ({
+          symbol: d.symbol,
+          ask: d.ask,
+          bid: d.bid,
+          timestamp: d.timestamp.toISOString(),
+          status: d.status,
+        })),
+        responsetime: dbEntry.responsetime.toISOString(),
+      } as GmoCoinTicker;
     }
+
+    const parsed = await fetchJson<GmoCoinTicker>(
+      `${this.baseUrl}/v1/ticker`,
+      {},
+      { validate: GmoCoinTickerSchema },
+    );
+
+    if (updateDb) {
+      // インメモリ履歴に追加
+      this.addTickerToHistory(parsed);
+      await saveGmoCoinTicker(parsed);
+
+      // ライブ通知を行う（SSE リスナーへ即時配信）
+      try {
+        this.tickerSubject.next(parsed);
+      } catch (err) {
+        this.logger.error('Failed to emit ticker to subject', err);
+      }
+    }
+
+    return parsed;
   }
 
   /**
@@ -222,61 +181,42 @@ export class CoinService {
       cache: false,
     },
   ): Promise<GmoCoinKline> {
-    try {
-      if (cache) {
-        const dbEntry = await getLatestGmoCoinKline();
-        if (!dbEntry) {
-          throw new NotFoundException('No cached GMO Coin kline available');
-        }
-
-        return {
-          status: dbEntry.statusCode,
-          data: dbEntry.data.map((d) => ({
-            openTime: d.openTime.toISOString(),
-            open: d.open,
-            high: d.high,
-            low: d.low,
-            close: d.close,
-          })),
-          responsetime: dbEntry.responsetime.toISOString(),
-        } as GmoCoinKline;
-      }
-      const queryParams = new URLSearchParams({
-        symbol: params.symbol,
-        priceType: params.priceType,
-        interval: params.interval,
-        date: params.date,
-      });
-
-      const response = await fetch(
-        `${this.baseUrl}/v1/klines?${queryParams.toString()}`,
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+    if (cache) {
+      const dbEntry = await getLatestGmoCoinKline();
+      if (!dbEntry) {
+        throw AppErrorCodes.EXTERNAL_API_REQUEST_FAILED;
       }
 
-      const data = await response.json();
-      const parsed = GmoCoinKlineSchema.parse(data);
-      if (updateDb) {
-        await saveGmoCoinKline(parsed);
-      }
-      return parsed;
-    } catch (error) {
-      if (error instanceof ZodError) {
-        throw new HttpException(
-          'Invalid response format from GMO Coin kline API',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-      throw new HttpException(
-        'Failed to fetch GMO Coin kline data',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      return {
+        status: dbEntry.statusCode,
+        data: dbEntry.data.map((d) => ({
+          openTime: d.openTime.toISOString(),
+          open: d.open,
+          high: d.high,
+          low: d.low,
+          close: d.close,
+        })),
+        responsetime: dbEntry.responsetime.toISOString(),
+      } as GmoCoinKline;
     }
+
+    const queryParams = new URLSearchParams({
+      symbol: params.symbol,
+      priceType: params.priceType,
+      interval: params.interval,
+      date: params.date,
+    });
+
+    const parsed = await fetchJson<GmoCoinKline>(
+      `${this.baseUrl}/v1/klines?${queryParams.toString()}`,
+      {},
+      { validate: GmoCoinKlineSchema },
+    );
+
+    if (updateDb) {
+      await saveGmoCoinKline(parsed);
+    }
+    return parsed;
   }
 
   /**
@@ -288,52 +228,35 @@ export class CoinService {
       cache: false,
     },
   ): Promise<GmoCoinRules> {
-    try {
-      if (cache) {
-        const dbEntry = await getLatestGmoCoinRules();
-        if (!dbEntry) {
-          throw new NotFoundException('No cached GMO Coin rules available');
-        }
-
-        return {
-          status: dbEntry.statusCode,
-          data: dbEntry.data.map((d) => ({
-            symbol: d.symbol,
-            tickSize: d.tickSize,
-            minOpenOrderSize: d.minOpenOrderSize,
-            maxOrderSize: d.maxOrderSize,
-            sizeStep: d.sizeStep,
-          })),
-          responsetime: dbEntry.responsetime.toISOString(),
-        } as GmoCoinRules;
-      }
-      const response = await fetch(`${this.baseUrl}/v1/symbols`);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+    if (cache) {
+      const dbEntry = await getLatestGmoCoinRules();
+      if (!dbEntry) {
+        throw AppErrorCodes.EXTERNAL_API_REQUEST_FAILED;
       }
 
-      const data = await response.json();
-      const parsed = GmoCoinRulesSchema.parse(data);
-      if (updateDb) {
-        await saveGmoCoinRules(parsed);
-      }
-      return parsed;
-    } catch (error) {
-      if (error instanceof ZodError) {
-        throw new HttpException(
-          'Invalid response format from GMO Coin rules API',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-      throw new HttpException(
-        'Failed to fetch GMO Coin rules',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      return {
+        status: dbEntry.statusCode,
+        data: dbEntry.data.map((d) => ({
+          symbol: d.symbol,
+          tickSize: d.tickSize,
+          minOpenOrderSize: d.minOpenOrderSize,
+          maxOrderSize: d.maxOrderSize,
+          sizeStep: d.sizeStep,
+        })),
+        responsetime: dbEntry.responsetime.toISOString(),
+      } as GmoCoinRules;
     }
+
+    const parsed = await fetchJson<GmoCoinRules>(
+      `${this.baseUrl}/v1/symbols`,
+      {},
+      { validate: GmoCoinRulesSchema },
+    );
+
+    if (updateDb) {
+      await saveGmoCoinRules(parsed);
+    }
+    return parsed;
   }
 
   /**
@@ -387,7 +310,6 @@ export class CoinService {
     // ライブ通知 Observable: getTicker() が成功した際に this.tickerSubject に next される
     const live$ = this.tickerSubject.pipe(
       map((parsed) => {
-        // If symbols filter provided, filter parsed.data accordingly
         const filteredData = parsed.data.filter(
           (d: any) =>
             !symbols || symbols.length === 0 || symbols.includes(d.symbol),

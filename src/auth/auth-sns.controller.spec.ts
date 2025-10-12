@@ -78,7 +78,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
     getProvider: jest.fn((provider: string) => {
       if (provider === 'google') return mockGoogleProvider;
       if (provider === 'discord') return mockDiscordProvider;
-      throw new Error(`Provider ${provider} not found`);
+      throw AppErrorCodes.PROVIDER_NOT_FOUND;
     }),
     getAllProviders: jest
       .fn()
@@ -251,7 +251,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
 
       await expect(
         controller.createAuthState(unsupportedDto, mockResponse),
-      ).rejects.toThrow(AppErrorCodes.INTERNAL_SERVER_ERROR);
+      ).rejects.toThrow(AppErrorCodes.PROVIDER_NOT_FOUND);
     });
   });
 

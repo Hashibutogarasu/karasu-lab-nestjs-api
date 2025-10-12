@@ -4,6 +4,7 @@ import { UpdateDiscordAppDto } from './dto/update-discord-app.dto';
 import * as necord from 'necord';
 import { Client } from 'discord.js';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { AppErrorCodes } from '../types/error-codes';
 
 @Injectable()
 export class DiscordAppService {
@@ -33,7 +34,7 @@ export class DiscordAppService {
    */
   public isoToDiscordTimestamp(iso: string): number {
     if (typeof iso !== 'string' || iso.length === 0) {
-      throw new Error('isoToDiscordTimestamp: iso must be a non-empty string');
+      throw AppErrorCodes.EMPTY_ISO_STRING;
     }
 
     // Normalize possible microsecond precision by trimming to milliseconds
@@ -43,7 +44,7 @@ export class DiscordAppService {
       /^(.*T\d{2}:\d{2}:\d{2})(\.\d+)?(Z|[+-]\d{2}:?\d{2})?$/,
     );
     if (!match) {
-      throw new Error(`isoToDiscordTimestamp: invalid ISO timestamp: ${iso}`);
+      throw AppErrorCodes.INVALID_ISO_TIMESTAMP;
     }
 
     const timePart = match[1];
@@ -60,9 +61,7 @@ export class DiscordAppService {
 
     const ms = Date.parse(normalized);
     if (Number.isNaN(ms)) {
-      throw new Error(
-        `isoToDiscordTimestamp: could not parse timestamp: ${iso}`,
-      );
+      throw AppErrorCodes.INVALID_ISO_TIMESTAMP;
     }
 
     // Convert milliseconds to seconds and floor to get Discord-compatible value

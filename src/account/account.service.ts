@@ -22,6 +22,7 @@ import {
 } from '../lib/database/query';
 import { ResendService } from '../resend/resend.service';
 import { UpdateUserNameDto } from './dto/update-user-name.dto';
+import { AppErrorCodes } from '../types/error-codes';
 
 @Injectable()
 export class AccountService {
@@ -32,7 +33,7 @@ export class AccountService {
   async resetPassword(userId: string, dto: ResetPasswordDto) {
     const user = await findUserById(userId);
     if (!user) {
-      throw new NotFoundException('ユーザーが見つかりません');
+      throw AppErrorCodes.USER_NOT_FOUND;
     }
 
     // SNSユーザー（パスワードハッシュがnull）の場合は、旧パスワード検証をスキップ
@@ -42,13 +43,13 @@ export class AccountService {
         dto.oldPassword,
       );
       if (!isValid) {
-        throw new UnauthorizedException('現在のパスワードが正しくありません');
+        throw AppErrorCodes.NOW_PASSWORD_IS_NOT_INVALID;
       }
     }
 
     const updatedUser = await updateUserPassword(userId, dto.newPassword);
     return {
-      message: 'パスワードが正常に更新されました',
+      message: 'Password updated successfully',
       user: updatedUser,
     };
   }
@@ -62,7 +63,7 @@ export class AccountService {
       // セキュリティ上、ユーザーが存在しない場合でも成功レスポンスを返す
       return {
         message:
-          '指定されたメールアドレスにパスワードリセット用のコードを送信しました',
+          'A password reset code has been sent to the specified email address',
       };
     }
 
@@ -100,9 +101,7 @@ export class AccountService {
   async confirmResetPassword(dto: ConfirmResetPasswordDto) {
     const passwordReset = await findValidPasswordReset(dto.resetCode);
     if (!passwordReset) {
-      throw new BadRequestException(
-        '無効なリセットコードか、有効期限が切れています',
-      );
+      throw AppErrorCodes.INVALID_RESET_CODE;
     }
 
     // パスワードを更新
@@ -115,7 +114,7 @@ export class AccountService {
     await markPasswordResetAsUsed(passwordReset.id);
 
     return {
-      message: 'パスワードが正常にリセットされました',
+      message: 'Password has been reset successfully',
       user: updatedUser,
     };
   }
@@ -123,7 +122,7 @@ export class AccountService {
   async getProfile(userId: string) {
     const user = await findUserById(userId);
     if (!user) {
-      throw new NotFoundException('ユーザーが見つかりません');
+      throw AppErrorCodes.USER_NOT_FOUND;
     }
     const { passwordHash, ...profile } = user;
     return profile;
@@ -132,19 +131,16 @@ export class AccountService {
   async updateProfile(userId: string, dto: UpdateUserNameDto) {
     const user = await findUserById(userId);
     if (!user) {
-      throw new NotFoundException('ユーザーが見つかりません');
+      throw AppErrorCodes.USER_NOT_FOUND;
     }
 
     try {
       await updateUserNameById(userId, dto.username);
       return {
-        message: 'ユーザー名が正常に更新されました',
+        message: 'Username updated successfully',
       };
     } catch {
-      return {
-        message:
-          'ユーザー名の更新に失敗しました。ユーザー名が既に使用されている可能性があります。',
-      };
+      throw AppErrorCodes.ALREADY_TAKEN_USERNAME;
     }
   }
 
@@ -155,19 +151,17 @@ export class AccountService {
   async setPassword(userId: string, dto: SetPasswordDto) {
     const user = await findUserById(userId);
     if (!user) {
-      throw new NotFoundException('ユーザーが見つかりません');
+      throw AppErrorCodes.USER_NOT_FOUND;
     }
 
     // 既にパスワードが設定されている場合はエラー
     if (user.passwordHash) {
-      throw new BadRequestException(
-        '既にパスワードが設定されています。パスワードを変更したい場合は、パスワードリセット機能をご利用ください。',
-      );
+      throw AppErrorCodes.PASSWORD_ALREADY_SET;
     }
 
     const updatedUser = await updateUserPassword(userId, dto.newPassword);
     return {
-      message: 'パスワードが正常に設定されました',
+      message: 'Password set successfully',
       user: updatedUser,
     };
   }
@@ -179,7 +173,7 @@ export class AccountService {
   async canSetPassword(userId: string) {
     const user = await findUserById(userId);
     if (!user) {
-      throw new NotFoundException('ユーザーが見つかりません');
+      throw AppErrorCodes.USER_NOT_FOUND;
     }
 
     const canSetPassword = !user.passwordHash && user.providers.length > 0;

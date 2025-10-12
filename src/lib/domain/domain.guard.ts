@@ -8,6 +8,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
 import { DomainService } from './domain.service';
+import { AppErrorCodes } from '../../types/error-codes';
 
 interface AuthenticatedRequest extends Request {
   user?: {
@@ -31,17 +32,13 @@ export class DomainGuard implements CanActivate {
 
     // ユーザー情報の存在確認
     if (!request.user) {
-      throw new UnauthorizedException(
-        'User must be authenticated to access this resource',
-      );
+      throw AppErrorCodes.UNAUTHORIZED;
     }
 
     // メールアドレスの存在確認
     const email = request.user.email;
     if (!email) {
-      throw new ForbiddenException(
-        'User email is required for domain validation',
-      );
+      throw AppErrorCodes.INVALID_DOMAIN_EMAIL;
     }
 
     // ドメインチェック

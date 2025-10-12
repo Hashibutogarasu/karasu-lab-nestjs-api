@@ -99,7 +99,7 @@ describe('AuthController', () => {
     getProvider: jest.fn((provider: string) => {
       if (provider === 'google') return mockGoogleProvider;
       if (provider === 'discord') return mockDiscordProvider;
-      throw new Error(`Provider ${provider} not found`);
+      throw AppErrorCodes.PROVIDER_NOT_FOUND;
     }),
     getAllProviders: jest
       .fn()

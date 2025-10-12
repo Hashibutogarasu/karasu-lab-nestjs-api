@@ -20,6 +20,7 @@ export class AppErrorCodeFilter implements ExceptionFilter {
 
     response.status(status).json({
       message: exception.message,
+      customMessage: exception.customMessage,
       status: status,
       code: exception.key,
       timestamp: new Date().toISOString(),
