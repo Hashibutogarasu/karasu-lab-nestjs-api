@@ -12,7 +12,9 @@ import { DifyService } from './dify.service';
 import { ChatMessageRequestDto } from './dify/dify.dto';
 import { DomainProtected } from '../lib/domain';
 import { AppErrorCodes } from '../types/error-codes';
+import { NoInterceptor } from '../interceptors/no-interceptor.decorator';
 
+@NoInterceptor()
 @Controller('dify')
 export class DifyController {
   constructor(private readonly difyService: DifyService) {}

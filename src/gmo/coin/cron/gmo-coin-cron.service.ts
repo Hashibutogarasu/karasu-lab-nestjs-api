@@ -11,7 +11,7 @@ export class GmoCoinCronService {
   /**
    * Cron: 定期的に最新ティッカーを取得して履歴へ保存する
    */
-  @Cron(CronExpression.EVERY_30_SECONDS)
+  // @Cron(CronExpression.EVERY_30_SECONDS)
   async fetchTickerCron() {
     try {
       await this.coinService.getTicker({
@@ -26,7 +26,7 @@ export class GmoCoinCronService {
   /**
    * Cron: 定期的にサービス稼働状態を取得して保存する
    */
-  @Cron(CronExpression.EVERY_30_SECONDS)
+  // @Cron(CronExpression.EVERY_30_SECONDS)
   async fetchStatusCron() {
     try {
       await this.coinService.getStatus({

@@ -39,7 +39,6 @@ export interface AuthStateRequest {
 export interface AuthStateResponse {
   success: boolean;
   stateCode?: string;
-  redirectUrl?: string;
   error?: string;
   errorDescription?: string;
 }
@@ -58,6 +57,7 @@ export interface VerifyTokenResponse {
     email?: string;
     picture?: string;
     provider: string;
+    role: string;
     providers: string[];
   };
   user?: {
@@ -72,7 +72,7 @@ export interface VerifyTokenResponse {
  * 認証ステートを作成し、リダイレクトURLを生成
  * @param request.callbackUrl フロントエンドのコールバックURL（認証完了後の最終リダイレクト先）
  * @param oauthProvider OAuthプロバイダー
- * @returns 認証ステートとリダイレクトURL（この関数ではリダイレクトURLは返すが、実際の使用はコントローラー側で行う）
+ * @returns 認証ステート
  */
 export async function createAuthenticationState(
   request: AuthStateRequest,
@@ -122,7 +122,6 @@ export async function createAuthenticationState(
     return {
       success: true,
       stateCode,
-      redirectUrl: '', // コントローラー側で再生成されるため空文字列
     };
   } catch (error) {
     console.error(error);
@@ -141,7 +140,7 @@ export async function processSnsCProfile(
   snsProfile: SnsProfile,
   stateCode: string,
 ): Promise<{
-  success: boolean;
+  success?: boolean;
   userId?: string;
   oneTimeToken?: string;
   error?: string;
@@ -317,6 +316,7 @@ export async function verifyAndCreateToken(
         sub: user.id,
         name: user.username,
         email: user.email,
+        role: user.role,
         provider: authState.provider,
         providers: user.providers || [authState.provider],
       },

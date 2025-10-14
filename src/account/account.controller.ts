@@ -23,6 +23,9 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import type { Request as ExpressRequest } from 'express';
 import { UpdateUserNameDto } from './dto/update-user-name.dto';
+import { AuthUser } from '../auth/decorators/auth-user.decorator';
+import type { User } from '@prisma/client';
+
 @Controller('account')
 export class AccountController {
   constructor(private readonly accountService: AccountService) {}
@@ -32,14 +35,8 @@ export class AccountController {
    */
   @Post('reset-password')
   @UseGuards(JwtAuthGuard)
-  async resetPassword(
-    @Request() req: any,
-    @Body() dto: ResetPasswordDto,
-    @Res() res: Response,
-  ): Promise<void> {
-    const userId = req.user.id;
-    const result = await this.accountService.resetPassword(userId, dto);
-    res.status(HttpStatus.OK).json(result);
+  async resetPassword(@AuthUser() user: User, @Body() dto: ResetPasswordDto) {
+    return await this.accountService.resetPassword(user.id, dto);
   }
 
   /**
@@ -47,12 +44,8 @@ export class AccountController {
    * メールアドレスを指定してリセットコードを送信
    */
   @Post('forgot-password')
-  async forgotPassword(
-    @Body() dto: ForgotPasswordDto,
-    @Res() res: Response,
-  ): Promise<void> {
-    const result = await this.accountService.forgotPassword(dto);
-    res.status(HttpStatus.OK).json(result);
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return await this.accountService.forgotPassword(dto);
   }
 
   /**
@@ -60,23 +53,15 @@ export class AccountController {
    * 6桁のコードと新しいパスワードを指定
    */
   @Post('confirm-reset')
-  async confirmResetPassword(
-    @Body() dto: ConfirmResetPasswordDto,
-    @Res() res: Response,
-  ): Promise<void> {
-    const result = await this.accountService.confirmResetPassword(dto);
-    res.status(HttpStatus.OK).json(result);
+  async confirmResetPassword(@Body() dto: ConfirmResetPasswordDto) {
+    return await this.accountService.confirmResetPassword(dto);
   }
 
   @Get('profile')
   @UseGuards(JwtAuthGuard)
-  async getProfile(
-    @Request() req: ExpressRequest,
-    @Res() res: Response,
-  ): Promise<void> {
+  async getProfile(@Request() req: ExpressRequest) {
     const userId = req.user?.['id'];
-    const profile = await this.accountService.getProfile(userId);
-    res.status(HttpStatus.OK).json(profile);
+    return await this.accountService.getProfile(userId);
   }
 
   @Put('profile')
@@ -84,14 +69,9 @@ export class AccountController {
   async updateProfile(
     @Request() req: ExpressRequest,
     @Body() body: UpdateUserNameDto,
-    @Res() res: Response,
-  ): Promise<void> {
+  ) {
     const userId = req.user?.['id'];
-    const updatedProfile = await this.accountService.updateProfile(
-      userId,
-      body,
-    );
-    res.status(HttpStatus.OK).json(updatedProfile);
+    return await this.accountService.updateProfile(userId, body);
   }
 
   /**
@@ -103,11 +83,9 @@ export class AccountController {
   async setPassword(
     @Request() req: ExpressRequest,
     @Body() dto: SetPasswordDto,
-    @Res() res: Response,
-  ): Promise<void> {
+  ) {
     const userId = req.user?.['id'];
-    const result = await this.accountService.setPassword(userId, dto);
-    res.status(HttpStatus.OK).json(result);
+    return await this.accountService.setPassword(userId, dto);
   }
 
   /**
@@ -116,12 +94,7 @@ export class AccountController {
    */
   @Get('can-set-password')
   @UseGuards(JwtAuthGuard)
-  async canSetPassword(
-    @Request() req: ExpressRequest,
-    @Res() res: Response,
-  ): Promise<void> {
-    const userId = req.user?.['id'];
-    const result = await this.accountService.canSetPassword(userId);
-    res.status(HttpStatus.OK).json(result);
+  async canSetPassword(@Request() req: ExpressRequest, @AuthUser() user: User) {
+    return await this.accountService.canSetPassword(user.id);
   }
 }

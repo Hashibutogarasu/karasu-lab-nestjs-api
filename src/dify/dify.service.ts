@@ -16,7 +16,6 @@ export class DifyService {
     if (!this.apiKey) {
       throw AppErrorCodes.INVALID_DIFY_API_KEY;
     }
-    console.log('DifyService initialized with base URL:', this.baseUrl);
   }
 
   async sendChatMessageStream(

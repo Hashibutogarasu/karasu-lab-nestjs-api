@@ -16,7 +16,19 @@ import { GoogleOAuthProvider } from '../lib/auth/google-oauth.provider';
 import { DiscordOAuthProvider } from '../lib/auth/discord-oauth.provider';
 import { AppErrorCode, AppErrorCodes } from '../types/error-codes';
 
+const mockUser = {
+  id: 'user_123',
+  username: 'testuser',
+  email: 'test@example.com',
+  passwordHash: null,
+  providers: [],
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  role: 'user',
+};
+
 // Mock the JWT token generation function
+// Note: jest.mock calls are hoisted; avoid referencing local variables (mockUser) here to prevent TDZ.
 jest.mock('../lib/auth/jwt-token', () => ({
   generateJWTToken: jest.fn().mockResolvedValue({
     success: true,
@@ -32,6 +44,21 @@ jest.mock('../lib/auth/jwt-token', () => ({
       role: 'user',
     },
     expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+  }),
+  generateRefreshToken: jest.fn().mockResolvedValue({
+    success: true,
+    jwtId: 'jwt_state_refresh_123',
+    token: 'mock_refresh_token_abc123',
+    profile: {
+      sub: 'user_123',
+      name: 'testuser',
+      email: 'test@example.com',
+      providers: [],
+    },
+    user: {
+      role: 'user',
+    },
+    expiresAt: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000),
   }),
 }));
 
@@ -145,21 +172,15 @@ describe('AuthController', () => {
 
   describe('register (POST /auth/register)', () => {
     const validRegisterDto: RegisterDto = {
-      username: 'testuser',
-      email: 'test@example.com',
+      username: mockUser.username,
+      email: mockUser.email,
       password: 'TestPass123',
     };
 
     it('should register user successfully', async () => {
       const mockAuthResponse = {
         success: true,
-        user: {
-          id: 'user_123',
-          username: 'testuser',
-          email: 'test@example.com',
-          created_at: new Date(),
-          updated_at: new Date(),
-        },
+        user: mockUser,
       };
 
       mockAuthService.register.mockResolvedValue(mockAuthResponse);
@@ -282,20 +303,14 @@ describe('AuthController', () => {
 
   describe('login (POST /auth/login)', () => {
     const validLoginDto: LoginDto = {
-      usernameOrEmail: 'testuser',
+      usernameOrEmail: mockUser.username,
       password: 'TestPass123',
     };
 
     it('should login user successfully', async () => {
       const mockLoginResponse = {
         success: true,
-        user: {
-          id: 'user_123',
-          username: 'testuser',
-          email: 'test@example.com',
-          created_at: new Date(),
-          updated_at: new Date(),
-        },
+        user: mockUser,
       };
 
       const mockSessionData = {
@@ -314,27 +329,24 @@ describe('AuthController', () => {
       expect(mockJsonFn).toHaveBeenCalledWith({
         message: 'Login successful',
         jwtId: 'jwt_state_123',
-        user: mockLoginResponse.user,
-        session_id: mockSessionData.sessionId,
-        expires_at: mockSessionData.expiresAt,
+        access_token: 'mock_jwt_token_abc123',
+        token_type: 'Bearer',
+        expires_in: 60 * 60,
+        refresh_token: expect.any(String),
+        refresh_expires_in: 60 * 60 * 24 * 30,
+        session_id: 'session_abc123',
       });
     });
 
     it('should handle login with email address', async () => {
       const loginWithEmail = {
-        usernameOrEmail: 'test@example.com',
+        usernameOrEmail: mockUser.email,
         password: 'TestPass123',
       };
 
       const mockLoginResponse = {
         success: true,
-        user: {
-          id: 'user_123',
-          username: 'testuser',
-          email: 'test@example.com',
-          created_at: new Date(),
-          updated_at: new Date(),
-        },
+        user: mockUser,
       };
 
       const mockSessionData = {
@@ -352,9 +364,12 @@ describe('AuthController', () => {
       expect(mockJsonFn).toHaveBeenCalledWith({
         message: 'Login successful',
         jwtId: 'jwt_state_123',
-        user: mockLoginResponse.user,
-        session_id: mockSessionData.sessionId,
-        expires_at: mockSessionData.expiresAt,
+        access_token: 'mock_jwt_token_abc123',
+        token_type: 'Bearer',
+        expires_in: 60 * 60,
+        refresh_token: expect.any(String),
+        refresh_expires_in: 60 * 60 * 24 * 30,
+        session_id: 'session_def456',
       });
     });
 
@@ -452,37 +467,30 @@ describe('AuthController', () => {
 
   describe('getProfile (GET /auth/profile)', () => {
     const validSessionId = 'session_valid_123';
-
-    beforeEach(() => {
-      mockRequest.headers = { 'x-session-id': validSessionId };
-    });
+    // The controller uses @AuthUser() decorator to inject the authenticated user,
+    // so tests should pass the user object directly instead of relying on headers.
 
     it('should get user profile successfully', async () => {
-      const mockUserProfile = {
-        id: 'user_123',
-        username: 'testuser',
-        email: 'test@example.com',
-        created_at: new Date(),
-        updated_at: new Date(),
-      };
+      mockAuthService.getProfile.mockResolvedValue(mockUser);
 
-      mockAuthService.getProfile.mockResolvedValue(mockUserProfile);
+      await controller.getProfile(mockRequest, mockResponse, mockUser);
 
-      await controller.getProfile(mockRequest, mockResponse);
-
-      expect(mockAuthService.getProfile).toHaveBeenCalledWith(validSessionId);
+      expect(mockAuthService.getProfile).toHaveBeenCalledWith(mockUser.id);
       expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
       expect(mockJsonFn).toHaveBeenCalledWith({
         message: 'Profile retrieved successfully',
-        user: mockUserProfile,
+        user: mockUser,
       });
     });
 
     it('should handle missing session ID', async () => {
-      mockRequest.headers = {}; // No session ID
-
+      // Simulate missing authenticated user
       await expect(
-        controller.getProfile(mockRequest, mockResponse),
+        controller.getProfile(
+          mockRequest,
+          mockResponse,
+          null as unknown as typeof mockUser,
+        ),
       ).rejects.toThrow(AppErrorCodes.MISSING_SESSION);
     });
 
@@ -490,7 +498,7 @@ describe('AuthController', () => {
       mockAuthService.getProfile.mockResolvedValue(null);
 
       await expect(
-        controller.getProfile(mockRequest, mockResponse),
+        controller.getProfile(mockRequest, mockResponse, mockUser),
       ).rejects.toThrow(AppErrorCodes.INVALID_SESSION);
     });
 
@@ -498,7 +506,7 @@ describe('AuthController', () => {
       mockAuthService.getProfile.mockResolvedValue(null);
 
       await expect(
-        controller.getProfile(mockRequest, mockResponse),
+        controller.getProfile(mockRequest, mockResponse, mockUser),
       ).rejects.toThrow(AppErrorCodes.INVALID_SESSION);
     });
 
@@ -506,36 +514,31 @@ describe('AuthController', () => {
       mockAuthService.getProfile.mockRejectedValue(new Error('Database error'));
 
       await expect(
-        controller.getProfile(mockRequest, mockResponse),
+        controller.getProfile(mockRequest, mockResponse, mockUser),
       ).rejects.toThrow(AppErrorCodes.INTERNAL_SERVER_ERROR);
     });
 
     it('should handle empty session ID header', async () => {
-      mockRequest.headers = { 'x-session-id': '' };
-
+      // Empty user -> missing session
       await expect(
-        controller.getProfile(mockRequest, mockResponse),
+        controller.getProfile(
+          mockRequest,
+          mockResponse,
+          null as unknown as typeof mockUser,
+        ),
       ).rejects.toThrow(AppErrorCodes.MISSING_SESSION);
     });
 
     it('should handle session ID from different header formats', async () => {
-      // Test case-insensitive header handling
-      mockRequest.headers = { 'X-Session-ID': validSessionId };
-
-      const mockUserProfile = {
-        id: 'user_123',
-        username: 'testuser',
-        email: 'test@example.com',
-        created_at: new Date(),
-        updated_at: new Date(),
-      };
-
+      // Since controller uses @AuthUser, this test ensures AuthUser propagation works
+      const mockUserProfile = { ...mockUser };
       mockAuthService.getProfile.mockResolvedValue(mockUserProfile);
 
-      await controller.getProfile(mockRequest, mockResponse);
+      await controller.getProfile(mockRequest, mockResponse, mockUserProfile);
 
-      // Note: Express normalizes headers to lowercase, so this should work
-      expect(mockAuthService.getProfile).toHaveBeenCalledWith(validSessionId);
+      expect(mockAuthService.getProfile).toHaveBeenCalledWith(
+        mockUserProfile.id,
+      );
     });
   });
 
@@ -667,8 +670,11 @@ describe('AuthController', () => {
         id: 'user_123',
         username: 'testuser',
         email: 'test@example.com',
-        created_at: new Date(),
-        updated_at: new Date(),
+        passwordHash: null,
+        providers: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        role: 'user',
       };
 
       mockAuthService.getProfile.mockResolvedValue(mockUserProfile);
@@ -676,7 +682,9 @@ describe('AuthController', () => {
       // Simulate concurrent requests
       const promises = Array(5)
         .fill(null)
-        .map(() => controller.getProfile(mockRequest, mockResponse));
+        .map(() =>
+          controller.getProfile(mockRequest, mockResponse, mockUserProfile),
+        );
 
       await Promise.all(promises);
 
@@ -804,7 +812,7 @@ describe('AuthController', () => {
       mockAuthService.getProfile.mockResolvedValue(null);
 
       await expect(
-        controller.getProfile(mockRequest, mockResponse),
+        controller.getProfile(mockRequest, mockResponse, mockUser),
       ).rejects.toThrow(AppErrorCodes.INVALID_SESSION);
     });
 
@@ -812,19 +820,11 @@ describe('AuthController', () => {
       const sessionId = 'session_valid';
       mockRequest.headers = { 'x-session-id': sessionId };
 
-      const mockProfile = {
-        id: 'user_123',
-        username: 'testuser',
-        email: 'test@example.com',
-        created_at: new Date(),
-        updated_at: new Date(),
-      };
-
+      const mockProfile = { ...mockUser };
       mockAuthService.getProfile.mockResolvedValue(mockProfile);
 
-      await controller.getProfile(mockRequest, mockResponse);
-
-      expect(mockAuthService.getProfile).toHaveBeenCalledWith(sessionId);
+      await controller.getProfile(mockRequest, mockResponse, mockProfile);
+      expect(mockAuthService.getProfile).toHaveBeenCalledWith(mockProfile.id);
       expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
     });
 

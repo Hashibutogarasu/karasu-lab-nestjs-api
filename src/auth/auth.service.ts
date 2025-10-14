@@ -127,14 +127,9 @@ export class AuthService {
   /**
    * ユーザープロフィール取得
    */
-  async getProfile(sessionId: string): Promise<UserResponse | null> {
+  async getProfile(userId: string): Promise<UserResponse | null> {
     try {
-      const session = SessionManager.getSession(sessionId);
-      if (!session) {
-        return null;
-      }
-
-      const user = await findUserById(session.userId);
+      const user = await findUserById(userId);
       if (!user) {
         return null;
       }

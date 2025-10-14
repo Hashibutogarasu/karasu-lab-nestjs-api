@@ -35,7 +35,9 @@ import {
   UserInfoResponse,
   ConsentResponse,
 } from '../types/oauth-responses.types';
+import { NoInterceptor } from '../interceptors/no-interceptor.decorator';
 
+@NoInterceptor()
 @Controller('oauth')
 export class OauthController {
   constructor(private readonly oauthService: OauthService) {}

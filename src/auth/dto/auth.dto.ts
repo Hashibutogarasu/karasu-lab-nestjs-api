@@ -7,3 +7,7 @@ export interface VerifyTokenDto {
   stateCode: string;
   oneTimeToken: string;
 }
+
+export interface RefreshTokenDto {
+  refreshToken: string;
+}

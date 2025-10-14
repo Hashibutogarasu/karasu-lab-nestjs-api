@@ -100,14 +100,12 @@ describe('AccountController - Password Management', () => {
 
       mockAccountService.resetPassword.mockResolvedValue(expectedResult);
 
-      await controller.resetPassword(mockRequest, validResetDto, mockResponse);
+      await controller.resetPassword(mockUser as any, validResetDto);
 
       expect(mockAccountService.resetPassword).toHaveBeenCalledWith(
         'user_123',
         validResetDto,
       );
-      expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
-      expect(mockJsonFn).toHaveBeenCalledWith(expectedResult);
     });
 
     it('should handle user not found error', async () => {
@@ -116,10 +114,10 @@ describe('AccountController - Password Management', () => {
       );
 
       await expect(
-        controller.resetPassword(mockRequest, validResetDto, mockResponse),
+        controller.resetPassword(mockUser as any, validResetDto),
       ).rejects.toThrow(NotFoundException);
       await expect(
-        controller.resetPassword(mockRequest, validResetDto, mockResponse),
+        controller.resetPassword(mockUser as any, validResetDto),
       ).rejects.toThrow('ユーザーが見つかりません');
     });
 
@@ -134,37 +132,27 @@ describe('AccountController - Password Management', () => {
       };
 
       await expect(
-        controller.resetPassword(mockRequest, invalidDto, mockResponse),
+        controller.resetPassword(mockUser as any, invalidDto),
       ).rejects.toThrow(UnauthorizedException);
       await expect(
-        controller.resetPassword(mockRequest, invalidDto, mockResponse),
+        controller.resetPassword(mockUser as any, invalidDto),
       ).rejects.toThrow('現在のパスワードが正しくありません');
     });
 
     it('should extract user ID from JWT token', async () => {
-      const customRequest = {
-        user: { id: 'custom_user_456' },
-      };
-
       const expectedResult = {
         message: 'パスワードが正常に更新されました',
-        user: { ...mockUser, id: 'custom_user_456' },
+        user: { ...mockUser, id: 'user_123' },
       };
 
       mockAccountService.resetPassword.mockResolvedValue(expectedResult);
 
-      await controller.resetPassword(
-        customRequest,
-        validResetDto,
-        mockResponse,
-      );
+      await controller.resetPassword(mockUser as any, validResetDto);
 
       expect(mockAccountService.resetPassword).toHaveBeenCalledWith(
-        'custom_user_456',
+        'user_123',
         validResetDto,
       );
-      expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
-      expect(mockJsonFn).toHaveBeenCalledWith(expectedResult);
     });
 
     it('should validate DTO with class-validator', async () => {
@@ -176,11 +164,7 @@ describe('AccountController - Password Management', () => {
       // In a real scenario, this would be caught by validation pipes before reaching the controller
       // For this test, we'll simulate the validation by checking the service isn't called with invalid data
       try {
-        await controller.resetPassword(
-          mockRequest,
-          invalidDto as any,
-          mockResponse,
-        );
+        await controller.resetPassword(mockUser as any, invalidDto as any);
         // If validation was properly implemented, this should not be reached
       } catch (error) {
         // Expected behavior when validation is implemented
@@ -222,13 +206,11 @@ describe('AccountController - Password Management', () => {
 
       mockAccountService.forgotPassword.mockResolvedValue(expectedResult);
 
-      await controller.forgotPassword(validForgotDto, mockResponse);
+      await controller.forgotPassword(validForgotDto);
 
       expect(mockAccountService.forgotPassword).toHaveBeenCalledWith(
         validForgotDto,
       );
-      expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
-      expect(mockJsonFn).toHaveBeenCalledWith(expectedResult);
     });
 
     it('should return success message even for non-existent user', async () => {
@@ -243,13 +225,11 @@ describe('AccountController - Password Management', () => {
         email: 'nonexistent@example.com',
       };
 
-      await controller.forgotPassword(nonExistentEmailDto, mockResponse);
+      await controller.forgotPassword(nonExistentEmailDto);
 
       expect(mockAccountService.forgotPassword).toHaveBeenCalledWith(
         nonExistentEmailDto,
       );
-      expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
-      expect(mockJsonFn).toHaveBeenCalledWith(expectedResult);
     });
 
     it('should validate email format', async () => {
@@ -266,7 +246,7 @@ describe('AccountController - Password Management', () => {
 
       mockAccountService.forgotPassword.mockResolvedValue(mockResult);
 
-      await controller.forgotPassword(invalidEmailDto as any, mockResponse);
+      await controller.forgotPassword(invalidEmailDto as any);
 
       // In production, this would be caught by validation pipes
       expect(mockAccountService.forgotPassword).toHaveBeenCalled();
@@ -285,7 +265,7 @@ describe('AccountController - Password Management', () => {
 
       mockAccountService.forgotPassword.mockResolvedValue(mockResult);
 
-      await controller.forgotPassword(emptyEmailDto as any, mockResponse);
+      await controller.forgotPassword(emptyEmailDto as any);
 
       expect(mockAccountService.forgotPassword).toHaveBeenCalled();
     });
@@ -315,13 +295,11 @@ describe('AccountController - Password Management', () => {
 
       mockAccountService.confirmResetPassword.mockResolvedValue(expectedResult);
 
-      await controller.confirmResetPassword(validConfirmDto, mockResponse);
+      await controller.confirmResetPassword(validConfirmDto);
 
       expect(mockAccountService.confirmResetPassword).toHaveBeenCalledWith(
         validConfirmDto,
       );
-      expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
-      expect(mockJsonFn).toHaveBeenCalledWith(expectedResult);
     });
 
     it('should handle invalid reset code', async () => {
@@ -337,10 +315,10 @@ describe('AccountController - Password Management', () => {
       };
 
       await expect(
-        controller.confirmResetPassword(invalidCodeDto, mockResponse),
+        controller.confirmResetPassword(invalidCodeDto),
       ).rejects.toThrow(BadRequestException);
       await expect(
-        controller.confirmResetPassword(invalidCodeDto, mockResponse),
+        controller.confirmResetPassword(invalidCodeDto),
       ).rejects.toThrow('無効なリセットコードか、有効期限が切れています');
     });
 
@@ -357,7 +335,7 @@ describe('AccountController - Password Management', () => {
       };
 
       await expect(
-        controller.confirmResetPassword(expiredCodeDto, mockResponse),
+        controller.confirmResetPassword(expiredCodeDto),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -368,7 +346,7 @@ describe('AccountController - Password Management', () => {
       };
 
       await expect(
-        controller.confirmResetPassword(invalidCodeDto as any, mockResponse),
+        controller.confirmResetPassword(invalidCodeDto as any),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -379,7 +357,7 @@ describe('AccountController - Password Management', () => {
       };
 
       await expect(
-        controller.confirmResetPassword(weakPasswordDto as any, mockResponse),
+        controller.confirmResetPassword(weakPasswordDto as any),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -407,18 +385,12 @@ describe('AccountController - Password Management', () => {
 
       mockAccountService.setPassword.mockResolvedValue(expectedResult);
 
-      await controller.setPassword(
-        mockRequest,
-        validSetPasswordDto,
-        mockResponse,
-      );
+      await controller.setPassword(mockRequest, validSetPasswordDto);
 
       expect(mockAccountService.setPassword).toHaveBeenCalledWith(
         'user_123',
         validSetPasswordDto,
       );
-      expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
-      expect(mockJsonFn).toHaveBeenCalledWith(expectedResult);
     });
 
     it('should handle user not found error', async () => {
@@ -427,10 +399,10 @@ describe('AccountController - Password Management', () => {
       );
 
       await expect(
-        controller.setPassword(mockRequest, validSetPasswordDto, mockResponse),
+        controller.setPassword(mockRequest, validSetPasswordDto),
       ).rejects.toThrow(NotFoundException);
       await expect(
-        controller.setPassword(mockRequest, validSetPasswordDto, mockResponse),
+        controller.setPassword(mockRequest, validSetPasswordDto),
       ).rejects.toThrow('ユーザーが見つかりません');
     });
 
@@ -442,10 +414,10 @@ describe('AccountController - Password Management', () => {
       );
 
       await expect(
-        controller.setPassword(mockRequest, validSetPasswordDto, mockResponse),
+        controller.setPassword(mockRequest, validSetPasswordDto),
       ).rejects.toThrow(BadRequestException);
       await expect(
-        controller.setPassword(mockRequest, validSetPasswordDto, mockResponse),
+        controller.setPassword(mockRequest, validSetPasswordDto),
       ).rejects.toThrow('既にパスワードが設定されています');
     });
 
@@ -472,18 +444,12 @@ describe('AccountController - Password Management', () => {
 
       mockAccountService.setPassword.mockResolvedValue(expectedResult);
 
-      await controller.setPassword(
-        customRequest,
-        validSetPasswordDto,
-        mockResponse,
-      );
+      await controller.setPassword(customRequest, validSetPasswordDto);
 
       expect(mockAccountService.setPassword).toHaveBeenCalledWith(
         'sns_user_456',
         validSetPasswordDto,
       );
-      expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
-      expect(mockJsonFn).toHaveBeenCalledWith(expectedResult);
     });
 
     it('should validate password strength', async () => {
@@ -497,11 +463,7 @@ describe('AccountController - Password Management', () => {
       );
 
       await expect(
-        controller.setPassword(
-          mockRequest,
-          weakPasswordDto as any,
-          mockResponse,
-        ),
+        controller.setPassword(mockRequest, weakPasswordDto as any),
       ).rejects.toThrow(BadRequestException);
     });
   });
@@ -517,32 +479,28 @@ describe('AccountController - Password Management', () => {
 
       mockAccountService.canSetPassword.mockResolvedValue(expectedResult);
 
-      await controller.canSetPassword(mockRequest, mockResponse);
+      await controller.canSetPassword(mockRequest, mockUser as any);
 
       expect(mockAccountService.canSetPassword).toHaveBeenCalledWith(
         'user_123',
       );
-      expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
-      expect(mockJsonFn).toHaveBeenCalledWith(expectedResult);
     });
 
     it('should return false when user has password set', async () => {
       const expectedResult = {
         canSetPassword: false,
-        hasPassword: true,
         hasExternalProviders: true,
+        hasPassword: true,
         providers: ['google'],
       };
 
       mockAccountService.canSetPassword.mockResolvedValue(expectedResult);
 
-      await controller.canSetPassword(mockRequest, mockResponse);
+      await controller.canSetPassword(mockRequest, mockUser as any);
 
       expect(mockAccountService.canSetPassword).toHaveBeenCalledWith(
         'user_123',
       );
-      expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
-      expect(mockJsonFn).toHaveBeenCalledWith(expectedResult);
     });
 
     it('should return false when user has no external providers', async () => {
@@ -555,13 +513,11 @@ describe('AccountController - Password Management', () => {
 
       mockAccountService.canSetPassword.mockResolvedValue(expectedResult);
 
-      await controller.canSetPassword(mockRequest, mockResponse);
+      await controller.canSetPassword(mockRequest, mockUser as any);
 
       expect(mockAccountService.canSetPassword).toHaveBeenCalledWith(
         'user_123',
       );
-      expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
-      expect(mockJsonFn).toHaveBeenCalledWith(expectedResult);
     });
 
     it('should handle user not found error', async () => {
@@ -570,10 +526,10 @@ describe('AccountController - Password Management', () => {
       );
 
       await expect(
-        controller.canSetPassword(mockRequest, mockResponse),
+        controller.canSetPassword(mockRequest, mockUser as any),
       ).rejects.toThrow(NotFoundException);
       await expect(
-        controller.canSetPassword(mockRequest, mockResponse),
+        controller.canSetPassword(mockRequest, mockUser as any),
       ).rejects.toThrow('ユーザーが見つかりません');
     });
 
@@ -602,13 +558,11 @@ describe('AccountController - Password Management', () => {
 
       mockAccountService.canSetPassword.mockResolvedValue(expectedResult);
 
-      await controller.canSetPassword(customRequest, mockResponse);
+      await controller.canSetPassword(customRequest, mockUser as any);
 
       expect(mockAccountService.canSetPassword).toHaveBeenCalledWith(
-        'external_user_789',
+        'user_123',
       );
-      expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
-      expect(mockJsonFn).toHaveBeenCalledWith(expectedResult);
     });
   });
 
@@ -624,8 +578,7 @@ describe('AccountController - Password Management', () => {
 
       mockAccountService.forgotPassword.mockResolvedValue(forgotResult);
 
-      await controller.forgotPassword(forgotDto, mockResponse);
-      expect(mockJsonFn).toHaveBeenCalledWith(forgotResult);
+      await controller.forgotPassword(forgotDto);
 
       // Step 2: Confirm password reset
       const confirmDto = {
@@ -639,8 +592,7 @@ describe('AccountController - Password Management', () => {
 
       mockAccountService.confirmResetPassword.mockResolvedValue(confirmResult);
 
-      await controller.confirmResetPassword(confirmDto, mockResponse);
-      expect(mockJsonFn).toHaveBeenCalledWith(confirmResult);
+      await controller.confirmResetPassword(confirmDto);
     });
 
     it('should handle concurrent reset requests', async () => {
@@ -655,13 +607,13 @@ describe('AccountController - Password Management', () => {
       // Simulate multiple concurrent requests
       const promises = Array(5)
         .fill(null)
-        .map(() => controller.forgotPassword(forgotDto, mockResponse));
+        .map(() => controller.forgotPassword(forgotDto));
 
       await Promise.all(promises);
 
       expect(mockAccountService.forgotPassword).toHaveBeenCalledTimes(5);
-      expect(mockStatusFn).toHaveBeenCalledTimes(5);
-      expect(mockJsonFn).toHaveBeenCalledTimes(5);
+      expect(mockStatusFn).toHaveBeenCalledTimes(0);
+      expect(mockJsonFn).toHaveBeenCalledTimes(0);
     });
   });
 
@@ -672,14 +624,10 @@ describe('AccountController - Password Management', () => {
       );
 
       await expect(
-        controller.resetPassword(
-          mockRequest,
-          {
-            oldPassword: 'test',
-            newPassword: 'test',
-          },
-          mockResponse,
-        ),
+        controller.resetPassword(mockUser as any, {
+          oldPassword: 'test',
+          newPassword: 'test',
+        }),
       ).rejects.toThrow('Database connection failed');
     });
 
@@ -687,14 +635,10 @@ describe('AccountController - Password Management', () => {
       const malformedRequest = null as any;
 
       await expect(
-        controller.resetPassword(
-          malformedRequest,
-          {
-            oldPassword: 'test',
-            newPassword: 'test',
-          },
-          mockResponse,
-        ),
+        controller.resetPassword(malformedRequest, {
+          oldPassword: 'test',
+          newPassword: 'test',
+        }),
       ).rejects.toThrow();
     });
 
@@ -702,14 +646,10 @@ describe('AccountController - Password Management', () => {
       const requestWithoutUser = {} as any;
 
       await expect(
-        controller.resetPassword(
-          requestWithoutUser,
-          {
-            oldPassword: 'test',
-            newPassword: 'test',
-          },
-          mockResponse,
-        ),
+        controller.resetPassword(requestWithoutUser, {
+          oldPassword: 'test',
+          newPassword: 'test',
+        }),
       ).rejects.toThrow();
     });
   });
@@ -745,10 +685,6 @@ describe('AccountController - Password Management', () => {
     });
 
     it('should handle user ID extraction securely', async () => {
-      const mockRequestWithId = {
-        user: { id: 'secure_user_789' },
-      };
-
       const expectedResult = {
         message: 'パスワードが正常に更新されました',
         user: mockUser,
@@ -756,21 +692,15 @@ describe('AccountController - Password Management', () => {
 
       mockAccountService.resetPassword.mockResolvedValue(expectedResult);
 
-      await controller.resetPassword(
-        mockRequestWithId,
-        {
-          oldPassword: 'old',
-          newPassword: 'new',
-        },
-        mockResponse,
-      );
+      await controller.resetPassword(mockUser as any, {
+        oldPassword: 'old',
+        newPassword: 'new',
+      });
 
       expect(mockAccountService.resetPassword).toHaveBeenCalledWith(
-        'secure_user_789',
-        expect.any(Object),
+        'user_123',
+        { newPassword: 'new', oldPassword: 'old' },
       );
-      expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
-      expect(mockJsonFn).toHaveBeenCalledWith(expectedResult);
     });
   });
 });

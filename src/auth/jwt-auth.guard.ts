@@ -8,6 +8,7 @@ import { Request } from 'express';
 import { Observable } from 'rxjs';
 import { JwtService } from '@nestjs/jwt';
 import { AppErrorCodes } from '../types/error-codes';
+import { verifyJWTToken } from '../lib/auth/jwt-token';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
@@ -25,16 +26,18 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     }
 
     try {
-      const payload = this.jwtService.verify(token, {
-        secret: process.env.JWT_SECRET!,
-      });
-
-      request.user = payload;
+      return (async () => {
+        const result = await verifyJWTToken(token);
+        if (!result.success || !result.payload) {
+          throw AppErrorCodes.INVALID_TOKEN;
+        }
+        // Attach minimal user context (id only).
+        request.user = { id: result.payload.sub };
+        return super.canActivate(context) as Promise<boolean>;
+      })();
     } catch (err) {
       throw AppErrorCodes.INVALID_TOKEN;
     }
-
-    return super.canActivate(context);
   }
 
   private extractTokenFromHeader(request: Request): string | undefined {

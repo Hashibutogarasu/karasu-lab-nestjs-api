@@ -1,4 +1,5 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -16,6 +17,8 @@ import { UsersModule } from './users/users.module';
 import { GmoModule } from './gmo/gmo.module';
 import { EncryptionModule } from './encryption/encryption.module';
 import { DiscordTokenModule } from './tokens/discord-token/discord-token.module';
+import { ResponseFormatterInterceptor } from './interceptors/response-formatter.interceptor';
+import { LoggerMiddleware } from './logger-middleware/logger-middleware.middleware';
 
 @Module({
   imports: [
@@ -24,7 +27,7 @@ import { DiscordTokenModule } from './tokens/discord-token/discord-token.module'
     OauthModule,
     DeveloperModule,
     AccountModule,
-    DiscordAppModule,
+    ...(process.env.DISCORD_TOKEN ? [DiscordAppModule] : []),
     MarkdownModule,
     McpServerModule,
     DifyModule,
@@ -38,7 +41,18 @@ import { DiscordTokenModule } from './tokens/discord-token/discord-token.module'
     DiscordTokenModule,
   ],
   controllers: [AppController],
-  providers: [AppService, ResendService],
+  providers: [
+    AppService,
+    ResendService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ResponseFormatterInterceptor,
+    },
+  ],
   exports: [AppService],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(LoggerMiddleware).forRoutes('');
+  }
+}

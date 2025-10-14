@@ -13,11 +13,8 @@ import {
 export interface JWTPayload {
   id: string; // JWT State ID
   sub: string; // User ID
-  username: string;
-  email: string;
+  // Keep payload minimal for security
   provider?: string;
-  providers?: string[];
-  role?: string;
   iat?: number;
   exp?: number;
 }
@@ -93,11 +90,7 @@ export async function generateJWTToken(
     const payload: JWTPayload = {
       id: jwtState.id,
       sub: user.id,
-      username: user.username,
-      email: user.email,
       provider: request.provider,
-      providers: user.providers || [],
-      role: user.role,
       iat,
       exp,
     };
