@@ -294,8 +294,6 @@ export class AuthController {
     @Req() req: Request,
     @Res() res: Response,
     @AuthUser() user: User,
-    @AuthGoogleUser() googleUser: GoogleUser | null,
-    @AuthDiscordUser() discordUser: DiscordUser | null,
   ): Promise<void> {
     try {
       // Ensure authenticated user is present
