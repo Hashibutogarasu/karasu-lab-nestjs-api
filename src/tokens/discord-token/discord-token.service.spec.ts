@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DiscordTokenService } from './discord-token.service';
+import { getGlobalModule } from '../../utils/test/global-modules';
 
 // node-fetch is used in the service; we'll mock global.fetch for tests
 describe('DiscordTokenService', () => {
@@ -15,7 +16,7 @@ describe('DiscordTokenService', () => {
     process.env.DISCORD_CALLBACK_URL = 'http://localhost:3000/auth/callback';
 
     // create testing module
-    const module: TestingModule = await Test.createTestingModule({
+    const module: TestingModule = await getGlobalModule({
       providers: [DiscordTokenService],
     }).compile();
 

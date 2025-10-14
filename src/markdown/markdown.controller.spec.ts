@@ -1,13 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { MarkdownController } from './markdown.controller';
 import { MarkdownService } from './markdown.service';
+import { getGlobalModule } from '../utils/test/global-modules';
 
 describe('MarkdownController', () => {
   let controller: MarkdownController;
   let service: MarkdownService;
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    const module: TestingModule = await getGlobalModule({
       controllers: [MarkdownController],
       providers: [MarkdownService],
     }).compile();

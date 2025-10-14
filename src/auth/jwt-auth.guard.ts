@@ -5,20 +5,21 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
-import { Observable } from 'rxjs';
 import { JwtService } from '@nestjs/jwt';
 import { AppErrorCodes } from '../types/error-codes';
 import { verifyJWTToken } from '../lib/auth/jwt-token';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
-  constructor(private jwtService: JwtService) {
+  constructor(
+    private jwtService: JwtService,
+    private usersService: UsersService,
+  ) {
     super();
   }
 
-  canActivate(
-    context: ExecutionContext,
-  ): boolean | Promise<boolean> | Observable<boolean> {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const token = this.extractTokenFromHeader(request);
     if (!token) {
@@ -26,15 +27,17 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     }
 
     try {
-      return (async () => {
-        const result = await verifyJWTToken(token);
-        if (!result.success || !result.payload) {
-          throw AppErrorCodes.INVALID_TOKEN;
-        }
-        // Attach minimal user context (id only).
-        request.user = { id: result.payload.sub };
-        return super.canActivate(context) as Promise<boolean>;
-      })();
+      const result = await verifyJWTToken(token);
+      if (!result.success || !result.payload) {
+        throw AppErrorCodes.INVALID_TOKEN;
+      }
+
+      if (!(await this.usersService.exists(result.payload.sub))) {
+        throw AppErrorCodes.USER_NOT_FOUND;
+      }
+
+      request.user = { id: result.payload.sub };
+      return super.canActivate(context) as Promise<boolean>;
     } catch (err) {
       throw AppErrorCodes.INVALID_TOKEN;
     }

@@ -9,6 +9,7 @@ import {
   GmoCoinRules,
 } from '../../types/gmo-coin';
 import { GetKlineDto, Interval, PriceType } from './dto/gmo-coin-request.dto';
+import { getGlobalModule } from '../../utils/test/global-modules';
 
 describe('CoinController', () => {
   let controller: CoinController;
@@ -79,7 +80,7 @@ describe('CoinController', () => {
   };
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    const module: TestingModule = await getGlobalModule({
       controllers: [CoinController],
       providers: [
         {

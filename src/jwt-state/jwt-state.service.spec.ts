@@ -4,6 +4,7 @@ import * as jwtTokenLib from '../lib/auth/jwt-token';
 import * as lib from '../lib';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { User } from '@prisma/client';
+import { getGlobalModule } from '../utils/test/global-modules';
 
 jest.mock('../lib/auth/jwt-token', () => ({
   generateJWTToken: jest.fn(),
@@ -41,7 +42,7 @@ describe('JwtStateService', () => {
   } as any;
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    const module: TestingModule = await getGlobalModule({
       providers: [JwtStateService],
     }).compile();
 

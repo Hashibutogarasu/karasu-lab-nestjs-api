@@ -19,6 +19,7 @@ import { EncryptionModule } from './encryption/encryption.module';
 import { DiscordTokenModule } from './tokens/discord-token/discord-token.module';
 import { ResponseFormatterInterceptor } from './interceptors/response-formatter.interceptor';
 import { LoggerMiddleware } from './logger-middleware/logger-middleware.middleware';
+import { UsersService } from './users/users.service';
 
 @Module({
   imports: [
@@ -32,7 +33,10 @@ import { LoggerMiddleware } from './logger-middleware/logger-middleware.middlewa
     McpServerModule,
     DifyModule,
     JwtStateModule,
-    UsersModule,
+    {
+      global: true,
+      module: UsersModule,
+    },
     GmoModule,
     EncryptionModule.forRoot({
       privateKey: process.env.ENCRYPTION_PRIVATE_KEY!,

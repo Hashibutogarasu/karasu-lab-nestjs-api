@@ -10,7 +10,7 @@ export async function getAuthenticatedUserProfile<T>(
   ctx: ExecutionContext,
   provider: string,
   parseProfile: (rawProfile: any) => T,
-): Promise<T> {
+): Promise<T | null> {
   const request = ctx.switchToHttp().getRequest();
 
   if (!request.user?.id) {
@@ -28,7 +28,7 @@ export async function getAuthenticatedUserProfile<T>(
   const profile = user.extraProfiles?.find((p) => p.provider === provider);
 
   if (!profile) {
-    throw AppErrorCodes.EXTRA_USER_PROFILE_NOT_FOUND;
+    return null;
   }
 
   // raw_profile をパース

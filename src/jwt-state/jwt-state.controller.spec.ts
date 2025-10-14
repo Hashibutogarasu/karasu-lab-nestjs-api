@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtStateController } from './jwt-state.controller';
 import { JwtStateService } from './jwt-state.service';
+import { getGlobalModule } from '../utils/test/global-modules';
 
 describe('JwtStateController', () => {
   let controller: JwtStateController;
@@ -22,7 +23,7 @@ describe('JwtStateController', () => {
       remove: jest.fn(),
     };
 
-    const module: TestingModule = await Test.createTestingModule({
+    const module: TestingModule = await getGlobalModule({
       controllers: [JwtStateController],
       providers: [{ provide: JwtStateService, useValue: jwtStateService }],
     }).compile();

@@ -13,6 +13,7 @@ jest.mock('../../lib', () => ({
 }));
 
 import * as lib from '../../lib';
+import { getGlobalModule } from '../../utils/test/global-modules';
 
 // Prismaが返すレコード型の定義（実際のモデルに合わせる）
 type PrismaRecord = {
@@ -84,7 +85,7 @@ describe('ExternalProviderAccessTokenService', () => {
     mockGetExternalProviderAccessTokensByUserId.mockResolvedValue([]);
     mockDeleteExternalProviderAccessToken.mockResolvedValue(true);
 
-    const module: TestingModule = await Test.createTestingModule({
+    const module: TestingModule = await getGlobalModule({
       providers: [
         ExternalProviderAccessTokenService,
         { provide: EncryptionService, useValue: mockEncryptionService },

@@ -6,6 +6,7 @@ import { createMock } from '@golevelup/ts-jest';
 import type { DiscordUser } from '../types/discord-user';
 import type { GoogleUser } from '../types/google-user';
 import * as queryModule from '../lib/database/query';
+import { getGlobalModule } from '../utils/test/global-modules';
 
 describe('UsersController', () => {
   let controller: UsersController;
@@ -145,7 +146,7 @@ describe('UsersController', () => {
   };
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    const module: TestingModule = await getGlobalModule({
       controllers: [UsersController],
       providers: [
         UsersService,

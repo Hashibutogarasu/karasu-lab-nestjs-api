@@ -15,6 +15,7 @@ import { createMock } from '@golevelup/ts-jest';
 import type { Response } from 'express';
 import { Readable } from 'stream';
 import { AppErrorCodes } from '../types/error-codes';
+import { getGlobalModule } from '../utils/test/global-modules';
 
 describe('DifyController', () => {
   let controller: DifyController;
@@ -53,7 +54,7 @@ describe('DifyController', () => {
   };
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    const module: TestingModule = await getGlobalModule({
       imports: [
         JwtModule.register({
           secret: 'test-secret',

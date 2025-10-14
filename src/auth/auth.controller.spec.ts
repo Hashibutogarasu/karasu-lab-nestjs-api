@@ -15,17 +15,16 @@ import { OAuthProviderFactory } from '../lib/auth/oauth-provider.factory';
 import { GoogleOAuthProvider } from '../lib/auth/google-oauth.provider';
 import { DiscordOAuthProvider } from '../lib/auth/discord-oauth.provider';
 import { AppErrorCode, AppErrorCodes } from '../types/error-codes';
-
-const mockUser = {
-  id: 'user_123',
-  username: 'testuser',
-  email: 'test@example.com',
-  passwordHash: null,
-  providers: [],
-  createdAt: new Date(),
-  updatedAt: new Date(),
-  role: 'user',
-};
+import { getGlobalModule } from '../utils/test/global-modules';
+import { mockUser } from '../../mock-data';
+import {
+  mockAuthService,
+  mockDiscordProvider,
+  mockExternalProviderAccessTokenService,
+  mockGoogleProvider,
+} from '../utils/test/mock-services';
+import { mockRequest, mockResponse } from '../utils/test/mock-networking';
+import { mockJsonFn, mockStatusFn } from '../utils/test/mock-fuctions';
 
 // Mock the JWT token generation function
 // Note: jest.mock calls are hoisted; avoid referencing local variables (mockUser) here to prevent TDZ.
@@ -63,7 +62,7 @@ jest.mock('../lib/auth/jwt-token', () => ({
 }));
 
 // Mock the createJWTState function (for backward compatibility)
-jest.mock('../lib', () => ({
+jest.mock('../lib/database/query', () => ({
   createJWTState: jest.fn().mockResolvedValue({ id: 'jwt_state_123' }),
 }));
 
@@ -72,55 +71,6 @@ describe('AuthController', () => {
   let service: AuthService;
 
   // Mock Response object
-  const mockStatusFn = jest.fn();
-  const mockJsonFn = jest.fn();
-  const mockResponse = {
-    status: mockStatusFn.mockReturnThis(),
-    json: mockJsonFn.mockReturnThis(),
-  } as unknown as Response;
-
-  // Mock Request object
-  const mockRequest = {
-    headers: {},
-    ip: '127.0.0.1',
-  } as unknown as Request;
-
-  const mockAuthService = {
-    register: jest.fn(),
-    login: jest.fn(),
-    createSession: jest.fn(),
-    getProfile: jest.fn(),
-    logout: jest.fn(),
-    validateSession: jest.fn(),
-    validatePassword: jest.fn(),
-    validateUsername: jest.fn(),
-    validateEmail: jest.fn(),
-    cleanupExpiredSessions: jest.fn(),
-  };
-
-  const mockExternalProviderAccessTokenService = {
-    save: jest.fn(),
-    getById: jest.fn(),
-    getByUserId: jest.fn(),
-    getDecryptedById: jest.fn(),
-    update: jest.fn(),
-    upsert: jest.fn(),
-    delete: jest.fn(),
-  };
-
-  const mockGoogleProvider = {
-    getProvider: jest.fn().mockReturnValue('google'),
-    getAuthorizationUrl: jest.fn(),
-    processOAuth: jest.fn(),
-    isAvailable: jest.fn().mockReturnValue(true),
-  };
-
-  const mockDiscordProvider = {
-    getProvider: jest.fn().mockReturnValue('discord'),
-    getAuthorizationUrl: jest.fn(),
-    processOAuth: jest.fn(),
-    isAvailable: jest.fn().mockReturnValue(true),
-  };
 
   const mockOAuthProviderFactory = {
     getProvider: jest.fn((provider: string) => {
@@ -138,7 +88,7 @@ describe('AuthController', () => {
   };
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    const module: TestingModule = await getGlobalModule({
       controllers: [AuthController],
       providers: [
         {

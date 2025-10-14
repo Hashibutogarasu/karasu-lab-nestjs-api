@@ -14,6 +14,7 @@ import * as query from '../lib/database/query';
 import { ExternalProviderAccessTokenService } from '../encryption/external-provider-access-token/external-provider-access-token.service';
 import { OAuthProviderFactory } from '../lib/auth/oauth-provider.factory';
 import { AppErrorCodes } from '../types/error-codes';
+import { getGlobalModule } from '../utils/test/global-modules';
 
 // Mock implementations
 jest.mock('../lib/auth/sns-auth');
@@ -133,7 +134,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
     process.env.BASE_URL = process.env.BASE_URL ?? 'http://localhost:3000';
     process.env.JWT_SECRET = process.env.JWT_SECRET ?? 'test_jwt_secret';
 
-    const module: TestingModule = await Test.createTestingModule({
+    const module: TestingModule = await getGlobalModule({
       controllers: [AuthController],
       providers: [
         {
@@ -631,6 +632,9 @@ describe('AuthController - SNS OAuth Authentication', () => {
         success: true,
         token: 'refresh_token_abc123',
       });
+      mockAuthService.createSession.mockResolvedValue({
+        sessionId: 'session_id_abc123',
+      });
     });
 
     it('should verify token and return JWT successfully', async () => {
@@ -660,6 +664,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
         profile: expectedResult.profile,
         access_token: expectedResult.token,
         refresh_token: 'refresh_token_abc123',
+        session_id: 'session_id_abc123',
       });
     });
 
@@ -724,9 +729,13 @@ describe('AuthController - SNS OAuth Authentication', () => {
           providers: ['google'],
         },
         token: 'jwt_token_abc123',
+        jwtId: 'jwt_id_abc123',
       };
 
       mockVerifyAndCreateToken.mockResolvedValueOnce(successResult);
+      mockAuthService.createSession.mockResolvedValueOnce({
+        sessionId: 'session_id_abc123',
+      });
 
       await controller.verifyToken(validVerifyDto, mockResponse);
 
@@ -1325,9 +1334,13 @@ describe('AuthController - SNS OAuth Authentication', () => {
           providers: ['google'],
         },
         token: 'jwt_token_abc123',
+        jwtId: 'jwt_id_abc123',
       };
 
       mockVerifyAndCreateToken.mockResolvedValue(verifyResult);
+      mockAuthService.createSession.mockResolvedValue({
+        sessionId: 'session_id_abc123',
+      });
 
       const verifyDto = {
         stateCode: 'state_abc123',

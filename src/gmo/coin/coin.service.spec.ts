@@ -5,6 +5,7 @@ import { PriceType, Interval } from './dto/gmo-coin-request.dto';
 import * as queryModule from '../../lib/database/query';
 import { AppErrorCodes } from '../../types/error-codes';
 import fetchJson from '../../utils/network-utils';
+import { getGlobalModule } from '../../utils/test/global-modules';
 
 // Mock DB save functions to avoid contacting real database during unit tests
 jest.mock('../../lib/database/query', () => ({
@@ -28,7 +29,7 @@ describe('CoinService', () => {
   let service: CoinService;
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    const module: TestingModule = await getGlobalModule({
       providers: [CoinService],
     }).compile();
 

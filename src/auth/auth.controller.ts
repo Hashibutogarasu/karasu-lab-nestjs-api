@@ -46,6 +46,10 @@ import { AppErrorCode, AppErrorCodes } from '../types/error-codes';
 import { NoInterceptor } from '../interceptors/no-interceptor.decorator';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { AuthUser } from './decorators/auth-user.decorator';
+import { AuthGoogleUser } from './decorators/auth-google-user.decorator';
+import type { GoogleUser } from '../types/google-user';
+import { AuthDiscordUser } from './decorators/auth-discord-user.decorator';
+import type { DiscordUser } from '../types/discord-user';
 
 @NoInterceptor()
 @Controller('auth')
@@ -290,6 +294,8 @@ export class AuthController {
     @Req() req: Request,
     @Res() res: Response,
     @AuthUser() user: User,
+    @AuthGoogleUser() googleUser: GoogleUser | null,
+    @AuthDiscordUser() discordUser: DiscordUser | null,
   ): Promise<void> {
     try {
       // Ensure authenticated user is present
@@ -304,11 +310,17 @@ export class AuthController {
         throw AppErrorCodes.INVALID_SESSION;
       }
 
-      // 成功レスポンス
-      res.status(HttpStatus.OK).json({
+      const data = {
         message: 'Profile retrieved successfully',
-        user: userProfile,
-      });
+        user: {
+          ...userProfile,
+          providers: user.providers,
+          role: user.role,
+        },
+      };
+
+      // 成功レスポンス
+      res.status(HttpStatus.OK).json(data);
     } catch (error) {
       if (error instanceof AppErrorCode) {
         throw error;
@@ -546,6 +558,9 @@ export class AuthController {
       if (!tokenResult.profile?.sub) {
         throw AppErrorCodes.INVALID_TOKEN;
       }
+      const sessionData = await this.authService.createSession(
+        tokenResult.profile.sub,
+      );
       const refreshTokenResult = await generateRefreshToken(
         tokenResult.profile.sub,
       );
@@ -562,6 +577,7 @@ export class AuthController {
         profile: tokenResult.profile,
         access_token: tokenResult.token,
         refresh_token: refreshTokenResult.token,
+        session_id: sessionData.sessionId,
       });
     } catch (error) {
       if (error instanceof AppErrorCode) {

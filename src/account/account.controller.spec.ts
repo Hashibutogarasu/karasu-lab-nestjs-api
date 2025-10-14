@@ -15,6 +15,7 @@ import {
   ConfirmResetPasswordDto,
   SetPasswordDto,
 } from './dto/password-reset.dto';
+import { getGlobalModule } from '../utils/test/global-modules';
 
 describe('AccountController - Password Management', () => {
   let controller: AccountController;
@@ -59,7 +60,7 @@ describe('AccountController - Password Management', () => {
   };
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    const module: TestingModule = await getGlobalModule({
       controllers: [AccountController],
       providers: [
         {

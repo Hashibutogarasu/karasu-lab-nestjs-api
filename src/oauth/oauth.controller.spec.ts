@@ -14,6 +14,7 @@ import {
   IntrospectResponse,
   ConsentResponse,
 } from '../types/oauth-responses.types';
+import { getGlobalModule } from '../utils/test/global-modules';
 
 describe('OauthController', () => {
   let controller: OauthController;
@@ -30,7 +31,7 @@ describe('OauthController', () => {
   };
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    const module: TestingModule = await getGlobalModule({
       controllers: [OauthController],
       providers: [
         {
