@@ -194,6 +194,13 @@ export async function createUser(data: {
       email: data.email,
       passwordHash: hashString(data.password), // パスワードをハッシュ化
     },
+    select: {
+      id: true,
+      username: true,
+      email: true,
+      role: true,
+      passwordHash: false,
+    },
   });
 }
 
