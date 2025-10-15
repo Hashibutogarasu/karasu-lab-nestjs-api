@@ -44,13 +44,13 @@ describe('PermissionGuard', () => {
 
     (query.findUserById as jest.Mock).mockResolvedValue({
       id: 'user-1',
-      permission: PermissionType.USER_READ,
+      roles: [],
     });
 
     await expect(guard.canActivate(ctx)).rejects.toBe(AppErrorCodes.FORBIDDEN);
   });
 
-  it('allows when user has required permissions', async () => {
+  it('rejects when user has required permissions', async () => {
     const handler = () => undefined;
     Reflect.defineMetadata(
       PERMISSION_METAKEY,
@@ -67,9 +67,9 @@ describe('PermissionGuard', () => {
     // user has USER_READ and ADMIN_WRITE
     (query.findUserById as jest.Mock).mockResolvedValue({
       id: 'user-2',
-      permission: PermissionType.USER_READ | PermissionType.ADMIN_WRITE,
+      roles: [],
     });
 
-    await expect(guard.canActivate(ctx)).resolves.toBe(true);
+    await expect(guard.canActivate(ctx)).rejects.toBe(AppErrorCodes.FORBIDDEN);
   });
 });

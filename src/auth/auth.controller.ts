@@ -408,7 +408,7 @@ export class AuthController {
   }
 
   /**
-   * SNS認証コールバックエンドポイント (統合版)
+   * SNS認証コールバックエンドポイント
    * GET /auth/callback/:provider
    */
   @Get('callback/:provider')
