@@ -1,5 +1,11 @@
-import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { User } from '@prisma/client';
+import { findUserByIdWithoutPassword } from '../../lib';
+import {
+  createParamDecorator,
+  ExecutionContext,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { AppErrorCodes } from '../../types/error-codes';
 
 /**
  * JWT認証されたユーザー情報を取得するデコレーター
@@ -14,8 +20,15 @@ import { User } from '@prisma/client';
  * ```
  */
 export const AuthUser = createParamDecorator(
-  (data: unknown, ctx: ExecutionContext): User => {
+  async (
+    data: unknown,
+    ctx: ExecutionContext,
+  ): Promise<Omit<User, 'passwordHash'> | null> => {
     const request = ctx.switchToHttp().getRequest();
-    return request.user;
+    const user = await findUserByIdWithoutPassword(request.user.id);
+    if (!user) {
+      throw AppErrorCodes.UNAUTHORIZED;
+    }
+    return user;
   },
 );

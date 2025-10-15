@@ -158,10 +158,25 @@ export async function findUserByEmail(email: string) {
  * ユーザーIDでユーザーを取得
  */
 export async function findUserById(userId: string) {
-  return prisma.user.findUnique({
+  return prisma.user.findFirst({
     where: { id: userId },
     include: {
       extraProfiles: true,
+    },
+  });
+}
+
+/**
+ * パスワードなしでユーザーを取得
+ */
+export async function findUserByIdWithoutPassword(userId: string) {
+  return prisma.user.findFirst({
+    where: { id: userId },
+    include: {
+      extraProfiles: true,
+    },
+    omit: {
+      passwordHash: true,
     },
   });
 }
