@@ -19,9 +19,8 @@ import { EncryptionModule } from './encryption/encryption.module';
 import { DiscordTokenModule } from './tokens/discord-token/discord-token.module';
 import { ResponseFormatterInterceptor } from './interceptors/response-formatter.interceptor';
 import { LoggerMiddleware } from './logger-middleware/logger-middleware.middleware';
-import { UsersService } from './users/users.service';
-import { PermissionBitcalcService } from './permission-bitcalc/permission-bitcalc.service';
-import { RoleService } from './role/role.service';
+import { RoleModule } from './role/role.module';
+import { PermissionBitcalcModule } from './permission-bitcalc/permission-bitcalc.module';
 
 @Module({
   imports: [
@@ -45,6 +44,8 @@ import { RoleService } from './role/role.service';
       publicKey: process.env.ENCRYPTION_PUBLIC_KEY!,
     }),
     DiscordTokenModule,
+    RoleModule,
+    PermissionBitcalcModule,
   ],
   controllers: [AppController],
   providers: [
@@ -54,8 +55,6 @@ import { RoleService } from './role/role.service';
       provide: APP_INTERCEPTOR,
       useClass: ResponseFormatterInterceptor,
     },
-    PermissionBitcalcService,
-    RoleService,
   ],
   exports: [AppService],
 })

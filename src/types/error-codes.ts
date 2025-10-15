@@ -183,4 +183,5 @@ export const AppErrorCodes = {
     400,
     'Provided permission bitmask contains invalid bits',
   ),
+  PERMISSION_DENIED: new AppErrorCode(403, 'Permission denied'),
 };

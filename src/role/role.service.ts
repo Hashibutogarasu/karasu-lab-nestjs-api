@@ -8,6 +8,9 @@ import {
 } from '../lib/database/query';
 import { deleteRole } from '../lib/database/query';
 import { UsersService } from '../users/users.service';
+import { User } from '@prisma/client';
+import { PublicUser } from '../auth/decorators/auth-user.decorator';
+import { AppErrorCodes } from '../types/error-codes';
 
 @Injectable()
 export class RoleService implements OnModuleInit {
@@ -58,10 +61,6 @@ export class RoleService implements OnModuleInit {
       this.logger.error('Error synchronizing roles', err);
     }
 
-    await this.updateAdminUsers();
-  }
-
-  async updateAdminUsers() {
     this.logger.log('Adding admin role to the configured admin users...');
 
     const adminUsers = await this.usersService.findUsersByDomain(
@@ -70,10 +69,32 @@ export class RoleService implements OnModuleInit {
 
     this.logger.log(`Found ${adminUsers.length} admin users.`);
 
-    for (const user of adminUsers) {
-      await this.usersService.updateUserRoles(user.id, [Roles.ADMIN]);
-    }
+    await this.updateAdminUsers(
+      adminUsers.map((user) => {
+        const { passwordHash, ...data } = user;
+        return {
+          ...data,
+          extraProfiles: [],
+          roles: [],
+        };
+      }),
+    );
 
     this.logger.log('Role initialization complete.');
+  }
+
+  async updateAdminUsers(users: PublicUser[]) {
+    const adminDomain = process.env.ADMIN_DOMAIN!;
+    const invalidUser = users.find(
+      (user) => user.email.split('@')[1] !== adminDomain,
+    );
+
+    if (invalidUser) {
+      throw AppErrorCodes.PERMISSION_DENIED;
+    }
+
+    for (const user of users) {
+      await this.usersService.updateUserRoles(user.id, [Roles.ADMIN]);
+    }
   }
 }

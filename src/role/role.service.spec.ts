@@ -2,26 +2,46 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { RoleService } from './role.service';
 import * as db from '../lib/database/query';
 import { PermissionBitcalcService } from '../permission-bitcalc/permission-bitcalc.service';
-import { RoleDefinitions } from '../types/roles';
+import { RoleDefinitions, Roles } from '../types/roles';
 import { getGlobalModule } from '../utils/test/global-modules';
+import { UsersService } from '../users/users.service';
+import { PublicUser } from '../auth/decorators/auth-user.decorator';
+import { AppErrorCodes } from '../types/error-codes';
 
 describe('RoleService', () => {
   let service: RoleService;
+  let usersService: UsersService;
+  let updateUserRolesMock: jest.Mock;
 
   beforeEach(async () => {
     jest.spyOn(db, 'findRoleByName').mockReset();
     jest.spyOn(db, 'upsertRoleByName').mockReset();
     jest.spyOn(db, 'findAllRoles').mockReset();
     jest.spyOn(db, 'deleteRole').mockReset();
-    jest.spyOn(db, 'updateUserRoles').mockReset();
-    // Prevent actual Prisma update during module initialization
-    (db.updateUserRoles as jest.Mock).mockResolvedValue(null);
 
     const module: TestingModule = await getGlobalModule({
-      providers: [RoleService, PermissionBitcalcService],
+      providers: [
+        RoleService,
+        PermissionBitcalcService,
+        {
+          provide: UsersService,
+          useValue: {
+            findUsersByDomain: jest.fn().mockResolvedValue([]),
+            updateUserRoles: jest.fn(),
+          },
+        },
+      ],
     }).compile();
 
     service = module.get<RoleService>(RoleService);
+    usersService = module.get<UsersService>(UsersService);
+    // capture the mock function locally to avoid referencing an unbound method
+    updateUserRolesMock = (usersService as any).updateUserRoles as jest.Mock;
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+    delete process.env.ADMIN_DOMAIN;
   });
 
   it('should be defined', () => {
@@ -69,5 +89,39 @@ describe('RoleService', () => {
     await service.onModuleInit();
 
     expect(db.deleteRole).toHaveBeenCalledWith('extra');
+  });
+
+  describe('updateAdminUsers', () => {
+    const ADMIN_DOMAIN = 'admin.com';
+
+    beforeEach(() => {
+      process.env.ADMIN_DOMAIN = ADMIN_DOMAIN;
+    });
+
+    it('should throw a permission error if a user with a non-admin domain is included', async () => {
+      const users = [
+        { id: '1', email: 'user1@admin.com' },
+        { id: '2', email: 'user2@invalid.com' },
+      ] as PublicUser[];
+
+      await expect(service.updateAdminUsers(users)).rejects.toThrow(
+        AppErrorCodes.PERMISSION_DENIED,
+      );
+
+      expect(updateUserRolesMock).not.toHaveBeenCalled();
+    });
+
+    it('should grant admin role to all users if they all have the admin domain', async () => {
+      const users = [
+        { id: '1', email: 'user1@admin.com' },
+        { id: '2', email: 'user2@admin.com' },
+      ] as PublicUser[];
+
+      await service.updateAdminUsers(users);
+
+      expect(updateUserRolesMock).toHaveBeenCalledTimes(2);
+      expect(updateUserRolesMock).toHaveBeenCalledWith('1', [Roles.ADMIN]);
+      expect(updateUserRolesMock).toHaveBeenCalledWith('2', [Roles.ADMIN]);
+    });
   });
 });
