@@ -171,7 +171,7 @@ export class AccountService {
    * JWT認証したユーザーが外部プロバイダーでパスワードを持たないかどうかを判定
    */
   async canSetPassword(userId: string) {
-    const user = await findUserById(userId, { passwordHash: true });
+    const user = await findUserById(userId, { passwordHash: false });
     if (!user) {
       throw AppErrorCodes.USER_NOT_FOUND;
     }
