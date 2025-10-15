@@ -7,6 +7,6 @@ export const IsAdmin = createParamDecorator(
 
     const user = await findUserById(request.user.id);
 
-    return user?.role == 'admin';
+    return user?.roles.some((role) => role.name === 'admin') ?? false;
   },
 );

@@ -625,7 +625,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
         extraProfiles: [],
         createdAt: new Date(),
         updatedAt: new Date(),
-        role: 'user',
+        roles: [],
       };
       mockFindUserById.mockResolvedValue(mockUser);
       (jwtToken.generateRefreshToken as jest.Mock).mockResolvedValue({
@@ -647,6 +647,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
           role: 'user',
           provider: 'google',
           providers: ['google'],
+          roles: [],
         },
         token: 'access_token_abc123',
         jwtId: 'jwt_id_abc123',
@@ -727,6 +728,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
           role: 'user',
           provider: 'google',
           providers: ['google'],
+          roles: [],
         },
         token: 'jwt_token_abc123',
         jwtId: 'jwt_id_abc123',
@@ -1332,6 +1334,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
           role: 'user',
           provider: 'google',
           providers: ['google'],
+          roles: [],
         },
         token: 'jwt_token_abc123',
         jwtId: 'jwt_id_abc123',

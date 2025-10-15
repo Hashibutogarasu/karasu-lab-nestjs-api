@@ -169,4 +169,18 @@ export const AppErrorCodes = {
     400,
     'id and userId are required',
   ),
+
+  // Permission Bitcalc Errors
+  INVALID_PERMISSION: new AppErrorCode(
+    400,
+    'One or more provided permissions are invalid',
+  ),
+  DUPLICATE_PERMISSION: new AppErrorCode(
+    400,
+    'Duplicate permissions are not allowed',
+  ),
+  INVALID_PERMISSION_BITMASK: new AppErrorCode(
+    400,
+    'Provided permission bitmask contains invalid bits',
+  ),
 };

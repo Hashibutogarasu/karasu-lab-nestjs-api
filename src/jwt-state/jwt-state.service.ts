@@ -15,7 +15,6 @@ export class JwtStateService {
   async createJWT(createJwtStateDto: CreateJwtStateDto) {
     const tokenResult = await generateJWTToken({
       userId: createJwtStateDto.userId,
-      expirationHours: 1, // デフォルト1時間
     });
 
     if (!tokenResult.success) {

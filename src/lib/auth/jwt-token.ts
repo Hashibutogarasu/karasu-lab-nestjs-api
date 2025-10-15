@@ -9,6 +9,7 @@ import {
   getJWTStateById,
   updateJWTState,
 } from '../database/query';
+import { Role } from '@prisma/client';
 
 export interface JWTPayload {
   id: string; // JWT State ID
@@ -22,7 +23,7 @@ export interface JWTPayload {
 export interface CreateTokenRequest {
   userId: string;
   provider?: string;
-  expirationHours?: number; // デフォルト1時間
+  expirationHours?: number;
 }
 
 export interface CreateTokenResponse {
@@ -37,7 +38,7 @@ export interface CreateTokenResponse {
     providers: string[];
   };
   user?: {
-    role: string;
+    roles: Role[];
   };
   expiresAt?: Date;
   error?: string;
@@ -80,7 +81,7 @@ export async function generateJWTToken(
     // JWT State を作成
     const jwtState = await createJWTState(user.id);
 
-    // トークンの有効期限を計算（デフォルト1時間）
+    // トークンの有効期限を計算
     const expirationHours = request.expirationHours || 1;
     const iat = Math.floor(Date.now() / 1000);
     const exp = iat + expirationHours * 60 * 60;
@@ -114,7 +115,7 @@ export async function generateJWTToken(
         providers: user.providers || [],
       },
       user: {
-        role: user.role,
+        roles: user.roles,
       },
       expiresAt,
     };

@@ -72,7 +72,7 @@ export class CleanupScheduler {
   private static interval: NodeJS.Timeout | null = null;
 
   /**
-   * 定期クリーンアップを開始（デフォルト: 1時間ごと）
+   * 定期クリーンアップを開始
    */
   static startScheduledCleanup(intervalMinutes: number = 60): void {
     if (this.interval) {

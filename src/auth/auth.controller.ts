@@ -46,6 +46,7 @@ import { AppErrorCode, AppErrorCodes } from '../types/error-codes';
 import { NoInterceptor } from '../interceptors/no-interceptor.decorator';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { AuthUser } from './decorators/auth-user.decorator';
+import type { PublicUser } from './decorators/auth-user.decorator';
 import { AuthGoogleUser } from './decorators/auth-google-user.decorator';
 import type { GoogleUser } from '../types/google-user';
 import { AuthDiscordUser } from './decorators/auth-discord-user.decorator';
@@ -92,7 +93,6 @@ export class AuthController {
         }
       }
 
-      // 成功レスポンス
       res.status(HttpStatus.CREATED).json({
         message: 'User registered successfully',
         user: result.user,
@@ -219,7 +219,6 @@ export class AuthController {
         throw AppErrorCodes.TOKEN_GENERATION_FAILED;
       }
 
-      // 成功レスポンス
       res.status(HttpStatus.OK).json({
         message: 'Login successful',
         jwtId: tokenResult.jwtId,
@@ -293,7 +292,7 @@ export class AuthController {
   async getProfile(
     @Req() req: Request,
     @Res() res: Response,
-    @AuthUser() user: User,
+    @AuthUser() user: PublicUser,
   ): Promise<void> {
     try {
       // Ensure authenticated user is present
@@ -313,11 +312,10 @@ export class AuthController {
         user: {
           ...userProfile,
           providers: user.providers,
-          role: user.role,
+          roles: user.roles,
         },
       };
 
-      // 成功レスポンス
       res.status(HttpStatus.OK).json(data);
     } catch (error) {
       if (error instanceof AppErrorCode) {

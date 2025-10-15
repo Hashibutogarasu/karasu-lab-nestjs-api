@@ -29,7 +29,6 @@ describe('JwtStateService', () => {
     providers: [],
     createdAt: new Date(),
     updatedAt: new Date(),
-    role: 'user',
   };
 
   const sampleJWTState = {
@@ -105,9 +104,8 @@ describe('JwtStateService', () => {
 
       const res = await service.createJWT(dto);
 
-      expect((jwtTokenLib as any).generateJWTToken).toHaveBeenCalledWith({
+      expect(jwtTokenLib.generateJWTToken).toHaveBeenCalledWith({
         userId: dto.userId,
-        expirationHours: 1,
       });
       expect(res).toHaveProperty('jwtId', sampleJWTState.id);
       expect(res).toHaveProperty('token', 'mock_token');
@@ -118,7 +116,7 @@ describe('JwtStateService', () => {
 
     it('findAll should return JWT states for user', async () => {
       const res = await service.findAll(mockUser);
-      expect((lib as any).getAllJWTState).toHaveBeenCalledWith({
+      expect(lib.getAllJWTState).toHaveBeenCalledWith({
         userId: mockUser.id,
       });
       expect(res).toEqual([sampleJWTState]);

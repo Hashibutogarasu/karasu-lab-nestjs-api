@@ -34,7 +34,7 @@ export class AdminGuard implements CanActivate {
       throw AppErrorCodes.USER_NOT_FOUND;
     }
 
-    if (dbUser?.role !== 'admin') {
+    if (dbUser?.roles.some((role) => role.name === 'admin') === false) {
       throw AppErrorCodes.FORBIDDEN;
     }
 

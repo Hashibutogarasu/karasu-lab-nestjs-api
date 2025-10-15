@@ -6,7 +6,8 @@ const mockUser = {
   providers: [],
   createdAt: new Date(),
   updatedAt: new Date(),
-  role: 'user',
+  roles: [],
+  extraProfiles: [],
 };
 
 export { mockUser };

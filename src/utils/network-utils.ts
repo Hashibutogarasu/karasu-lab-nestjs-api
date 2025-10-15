@@ -18,9 +18,7 @@ export async function fetchJson<T>(
   init?: RequestInit,
   options?: {
     validate?: Validator<T>;
-    // デフォルトは response.ok による判定。特定のステータスのみ成功とみなす場合に指定。
     okStatuses?: number[];
-    // ミリ秒指定でタイムアウト (省略時はタイムアウトなし)
     timeoutMs?: number;
   },
 ): Promise<T> {

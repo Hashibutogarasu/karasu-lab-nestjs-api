@@ -42,7 +42,6 @@ model User {
   providers    String[] @default([])
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
-  role         String   @default("user") // "user" or "admin"
 
   // Relations
   authorizationCodes          AuthorizationCode[]
@@ -54,8 +53,22 @@ model User {
   authStates                  AuthState[]
   JWTState                    JWTState[]
   ExternalProviderAccessToken ExternalProviderAccessToken[]
+  roles                       Role[]
 
   @@map("users")
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  bitmask     Int      @default(0)
+
+  users User[]
+
+  @@map("roles")
 }
 
 model AuthorizationCode {
@@ -71,7 +84,7 @@ model AuthorizationCode {
 
   // Relations
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("authorization_codes")
 }

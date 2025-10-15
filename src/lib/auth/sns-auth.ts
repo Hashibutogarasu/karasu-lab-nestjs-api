@@ -21,6 +21,7 @@ import {
 import { generateJWTToken } from './jwt-token';
 import * as bcrypt from 'bcrypt';
 import { IOAuthProvider } from './oauth-provider.interface';
+import { Role } from '@prisma/client';
 
 export interface SnsProfile {
   providerId: string;
@@ -57,11 +58,11 @@ export interface VerifyTokenResponse {
     email?: string;
     picture?: string;
     provider: string;
-    role: string;
+    roles: Role[];
     providers: string[];
   };
   user?: {
-    role: string;
+    roles: Role[];
   };
   token?: string;
   error?: string;
@@ -316,12 +317,12 @@ export async function verifyAndCreateToken(
         sub: user.id,
         name: user.username,
         email: user.email,
-        role: user.role,
+        roles: user.roles,
         provider: authState.provider,
         providers: user.providers || [authState.provider],
       },
       user: {
-        role: user.role,
+        roles: user.roles,
       },
       token: tokenResult.token,
     };

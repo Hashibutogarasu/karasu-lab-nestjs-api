@@ -16,7 +16,7 @@ import { GoogleOAuthProvider } from '../lib/auth/google-oauth.provider';
 import { DiscordOAuthProvider } from '../lib/auth/discord-oauth.provider';
 import { AppErrorCode, AppErrorCodes } from '../types/error-codes';
 import { getGlobalModule } from '../utils/test/global-modules';
-import { mockUser } from '../../mock-data';
+import { mockUser } from '../utils/test/mock-data';
 import {
   mockAuthService,
   mockDiscordProvider,
@@ -620,11 +620,10 @@ describe('AuthController', () => {
         id: 'user_123',
         username: 'testuser',
         email: 'test@example.com',
-        passwordHash: null,
         providers: [],
         createdAt: new Date(),
         updatedAt: new Date(),
-        role: 'user',
+        roles: [],
       };
 
       mockAuthService.getProfile.mockResolvedValue(mockUserProfile);
@@ -633,7 +632,11 @@ describe('AuthController', () => {
       const promises = Array(5)
         .fill(null)
         .map(() =>
-          controller.getProfile(mockRequest, mockResponse, mockUserProfile),
+          controller.getProfile(
+            mockRequest,
+            mockResponse,
+            mockUserProfile as any,
+          ),
         );
 
       await Promise.all(promises);
@@ -773,7 +776,11 @@ describe('AuthController', () => {
       const mockProfile = { ...mockUser };
       mockAuthService.getProfile.mockResolvedValue(mockProfile);
 
-      await controller.getProfile(mockRequest, mockResponse, mockProfile);
+      await controller.getProfile(
+        mockRequest,
+        mockResponse,
+        mockProfile as any,
+      );
       expect(mockAuthService.getProfile).toHaveBeenCalledWith(mockProfile.id);
       expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
     });

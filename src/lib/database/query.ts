@@ -6,6 +6,7 @@ import {
   ExternalProviderAccessTokenCreateSchema,
   ExternalProviderAccessTokenUpdateSchema,
 } from '../../types/external-provider-access-token';
+import { PublicUser } from '../../auth/decorators/auth-user.decorator';
 
 const prisma = new PrismaClient();
 
@@ -157,26 +158,18 @@ export async function findUserByEmail(email: string) {
 /**
  * ユーザーIDでユーザーを取得
  */
-export async function findUserById(userId: string) {
+export async function findUserById(
+  userId: string,
+  { passwordHash = false } = {},
+) {
   return prisma.user.findFirst({
     where: { id: userId },
-    include: {
-      extraProfiles: true,
-    },
-  });
-}
-
-/**
- * パスワードなしでユーザーを取得
- */
-export async function findUserByIdWithoutPassword(userId: string) {
-  return prisma.user.findFirst({
-    where: { id: userId },
-    include: {
-      extraProfiles: true,
-    },
     omit: {
-      passwordHash: true,
+      passwordHash: passwordHash,
+    },
+    include: {
+      extraProfiles: true,
+      roles: true,
     },
   });
 }
@@ -207,13 +200,13 @@ export async function createUser(data: {
     data: {
       username: data.username,
       email: data.email,
-      passwordHash: hashString(data.password), // パスワードをハッシュ化
+      passwordHash: hashString(data.password),
     },
     select: {
       id: true,
       username: true,
       email: true,
-      role: true,
+      roles: true,
       passwordHash: false,
     },
   });
@@ -225,22 +218,37 @@ export async function createUser(data: {
 export async function verifyUserPassword(
   usernameOrEmail: string,
   password: string,
-): Promise<{ isValid: boolean; user?: User }> {
+): Promise<PublicUser | null> {
   // ユーザー名またはメールアドレスでユーザーを検索
   const user = await prisma.user.findFirst({
     where: {
       OR: [{ username: usernameOrEmail }, { email: usernameOrEmail }],
     },
+    select: {
+      id: true,
+      username: true,
+      email: true,
+      createdAt: true,
+      updatedAt: true,
+      providers: true,
+      passwordHash: true,
+      roles: true,
+      extraProfiles: true,
+    },
   });
 
   if (!user) {
-    return { isValid: false };
+    return null;
   }
 
   const hashedPassword = hashString(password);
   const isValid = user.passwordHash === hashedPassword;
 
-  return { isValid, user: isValid ? user : undefined };
+  if (!isValid) return null;
+
+  // Remove passwordHash before returning as PublicUser
+  const { passwordHash, ...publicUser } = user;
+  return publicUser as PublicUser;
 }
 
 /**

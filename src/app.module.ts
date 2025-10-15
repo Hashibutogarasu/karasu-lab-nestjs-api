@@ -20,6 +20,7 @@ import { DiscordTokenModule } from './tokens/discord-token/discord-token.module'
 import { ResponseFormatterInterceptor } from './interceptors/response-formatter.interceptor';
 import { LoggerMiddleware } from './logger-middleware/logger-middleware.middleware';
 import { UsersService } from './users/users.service';
+import { PermissionBitcalcService } from './permission-bitcalc/permission-bitcalc.service';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { UsersService } from './users/users.service';
       provide: APP_INTERCEPTOR,
       useClass: ResponseFormatterInterceptor,
     },
+    PermissionBitcalcService,
   ],
   exports: [AppService],
 })

@@ -31,18 +31,18 @@ export class AccountService {
    * サインイン済みユーザーのパスワード変更（旧パスワード必要）
    */
   async resetPassword(userId: string, dto: ResetPasswordDto) {
-    const user = await findUserById(userId);
+    const user = await findUserById(userId, { passwordHash: true });
     if (!user) {
       throw AppErrorCodes.USER_NOT_FOUND;
     }
 
     // SNSユーザー（パスワードハッシュがnull）の場合は、旧パスワード検証をスキップ
     if (user.passwordHash) {
-      const { isValid } = await verifyUserPassword(
+      const verifiedUser = await verifyUserPassword(
         user.username,
         dto.oldPassword,
       );
-      if (!isValid) {
+      if (!verifiedUser) {
         throw AppErrorCodes.NOW_PASSWORD_IS_NOT_INVALID;
       }
     }
@@ -120,7 +120,7 @@ export class AccountService {
   }
 
   async getProfile(userId: string) {
-    const user = await findUserById(userId);
+    const user = await findUserById(userId, { passwordHash: true });
     if (!user) {
       throw AppErrorCodes.USER_NOT_FOUND;
     }
@@ -149,7 +149,7 @@ export class AccountService {
    * パスワードハッシュがnullのユーザーのみ設定可能
    */
   async setPassword(userId: string, dto: SetPasswordDto) {
-    const user = await findUserById(userId);
+    const user = await findUserById(userId, { passwordHash: true });
     if (!user) {
       throw AppErrorCodes.USER_NOT_FOUND;
     }
@@ -171,7 +171,7 @@ export class AccountService {
    * JWT認証したユーザーが外部プロバイダーでパスワードを持たないかどうかを判定
    */
   async canSetPassword(userId: string) {
-    const user = await findUserById(userId);
+    const user = await findUserById(userId, { passwordHash: true });
     if (!user) {
       throw AppErrorCodes.USER_NOT_FOUND;
     }

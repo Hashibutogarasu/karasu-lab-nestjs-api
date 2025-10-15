@@ -157,7 +157,6 @@ export class OauthController {
         );
       }
 
-      // 成功レスポンス
       return {
         access_token: result.access_token!,
         token_type: result.token_type || 'Bearer',
@@ -270,7 +269,6 @@ export class OauthController {
         );
       }
 
-      // 成功レスポンス
       return {
         active: result.active,
         scope: result.scope,

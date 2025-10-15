@@ -1,3 +1,5 @@
+import { Role } from '@prisma/client';
+import { AppErrorCodes } from '../../types/error-codes';
 import {
   createUser,
   verifyUserPassword,
@@ -28,7 +30,7 @@ export interface AuthResponse {
     id: string;
     username: string;
     email: string;
-    role: string;
+    roles: Role[];
   };
   error?: string;
   errorDescription?: string;
@@ -92,7 +94,7 @@ export async function registerUser(
         id: newUser.id,
         username: newUser.username,
         email: newUser.email,
-        role: newUser.role,
+        roles: newUser.roles,
       },
     };
   } catch (error) {
@@ -119,26 +121,22 @@ export async function loginUser(request: LoginRequest): Promise<AuthResponse> {
     }
 
     // ユーザー認証
-    const authResult = await verifyUserPassword(
+    const verifiedUser = await verifyUserPassword(
       request.usernameOrEmail,
       request.password,
     );
 
-    if (!authResult.isValid || !authResult.user) {
-      return {
-        success: false,
-        error: 'invalid_credentials',
-        errorDescription: 'Invalid username/email or password.',
-      };
+    if (!verifiedUser) {
+      throw AppErrorCodes.INVALID_CREDENTIALS;
     }
 
     return {
       success: true,
       user: {
-        id: authResult.user.id,
-        username: authResult.user.username,
-        email: authResult.user.email,
-        role: authResult.user.role,
+        id: verifiedUser.id,
+        username: verifiedUser.username,
+        email: verifiedUser.email,
+        roles: verifiedUser.roles,
       },
     };
   } catch (error) {
