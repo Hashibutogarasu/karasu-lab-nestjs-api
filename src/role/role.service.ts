@@ -58,6 +58,10 @@ export class RoleService implements OnModuleInit {
       this.logger.error('Error synchronizing roles', err);
     }
 
+    await this.updateAdminUsers();
+  }
+
+  async updateAdminUsers() {
     this.logger.log('Adding admin role to the configured admin users...');
 
     const adminUsers = await this.usersService.findUsersByDomain(

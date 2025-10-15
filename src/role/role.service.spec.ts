@@ -3,6 +3,7 @@ import { RoleService } from './role.service';
 import * as db from '../lib/database/query';
 import { PermissionBitcalcService } from '../permission-bitcalc/permission-bitcalc.service';
 import { RoleDefinitions } from '../types/roles';
+import { getGlobalModule } from '../utils/test/global-modules';
 
 describe('RoleService', () => {
   let service: RoleService;
@@ -12,8 +13,11 @@ describe('RoleService', () => {
     jest.spyOn(db, 'upsertRoleByName').mockReset();
     jest.spyOn(db, 'findAllRoles').mockReset();
     jest.spyOn(db, 'deleteRole').mockReset();
+    jest.spyOn(db, 'updateUserRoles').mockReset();
+    // Prevent actual Prisma update during module initialization
+    (db.updateUserRoles as jest.Mock).mockResolvedValue(null);
 
-    const module: TestingModule = await Test.createTestingModule({
+    const module: TestingModule = await getGlobalModule({
       providers: [RoleService, PermissionBitcalcService],
     }).compile();
 
