@@ -1,18 +1,22 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { PermissionBitcalcService } from '../permission-bitcalc/permission-bitcalc.service';
-import { RoleDefinitions } from '../types/roles';
+import { RoleDefinitions, Roles } from '../types/roles';
 import {
   upsertRoleByName,
   findRoleByName,
   findAllRoles,
 } from '../lib/database/query';
 import { deleteRole } from '../lib/database/query';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class RoleService implements OnModuleInit {
   private readonly logger = new Logger(RoleService.name);
 
-  constructor(private readonly bitcalc: PermissionBitcalcService) {}
+  constructor(
+    private readonly bitcalc: PermissionBitcalcService,
+    private readonly usersService: UsersService,
+  ) {}
 
   async onModuleInit(): Promise<void> {
     try {
@@ -53,5 +57,19 @@ export class RoleService implements OnModuleInit {
     } catch (err) {
       this.logger.error('Error synchronizing roles', err);
     }
+
+    this.logger.log('Adding admin role to the configured admin users...');
+
+    const adminUsers = await this.usersService.findUsersByDomain(
+      process.env.ADMIN_DOMAIN!,
+    );
+
+    this.logger.log(`Found ${adminUsers.length} admin users.`);
+
+    for (const user of adminUsers) {
+      await this.usersService.updateUserRoles(user.id, [Roles.ADMIN]);
+    }
+
+    this.logger.log('Role initialization complete.');
   }
 }

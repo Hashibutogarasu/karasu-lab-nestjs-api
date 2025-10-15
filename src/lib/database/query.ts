@@ -1,4 +1,4 @@
-import { JWTState, PrismaClient, User } from '@prisma/client';
+import { JWTState, PrismaClient, Role, User } from '@prisma/client';
 import { createHash, randomBytes } from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { UpdateJwtStateDto } from '../../jwt-state/dto/jwt-state.dto';
@@ -155,6 +155,20 @@ export async function findUserByEmail(email: string) {
   });
 }
 
+export async function findUsersByDomain(domain: string) {
+  return prisma.user.findMany({
+    where: {
+      OR: [
+        {
+          email: {
+            contains: `@${domain}`,
+          },
+        },
+      ],
+    },
+  });
+}
+
 /**
  * ユーザーIDでユーザーを取得
  */
@@ -185,6 +199,17 @@ export async function updateUserNameById(userId: string, username: string) {
   return prisma.user.update({
     where: { id: userId },
     data: { username },
+  });
+}
+
+export async function updateUserRoles(userId: string, roles: Role[]) {
+  return prisma.user.update({
+    where: { id: userId },
+    data: {
+      roles: {
+        set: roles.map((role) => ({ id: role.id })),
+      },
+    },
   });
 }
 

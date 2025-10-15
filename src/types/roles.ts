@@ -1,6 +1,6 @@
 import { PermissionType } from './permission';
 
-class Role {
+export class Role {
   name: string;
   permissions: PermissionType[];
 
