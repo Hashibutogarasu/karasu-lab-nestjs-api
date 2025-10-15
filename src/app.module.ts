@@ -21,6 +21,7 @@ import { ResponseFormatterInterceptor } from './interceptors/response-formatter.
 import { LoggerMiddleware } from './logger-middleware/logger-middleware.middleware';
 import { UsersService } from './users/users.service';
 import { PermissionBitcalcService } from './permission-bitcalc/permission-bitcalc.service';
+import { RoleService } from './role/role.service';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { PermissionBitcalcService } from './permission-bitcalc/permission-bitcal
       useClass: ResponseFormatterInterceptor,
     },
     PermissionBitcalcService,
+    RoleService,
   ],
   exports: [AppService],
 })
