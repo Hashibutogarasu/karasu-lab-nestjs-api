@@ -24,6 +24,8 @@ export interface CreateTokenRequest {
   userId: string;
   provider?: string;
   expirationHours?: number;
+  // If provided, reuse existing JWTState instead of creating a new one
+  jwtStateId?: string;
 }
 
 export interface CreateTokenResponse {
@@ -78,8 +80,22 @@ export async function generateJWTToken(
       };
     }
 
-    // JWT State を作成
-    const jwtState = await createJWTState(user.id);
+    // JWT State を作成（既存の ID が指定されていれば再利用）
+    let jwtState;
+    if (request.jwtStateId) {
+      // 再利用先が存在するか確認
+      const existing = await getJWTStateById(request.jwtStateId);
+      if (!existing) {
+        return {
+          success: false,
+          error: 'invalid_jwt_state',
+          errorDescription: 'Provided JWT state does not exist',
+        };
+      }
+      jwtState = existing;
+    } else {
+      jwtState = await createJWTState(user.id);
+    }
 
     // トークンの有効期限を計算
     const expirationHours = request.expirationHours || 1;
@@ -229,13 +245,16 @@ export function getTokenRemainingTime(token: string): number {
 
 /**
  * リフレッシュトークンを生成（長期間有効）
+ * jwtStateIdがあれば、再利用可能です。
  */
 export async function generateRefreshToken(
   userId: string,
+  options?: { jwtStateId?: string },
 ): Promise<CreateTokenResponse> {
   return generateJWTToken({
     userId,
     expirationHours: 24 * 30, // 30日間有効
+    jwtStateId: options?.jwtStateId,
   });
 }
 

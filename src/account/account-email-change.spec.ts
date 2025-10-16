@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/unbound-method */
 import { TestingModule } from '@nestjs/testing';
 import { getGlobalModule } from '../utils/test/global-modules';
 import { AccountController } from './account.controller';
@@ -86,7 +87,7 @@ describe('Account Email Change Flow', () => {
       'new@example.com',
     );
     expect(reqRes).toHaveProperty('message');
-    expect(void mockResendService.sendEmail).toHaveBeenCalled();
+    expect(mockResendService.sendEmail).toHaveBeenCalled();
 
     // now verify
     // findPendingByCode should return record when correct code is provided

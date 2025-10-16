@@ -205,7 +205,10 @@ export class AuthController {
         throw AppErrorCodes.TOKEN_GENERATION_FAILED;
       }
 
-      const refreshTokenResult = await generateRefreshToken(result.user!.id);
+      // 重複してトークンが生成されないようにする(既にアクセストークン作成時にJWTStateを作成しているので)
+      const refreshTokenResult = await generateRefreshToken(result.user!.id, {
+        jwtStateId: tokenResult.jwtId,
+      });
       if (!refreshTokenResult.success) {
         throw AppErrorCodes.TOKEN_GENERATION_FAILED;
       }
@@ -548,8 +551,10 @@ export class AuthController {
       const sessionData = await this.authService.createSession(
         tokenResult.profile.sub,
       );
+
       const refreshTokenResult = await generateRefreshToken(
         tokenResult.profile.sub,
+        { jwtStateId: tokenResult.jwtId },
       );
 
       if (!refreshTokenResult.success) {
