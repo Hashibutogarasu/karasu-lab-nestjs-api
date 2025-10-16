@@ -156,18 +156,46 @@ export async function processSnsCProfile(
       };
     }
 
-    // 既存のプロファイルをチェック
+    // マッチング戦略:
+    // 1) まず受け取ったメールアドレスで既存ユーザーを探す（メールで見つかればそのユーザーに紐付ける）
+    // 2) メールで見つからなければ、プロバイダーID(providerId+provider)でExtraProfileが存在するか確認する
+    //    存在すればそのユーザーを使用する（メールが変わっていても紐付けを維持するため）
+    // 3) どちらでも見つからなければ新規ユーザーを作成する
+
     let user;
-    const existingProfile = await findExtraProfileByProvider(
-      snsProfile.providerId,
-      snsProfile.provider,
-    );
 
-    if (existingProfile) {
-      // 既存ユーザー
-      user = existingProfile.user;
+    // 1) メールでのマッチングを優先
+    if (snsProfile.email) {
+      user = await findUserByEmail(snsProfile.email);
+    }
 
-      // プロファイル情報を更新
+    // 2) メールで見つからなければプロバイダーIDでExtraProfileを探す
+    let existingProfile;
+    if (!user) {
+      existingProfile = await findExtraProfileByProvider(
+        snsProfile.providerId,
+        snsProfile.provider,
+      );
+
+      if (existingProfile) {
+        user = existingProfile.user;
+      }
+    }
+
+    // 3) 新規ユーザー作成または既存ユーザーにプロバイダーを追加
+    if (!user) {
+      const username = generateUniqueUsername(
+        snsProfile.displayName || snsProfile.email || snsProfile.providerId,
+      );
+      user = await createSnsUser({
+        username,
+        email:
+          snsProfile.email ||
+          `${snsProfile.providerId}@${snsProfile.provider}.local`,
+        provider: snsProfile.provider,
+      });
+
+      // 新規ユーザーの場合はExtraProfileを作成
       await upsertExtraProfile({
         userId: user.id,
         provider: snsProfile.provider,
@@ -178,29 +206,7 @@ export async function processSnsCProfile(
         rawProfile: snsProfile.rawProfile,
       });
     } else {
-      // 新規ユーザーまたはメールアドレスでマッチング
-      if (snsProfile.email) {
-        user = await findUserByEmail(snsProfile.email);
-      }
-
-      if (!user) {
-        // 新規ユーザー作成
-        const username = generateUniqueUsername(
-          snsProfile.displayName || snsProfile.email || snsProfile.providerId,
-        );
-        user = await createSnsUser({
-          username,
-          email:
-            snsProfile.email ||
-            `${snsProfile.providerId}@${snsProfile.provider}.local`,
-          provider: snsProfile.provider,
-        });
-      } else {
-        // 既存ユーザーにプロバイダーを追加
-        await addUserProvider(user.id, snsProfile.provider);
-      }
-
-      // ExtraProfileを作成
+      // 既存ユーザーが見つかった場合、ExtraProfileが既に存在すれば更新、存在しなければ作成
       await upsertExtraProfile({
         userId: user.id,
         provider: snsProfile.provider,
@@ -210,6 +216,9 @@ export async function processSnsCProfile(
         avatarUrl: snsProfile.avatarUrl,
         rawProfile: snsProfile.rawProfile,
       });
+
+      // ユーザーのproviders配列にプロバイダーを追加
+      await addUserProvider(user.id, snsProfile.provider);
     }
 
     // 認証ステートにユーザーIDを保存（後でverifyAndCreateTokenで使用）

@@ -1033,6 +1033,126 @@ describe('AuthController - SNS OAuth Authentication', () => {
         'state_abc123',
       );
     });
+
+    it('should return linked user when email changed but ExtraProfile exists', async () => {
+      // Scenario: user changed their email in system, but ExtraProfile still links providerId->user
+      const changedEmailProfile = {
+        providerId: 'google_user_123',
+        provider: 'google',
+        displayName: 'Test User',
+        email: 'new-email@example.com', // different from original
+        avatarUrl: 'https://example.com/avatar.jpg',
+        rawProfile: {
+          id: 'google_user_123',
+          name: 'Test User',
+          email: 'new-email@example.com',
+          picture: 'https://example.com/avatar.jpg',
+        },
+      };
+
+      // Auth state
+      const mockAuthState = {
+        id: 'auth_state_123',
+        stateCode: 'state_abc123',
+        oneTimeToken: 'one_time_token_123',
+        provider: 'google',
+        callbackUrl: 'http://localhost:3000/auth/callback/google',
+        userId: null,
+        codeVerifier: null,
+        codeChallenge: null,
+        codeChallengeMethod: null,
+        expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+        used: false,
+        createdAt: new Date(),
+      };
+
+      mockAuthService.getAuthState.mockResolvedValue(mockAuthState);
+      mockGoogleProvider.processOAuth.mockResolvedValue({
+        snsProfile: changedEmailProfile,
+        accessToken: 'access_token_123',
+      });
+
+      // Simulate processSnsCProfile returning same linked user (no new user created)
+      mockProcessSnsCProfile.mockResolvedValue({
+        success: true,
+        userId: 'existing_user_123',
+        oneTimeToken: 'one_time_token_123',
+      });
+
+      await controller.handleProviderCallback(
+        'google',
+        'auth_code_123',
+        'state_abc123',
+        '',
+        '',
+        mockResponse,
+        mockRequest,
+      );
+
+      expect(mockProcessSnsCProfile).toHaveBeenCalledWith(
+        changedEmailProfile,
+        'state_abc123',
+      );
+      expect(mockRedirectFn).toHaveBeenCalledWith(
+        expect.stringContaining('token=one_time_token_123'),
+      );
+    });
+
+    it('should create new user when neither email nor ExtraProfile match', async () => {
+      const freshProfile = {
+        providerId: 'google_user_new',
+        provider: 'google',
+        displayName: 'Fresh User',
+        email: 'fresh@example.com',
+        avatarUrl: 'https://example.com/avatar2.jpg',
+        rawProfile: {},
+      };
+
+      const mockAuthState = {
+        id: 'auth_state_999',
+        stateCode: 'state_new_999',
+        oneTimeToken: 'one_time_token_999',
+        provider: 'google',
+        callbackUrl: 'http://localhost:3000/auth/callback/google',
+        userId: null,
+        codeVerifier: null,
+        codeChallenge: null,
+        codeChallengeMethod: null,
+        expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+        used: false,
+        createdAt: new Date(),
+      };
+
+      mockAuthService.getAuthState.mockResolvedValue(mockAuthState);
+      mockGoogleProvider.processOAuth.mockResolvedValue({
+        snsProfile: freshProfile,
+        accessToken: 'access_token_999',
+      });
+
+      mockProcessSnsCProfile.mockResolvedValue({
+        success: true,
+        userId: 'new_user_999',
+        oneTimeToken: 'one_time_token_999',
+      });
+
+      await controller.handleProviderCallback(
+        'google',
+        'auth_code_999',
+        'state_new_999',
+        '',
+        '',
+        mockResponse,
+        mockRequest,
+      );
+
+      expect(mockProcessSnsCProfile).toHaveBeenCalledWith(
+        freshProfile,
+        'state_new_999',
+      );
+      expect(mockRedirectFn).toHaveBeenCalledWith(
+        expect.stringContaining('token=one_time_token_999'),
+      );
+    });
   });
 
   describe('Cleanup and Maintenance Tests', () => {

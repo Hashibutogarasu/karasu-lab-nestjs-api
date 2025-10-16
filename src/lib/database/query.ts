@@ -33,6 +33,7 @@ export {
   findAllUsers,
   updateUser,
   deleteUser,
+  updateUserNameById,
 } from './user';
 
 // ===== 認可コード関連クエリ =====
@@ -86,6 +87,15 @@ export {
   upsertExtraProfile,
   findExtraProfileByProvider,
 } from './sns-oauth';
+
+// ===== メールアドレス変更プロセス関連クエリ =====
+export {
+  createPendingEmailChangeProcess,
+  findPendingByUserId,
+  findPendingByCode,
+  markPendingAsUsed,
+  deletePendingById,
+} from './pending-email-change-process';
 
 // ===== パスワードリセット関連クエリ =====
 export {

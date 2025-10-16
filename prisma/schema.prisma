@@ -54,12 +54,12 @@ model User {
   JWTState                    JWTState[]
   ExternalProviderAccessToken ExternalProviderAccessToken[]
   roles                       Role[]
-  PendingMailChangeProcess    PendingMailChangeProcess[]
+  PendingMailChangeProcess    PendingEMailChangeProcess[]
 
   @@map("users")
 }
 
-model PendingMailChangeProcess {
+model PendingEMailChangeProcess {
   id               String   @id @default(cuid())
   userId           String   @map("user_id")
   newEmail         String   @map("new_email")
@@ -71,7 +71,7 @@ model PendingMailChangeProcess {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([newEmail])
-  @@map("pending_mail_change_processes")
+  @@map("pending_email_change_processes")
 }
 
 model Role {

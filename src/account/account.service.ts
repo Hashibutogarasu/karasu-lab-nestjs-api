@@ -19,6 +19,11 @@ import {
   updateUserPassword,
   verifyUserPassword,
   updateUserNameById,
+  createPendingEmailChangeProcess,
+  findPendingByCode,
+  markPendingAsUsed,
+  deletePendingById,
+  updateUser,
 } from '../lib/database/query';
 import { ResendService } from '../resend/resend.service';
 import { UpdateUserNameDto } from './dto/update-user-name.dto';
@@ -85,8 +90,7 @@ export class AccountService {
         from: process.env.RESEND_FROM_EMAIL!,
       });
     } catch (error) {
-      console.error('メール送信に失敗しました:', error);
-      // メール送信に失敗した場合でもエラーを返さない（セキュリティ上の理由）
+      // ignore errors
     }
 
     return {
@@ -126,6 +130,77 @@ export class AccountService {
     }
     const { passwordHash, ...profile } = user;
     return profile;
+  }
+
+  /**
+   * メールアドレス変更リクエストを作成し、確認コードを送信する
+   */
+  async requestEmailChange(userId: string, newEmail: string) {
+    const user = await findUserById(userId);
+    if (!user) {
+      throw AppErrorCodes.USER_NOT_FOUND;
+    }
+
+    // 既に同じメールが他ユーザーに使われていないかチェック
+    const existing = await findUserByEmail(newEmail);
+    if (existing && existing.id !== userId) {
+      throw AppErrorCodes.USER_EXISTS;
+    }
+
+    // Create pending record and get verification code
+    const pending = await createPendingEmailChangeProcess({
+      userId,
+      newEmail,
+    });
+
+    // Send email with code
+    try {
+      await this.resendService.sendEmail({
+        to: newEmail,
+        subject: 'メールアドレス変更の確認コード',
+        from: process.env.RESEND_FROM_EMAIL!,
+        html: `
+          <p>メールアドレス変更のリクエストがありました。下の6桁の確認コードを入力して変更を確定してください。</p>
+          <h2>${pending.verificationCode}</h2>
+          <p>このコードの有効期限は30分です。</p>
+        `,
+      });
+    } catch {
+      // ignore errors
+    }
+
+    return {
+      message: 'Verification code sent to new email address',
+    };
+  }
+
+  /**
+   * 確認コードを検証してユーザーのメールアドレスを更新する
+   */
+  async verifyEmailChange(userId: string, code: string) {
+    const user = await findUserById(userId);
+    if (!user) throw AppErrorCodes.USER_NOT_FOUND;
+
+    const pending = await findPendingByCode(userId, code);
+    if (!pending) throw AppErrorCodes.INVALID_REQUEST;
+
+    // Update user's email
+    const updated = await updateUser(userId, { email: pending.newEmail });
+
+    // Mark pending as used
+    await markPendingAsUsed(pending.id);
+
+    // Optionally delete the pending record
+    try {
+      await deletePendingById(pending.id);
+    } catch (err) {
+      console.error('Failed to delete pending email change record', err);
+    }
+
+    return {
+      message: 'Email address updated successfully',
+      user: updated,
+    };
   }
 
   async updateProfile(userId: string, dto: UpdateUserNameDto) {

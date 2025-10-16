@@ -106,6 +106,9 @@ export const AppErrorCodes = {
     400,
     'Invalid reset code or the code has expired',
   ),
+  EMAIL_ALREADY_IN_USE: new AppErrorCode(400, 'Email is already in use'),
+  INVALID_VERIFICATION_CODE: new AppErrorCode(400, 'Invalid verification code'),
+  ALREADY_PENDING: new AppErrorCode(400, 'Request is already pending'),
 
   // Developer Service Errors
   CLIENT_ID_ALREADY_EXISTS: new AppErrorCode(409, 'Client ID already exists'),

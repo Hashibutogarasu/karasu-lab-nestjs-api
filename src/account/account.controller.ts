@@ -26,6 +26,9 @@ import { UpdateUserNameDto } from './dto/update-user-name.dto';
 import { AuthUser } from '../auth/decorators/auth-user.decorator';
 import type { User } from '@prisma/client';
 
+type EmailChangeRequestDto = { newEmail: string };
+type EmailChangeVerifyDto = { verificationCode: string };
+
 @Controller('account')
 export class AccountController {
   constructor(private readonly accountService: AccountService) {}
@@ -86,6 +89,34 @@ export class AccountController {
   ) {
     const userId = req.user?.['id'];
     return await this.accountService.setPassword(userId, dto);
+  }
+
+  @Post('email/change')
+  @UseGuards(JwtAuthGuard)
+  async requestEmailChange(
+    @AuthUser() user: User,
+    @Body() body: EmailChangeRequestDto,
+    @Res() res: Response,
+  ) {
+    const result = await this.accountService.requestEmailChange(
+      user.id,
+      body.newEmail,
+    );
+    return res.status(200).json(result);
+  }
+
+  @Post('email/change/verify')
+  @UseGuards(JwtAuthGuard)
+  async verifyEmailChange(
+    @AuthUser() user: User,
+    @Body() body: EmailChangeVerifyDto,
+    @Res() res: Response,
+  ) {
+    const result = await this.accountService.verifyEmailChange(
+      user.id,
+      body.verificationCode,
+    );
+    return res.status(200).json(result);
   }
 
   /**
