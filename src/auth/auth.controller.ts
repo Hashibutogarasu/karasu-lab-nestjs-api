@@ -3,13 +3,9 @@ import {
   Get,
   Post,
   Body,
-  BadRequestException,
-  UnauthorizedException,
-  ConflictException,
   HttpStatus,
   Res,
   Req,
-  HttpException,
   Query,
   Param,
   UseGuards,
@@ -25,7 +21,6 @@ import {
   verifyAndCreateToken,
   processSnsCProfile,
   SnsAuthCallback,
-  SnsProfile,
   createAuthenticationState,
 } from '../lib/auth/sns-auth';
 import type { AuthStateDto, VerifyTokenDto } from './dto/auth.dto';
@@ -47,10 +42,6 @@ import { NoInterceptor } from '../interceptors/no-interceptor.decorator';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { AuthUser } from './decorators/auth-user.decorator';
 import type { PublicUser } from './decorators/auth-user.decorator';
-import { AuthGoogleUser } from './decorators/auth-google-user.decorator';
-import type { GoogleUser } from '../types/google-user';
-import { AuthDiscordUser } from './decorators/auth-discord-user.decorator';
-import type { DiscordUser } from '../types/discord-user';
 
 @NoInterceptor()
 @Controller('auth')
