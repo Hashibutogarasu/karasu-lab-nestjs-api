@@ -54,8 +54,24 @@ model User {
   JWTState                    JWTState[]
   ExternalProviderAccessToken ExternalProviderAccessToken[]
   roles                       Role[]
+  PendingMailChangeProcess    PendingMailChangeProcess[]
 
   @@map("users")
+}
+
+model PendingMailChangeProcess {
+  id               String   @id @default(cuid())
+  userId           String   @map("user_id")
+  newEmail         String   @map("new_email")
+  verificationCode String   @map("verification_code")
+  expiresAt        DateTime @map("expires_at")
+  used             Boolean  @default(false)
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([newEmail])
+  @@map("pending_mail_change_processes")
 }
 
 model Role {
