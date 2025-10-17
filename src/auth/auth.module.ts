@@ -11,7 +11,6 @@ import { GoogleOAuthProvider } from '../lib/auth/google-oauth.provider';
 import { DiscordOAuthProvider } from '../lib/auth/discord-oauth.provider';
 import { XOAuthProvider } from '../lib/auth/x-oauth.provider';
 import { OAuthProviderFactory } from '../lib/auth/oauth-provider.factory';
-import { UsersService } from '../users/users.service';
 
 @Module({
   imports: [

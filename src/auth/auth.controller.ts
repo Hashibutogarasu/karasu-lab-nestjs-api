@@ -30,7 +30,7 @@ import {
   verifyJWTToken,
 } from '../lib/auth/jwt-token';
 import { findAuthState } from '../lib/database/query';
-import type { AuthState, User } from '@prisma/client';
+import type { AuthState } from '@prisma/client';
 import { ExternalProviderAccessTokenService } from '../encryption/external-provider-access-token/external-provider-access-token.service';
 import { OAuthProviderFactory } from '../lib/auth/oauth-provider.factory';
 import {
@@ -53,6 +53,37 @@ export class AuthController {
     private readonly externalProviderAccessTokenService: ExternalProviderAccessTokenService,
     private readonly oauthProviderFactory: OAuthProviderFactory,
   ) {}
+
+  /**
+   * 利用可能な外部プロバイダーリストを返すエンドポイント
+   * GET /auth/providers
+   */
+  @Get('providers')
+  async getProviders(@Res() res: Response): Promise<void> {
+    try {
+      const all = ['google', 'discord', 'x'];
+      const available: string[] = [];
+
+      for (const p of all) {
+        try {
+          const provider = this.oauthProviderFactory.getProvider(p);
+          if (provider && provider.isAvailable && provider.isAvailable()) {
+            available.push(p);
+          }
+        } catch (err) {
+          // If provider not implemented or other errors, skip it
+          continue;
+        }
+      }
+
+      res.status(HttpStatus.OK).json({ providers: available });
+    } catch (error) {
+      if (error instanceof AppErrorCode) {
+        throw error;
+      }
+      throw AppErrorCodes.INTERNAL_SERVER_ERROR;
+    }
+  }
 
   /**
    * ユーザー登録エンドポイント
