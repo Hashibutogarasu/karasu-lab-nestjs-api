@@ -155,19 +155,20 @@ export class AccountService {
 
     // Send email with code
     try {
+      const frontendUrl = `${process.env.FRONTEND_URL}/email/change/confirm`;
       await this.resendService.sendEmail({
         to: newEmail,
         subject: 'メールアドレス変更の確認コード',
         from: process.env.RESEND_FROM_EMAIL!,
         html: `
           <p>こんにちは、${user.username}さん</p>
-          <p>メールアドレスの確認をするため、下の6桁の確認コードを入力して変更を確定してください。</p>
+          <p>メールアドレスの確認をするため、下の6桁の確認コードを<a href="${frontendUrl}">ここ</a>に入力して変更を確定してください。</p>
           <p>確認コード：</p>
           <h2>${pending.verificationCode}</h2>
-          <p>または、以下のリンク、<a href="${process.env.FRONTEND_URL}/email/change/confirm?code=${pending.verificationCode}">こちら</a>をクリックしてください。</p>
+          <p>または、以下のリンク、<a href="${frontendUrl}?code=${pending.verificationCode}">こちら</a>をクリックしてください。</p>
           <p>このメールに心当たりがない場合は、無視してください。</p>
           <p>このコードの有効期限は30分です。</p>
-          <p>確認コードを入力する前に、そのアカウントでログインしている必要があります。</p>
+          <p>確認コードを入力する前に、変更したいアカウントでログインしている必要があります。</p>
         `,
       });
     } catch {
