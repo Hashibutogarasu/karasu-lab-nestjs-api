@@ -3,16 +3,20 @@ import {
   findUsersByDomain,
   findUserByEmail,
   findUserById,
-  updateUserRoles as dbUpdateUserRoles,
   findRoleByName,
   updateUserRoles,
+  findAllUsers,
 } from '../lib';
-import { Role, RoleDefinitions, Roles } from '../types/roles';
+import { Role, RoleDefinitions } from '../types/roles';
 
 @Injectable()
 export class UsersService {
   async exists(userId: string) {
     return (await findUserById(userId)) !== undefined;
+  }
+
+  async findAll() {
+    return findAllUsers();
   }
 
   async findById(userId: string) {

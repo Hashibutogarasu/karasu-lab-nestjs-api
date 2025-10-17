@@ -5,6 +5,9 @@ import { AuthDiscordUser } from '../auth/decorators/auth-discord-user.decorator'
 import { AuthGoogleUser } from '../auth/decorators/auth-google-user.decorator';
 import type { DiscordUser } from '../types/discord-user';
 import type { GoogleUser } from '../types/google-user';
+import { Permission } from '../auth/decorators/permission.decorator';
+import { PermissionType } from '../types/permission';
+import { PublicUser } from '../auth/decorators/auth-user.decorator';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
@@ -33,5 +36,16 @@ export class UsersController {
     @AuthGoogleUser() googleUser: GoogleUser,
   ): Promise<GoogleUser> {
     return googleUser;
+  }
+
+  /**
+   * GET /users/list
+   * `VIEW_ALL_USERS`権限を持つユーザーのみがアクセス可能
+   * 全てのユーザーの一覧を取得
+   */
+  @Permission([PermissionType.VIEW_ALL_USERS])
+  @Get('list')
+  async findAllUsers() {
+    return this.usersService.findAll();
   }
 }

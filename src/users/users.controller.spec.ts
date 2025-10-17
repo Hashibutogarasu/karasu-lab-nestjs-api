@@ -7,6 +7,13 @@ import type { DiscordUser } from '../types/discord-user';
 import type { GoogleUser } from '../types/google-user';
 import * as queryModule from '../lib/database/query';
 import { getGlobalModule } from '../utils/test/global-modules';
+import { PermissionBitcalcService } from '../permission-bitcalc/permission-bitcalc.service';
+import { PermissionGuard } from '../auth/guards/permission.guard';
+import { Reflector } from '@nestjs/core';
+import { PERMISSION_METAKEY } from '../auth/decorators/permission.decorator';
+import { PermissionType } from '../types/permission';
+import { AppErrorCodes } from '../types/error-codes';
+import { ExecutionContext } from '@nestjs/common';
 
 describe('UsersController', () => {
   let controller: UsersController;
@@ -154,6 +161,7 @@ describe('UsersController', () => {
           provide: JwtAuthGuard,
           useValue: createMock<JwtAuthGuard>(),
         },
+        PermissionBitcalcService,
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -170,6 +178,56 @@ describe('UsersController', () => {
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
+  });
+
+  describe('GET /users/list (findAllUsers)', () => {
+    it('allows user with VIEW_ALL_USERS permission to list users', async () => {
+      // Arrange: mock usersService.findAll
+      const fakeUsers = [{ id: 'u1' }, { id: 'u2' }];
+      jest.spyOn(usersService, 'findAll').mockResolvedValue(fakeUsers as any);
+
+      // Act: call controller.findAllUsers (Permission decorator is applied at runtime via guard,
+      // but here we test controller method directly since guards run in integration tests).
+      const result = await controller.findAllUsers();
+
+      // Assert
+      expect(result).toBeDefined();
+      expect(result).toEqual(fakeUsers);
+    });
+
+    it('rejects when user lacks VIEW_ALL_USERS permission (PermissionGuard behavior)', async () => {
+      // We'll directly test PermissionGuard logic via a minimal ExecutionContext mock.
+      const bitcalc = new PermissionBitcalcService();
+      const reflector = new Reflector();
+      const guard = new PermissionGuard(reflector, bitcalc);
+
+      // set required permission metadata to VIEW_ALL_USERS
+      const handler = () => undefined;
+      Reflect.defineMetadata(
+        PERMISSION_METAKEY,
+        [PermissionType.VIEW_ALL_USERS],
+        handler,
+      );
+      reflector['get'] = jest
+        .fn()
+        .mockReturnValue([PermissionType.VIEW_ALL_USERS]);
+
+      const ctx = {
+        switchToHttp: () => ({
+          getRequest: () => ({ user: { id: 'no-roles-user' } }),
+        }),
+        getHandler: () => handler,
+      } as unknown as ExecutionContext;
+
+      // mock findUserById to return a user without roles
+      jest
+        .spyOn(queryModule, 'findUserById')
+        .mockResolvedValue({ id: 'no-roles-user', roles: [] } as any);
+
+      await expect(guard.canActivate(ctx)).rejects.toBe(
+        AppErrorCodes.FORBIDDEN,
+      );
+    });
   });
 
   describe('GET /users/discord/me', () => {
