@@ -111,6 +111,19 @@ describe('Account Email Change Flow', () => {
     expect(mockDeletePending).toHaveBeenCalledWith('p1');
   });
 
+  it('requesting email change to an email already in use should return EMAIL_ALREADY_IN_USE', async () => {
+    mockFindUserById.mockResolvedValue(fakeUser as any);
+    // Simulate that another user already has the new email
+    mockFindUserByEmail.mockResolvedValue({
+      id: 'user_2',
+      email: 'taken@example.com',
+    } as any);
+
+    await expect(
+      service.requestEmailChange('user_1', 'taken@example.com'),
+    ).rejects.toBe(AppErrorCodes.EMAIL_ALREADY_IN_USE);
+  });
+
   it('invalid code returns bad request', async () => {
     mockFindUserById.mockResolvedValue(fakeUser as any);
     mockFindPendingByCode.mockResolvedValue(null as any);

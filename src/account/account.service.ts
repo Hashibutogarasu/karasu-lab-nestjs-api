@@ -144,7 +144,7 @@ export class AccountService {
     // 既に同じメールが他ユーザーに使われていないかチェック
     const existing = await findUserByEmail(newEmail);
     if (existing && existing.id !== userId) {
-      throw AppErrorCodes.USER_EXISTS;
+      throw AppErrorCodes.EMAIL_ALREADY_IN_USE;
     }
 
     // Create pending record and get verification code
@@ -160,9 +160,14 @@ export class AccountService {
         subject: 'メールアドレス変更の確認コード',
         from: process.env.RESEND_FROM_EMAIL!,
         html: `
-          <p>メールアドレス変更のリクエストがありました。下の6桁の確認コードを入力して変更を確定してください。</p>
+          <p>こんにちは、${user.username}さん</p>
+          <p>メールアドレスの確認をするため、下の6桁の確認コードを入力して変更を確定してください。</p>
+          <p>確認コード：</p>
           <h2>${pending.verificationCode}</h2>
+          <p>または、以下のリンク、<a href="${process.env.FRONTEND_URL}/email/change/confirm?code=${pending.verificationCode}">こちら</a>をクリックしてください。</p>
+          <p>このメールに心当たりがない場合は、無視してください。</p>
           <p>このコードの有効期限は30分です。</p>
+          <p>確認コードを入力する前に、そのアカウントでログインしている必要があります。</p>
         `,
       });
     } catch {

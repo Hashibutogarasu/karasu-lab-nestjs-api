@@ -1,10 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import {
-  HttpStatus,
-  NotFoundException,
-  BadRequestException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { TestingModule } from '@nestjs/testing';
 import { Response, Request } from 'express';
 import { AccountController } from './account.controller';
 import { AccountService } from './account.service';
@@ -16,6 +10,7 @@ import {
   SetPasswordDto,
 } from './dto/password-reset.dto';
 import { getGlobalModule } from '../utils/test/global-modules';
+import { AppErrorCodes } from '../types/error-codes';
 
 describe('AccountController - Password Management', () => {
   let controller: AccountController;
@@ -95,7 +90,7 @@ describe('AccountController - Password Management', () => {
 
     it('should reset password for authenticated user', async () => {
       const expectedResult = {
-        message: 'パスワードが正常に更新されました',
+        message: 'Password updated successfully',
         user: mockUser,
       };
 
@@ -111,20 +106,20 @@ describe('AccountController - Password Management', () => {
 
     it('should handle user not found error', async () => {
       mockAccountService.resetPassword.mockRejectedValue(
-        new NotFoundException('ユーザーが見つかりません'),
+        AppErrorCodes.USER_NOT_FOUND,
       );
 
       await expect(
         controller.resetPassword(mockUser as any, validResetDto),
-      ).rejects.toThrow(NotFoundException);
+      ).rejects.toThrow(AppErrorCodes.USER_NOT_FOUND);
       await expect(
         controller.resetPassword(mockUser as any, validResetDto),
-      ).rejects.toThrow('ユーザーが見つかりません');
+      ).rejects.toThrow(AppErrorCodes.USER_NOT_FOUND);
     });
 
     it('should handle incorrect old password error', async () => {
       mockAccountService.resetPassword.mockRejectedValue(
-        new UnauthorizedException('現在のパスワードが正しくありません'),
+        AppErrorCodes.NOW_PASSWORD_IS_NOT_INVALID,
       );
 
       const invalidDto = {
@@ -134,15 +129,15 @@ describe('AccountController - Password Management', () => {
 
       await expect(
         controller.resetPassword(mockUser as any, invalidDto),
-      ).rejects.toThrow(UnauthorizedException);
+      ).rejects.toThrow(AppErrorCodes.NOW_PASSWORD_IS_NOT_INVALID);
       await expect(
         controller.resetPassword(mockUser as any, invalidDto),
-      ).rejects.toThrow('現在のパスワードが正しくありません');
+      ).rejects.toThrow(AppErrorCodes.NOW_PASSWORD_IS_NOT_INVALID);
     });
 
     it('should extract user ID from JWT token', async () => {
       const expectedResult = {
-        message: 'パスワードが正常に更新されました',
+        message: 'Password updated successfully',
         user: { ...mockUser, id: 'user_123' },
       };
 
@@ -198,7 +193,7 @@ describe('AccountController - Password Management', () => {
     it('should send reset code for existing user', async () => {
       const expectedResult = {
         message:
-          '指定されたメールアドレスにパスワードリセット用のコードを送信しました',
+          'A password reset code has been sent to the specified email address',
         debug: {
           resetCode: 'ABC123',
           expiresAt: new Date(Date.now() + 30 * 60 * 1000),
@@ -217,7 +212,7 @@ describe('AccountController - Password Management', () => {
     it('should return success message even for non-existent user', async () => {
       const expectedResult = {
         message:
-          '指定されたメールアドレスにパスワードリセット用のコードを送信しました',
+          'A password reset code has been sent to the specified email address',
       };
 
       mockAccountService.forgotPassword.mockResolvedValue(expectedResult);
@@ -242,7 +237,7 @@ describe('AccountController - Password Management', () => {
       // For now, we'll test that the service is called and mock service handles validation
       const mockResult = {
         message:
-          '指定されたメールアドレスにパスワードリセット用のコードを送信しました',
+          'A password reset code has been sent to the specified email address',
       };
 
       mockAccountService.forgotPassword.mockResolvedValue(mockResult);
@@ -261,7 +256,7 @@ describe('AccountController - Password Management', () => {
       // Similar to above, in production this would be caught by validation pipes
       const mockResult = {
         message:
-          '指定されたメールアドレスにパスワードリセット用のコードを送信しました',
+          'A password reset code has been sent to the specified email address',
       };
 
       mockAccountService.forgotPassword.mockResolvedValue(mockResult);
@@ -290,7 +285,7 @@ describe('AccountController - Password Management', () => {
 
     it('should reset password with valid code', async () => {
       const expectedResult = {
-        message: 'パスワードが正常にリセットされました',
+        message: 'Password has been reset successfully',
         user: mockUser,
       };
 
@@ -305,9 +300,7 @@ describe('AccountController - Password Management', () => {
 
     it('should handle invalid reset code', async () => {
       mockAccountService.confirmResetPassword.mockRejectedValue(
-        new BadRequestException(
-          '無効なリセットコードか、有効期限が切れています',
-        ),
+        AppErrorCodes.INVALID_RESET_CODE,
       );
 
       const invalidCodeDto = {
@@ -317,17 +310,15 @@ describe('AccountController - Password Management', () => {
 
       await expect(
         controller.confirmResetPassword(invalidCodeDto),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(AppErrorCodes.INVALID_RESET_CODE);
       await expect(
         controller.confirmResetPassword(invalidCodeDto),
-      ).rejects.toThrow('無効なリセットコードか、有効期限が切れています');
+      ).rejects.toThrow(AppErrorCodes.INVALID_RESET_CODE);
     });
 
     it('should handle expired reset code', async () => {
       mockAccountService.confirmResetPassword.mockRejectedValue(
-        new BadRequestException(
-          '無効なリセットコードか、有効期限が切れています',
-        ),
+        AppErrorCodes.INVALID_RESET_CODE,
       );
 
       const expiredCodeDto = {
@@ -337,7 +328,7 @@ describe('AccountController - Password Management', () => {
 
       await expect(
         controller.confirmResetPassword(expiredCodeDto),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(AppErrorCodes.INVALID_RESET_CODE);
     });
 
     it('should validate reset code format (6 alphanumeric characters)', async () => {
@@ -348,7 +339,7 @@ describe('AccountController - Password Management', () => {
 
       await expect(
         controller.confirmResetPassword(invalidCodeDto as any),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(AppErrorCodes.INVALID_RESET_CODE);
     });
 
     it('should validate password strength', async () => {
@@ -359,7 +350,7 @@ describe('AccountController - Password Management', () => {
 
       await expect(
         controller.confirmResetPassword(weakPasswordDto as any),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(AppErrorCodes.INVALID_RESET_CODE);
     });
 
     it('should not require authentication', () => {
@@ -396,30 +387,28 @@ describe('AccountController - Password Management', () => {
 
     it('should handle user not found error', async () => {
       mockAccountService.setPassword.mockRejectedValue(
-        new NotFoundException('ユーザーが見つかりません'),
+        AppErrorCodes.USER_NOT_FOUND,
       );
 
       await expect(
         controller.setPassword(mockRequest, validSetPasswordDto),
-      ).rejects.toThrow(NotFoundException);
+      ).rejects.toThrow(AppErrorCodes.USER_NOT_FOUND);
       await expect(
         controller.setPassword(mockRequest, validSetPasswordDto),
-      ).rejects.toThrow('ユーザーが見つかりません');
+      ).rejects.toThrow(AppErrorCodes.USER_NOT_FOUND);
     });
 
     it('should handle user with existing password error', async () => {
       mockAccountService.setPassword.mockRejectedValue(
-        new BadRequestException(
-          '既にパスワードが設定されています。パスワードを変更したい場合は、パスワードリセット機能をご利用ください。',
-        ),
+        AppErrorCodes.PASSWORD_ALREADY_SET,
       );
 
       await expect(
         controller.setPassword(mockRequest, validSetPasswordDto),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(AppErrorCodes.PASSWORD_ALREADY_SET);
       await expect(
         controller.setPassword(mockRequest, validSetPasswordDto),
-      ).rejects.toThrow('既にパスワードが設定されています');
+      ).rejects.toThrow(AppErrorCodes.PASSWORD_ALREADY_SET);
     });
 
     it('should require JWT authentication', () => {
@@ -439,7 +428,7 @@ describe('AccountController - Password Management', () => {
       } as unknown as Request;
 
       const expectedResult = {
-        message: 'パスワードが正常に設定されました',
+        message: 'Password set successfully',
         user: { ...mockUser, id: 'sns_user_456' },
       };
 
@@ -460,12 +449,12 @@ describe('AccountController - Password Management', () => {
 
       // In production, this would be caught by validation pipes
       mockAccountService.setPassword.mockRejectedValue(
-        new BadRequestException('パスワードの形式が正しくありません'),
+        AppErrorCodes.WEAK_PASSWORD,
       );
 
       await expect(
         controller.setPassword(mockRequest, weakPasswordDto as any),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(AppErrorCodes.WEAK_PASSWORD);
     });
   });
 
@@ -523,15 +512,15 @@ describe('AccountController - Password Management', () => {
 
     it('should handle user not found error', async () => {
       mockAccountService.canSetPassword.mockRejectedValue(
-        new NotFoundException('ユーザーが見つかりません'),
+        AppErrorCodes.USER_NOT_FOUND,
       );
 
       await expect(
         controller.canSetPassword(mockRequest, mockUser as any),
-      ).rejects.toThrow(NotFoundException);
+      ).rejects.toThrow(AppErrorCodes.USER_NOT_FOUND);
       await expect(
         controller.canSetPassword(mockRequest, mockUser as any),
-      ).rejects.toThrow('ユーザーが見つかりません');
+      ).rejects.toThrow(AppErrorCodes.USER_NOT_FOUND);
     });
 
     it('should require JWT authentication', () => {
@@ -573,8 +562,7 @@ describe('AccountController - Password Management', () => {
       const forgotDto = { email: 'test@example.com' };
       const forgotResult = {
         message:
-          '指定されたメールアドレスにパスワードリセット用のコードを送信しました',
-        debug: { resetCode: 'ABC123' },
+          'A password reset code has been sent to the specified email address',
       };
 
       mockAccountService.forgotPassword.mockResolvedValue(forgotResult);
@@ -587,7 +575,7 @@ describe('AccountController - Password Management', () => {
         newPassword: 'NewSecurePass123',
       };
       const confirmResult = {
-        message: 'パスワードが正常にリセットされました',
+        message: 'Password has been reset successfully',
         user: mockUser,
       };
 
@@ -600,7 +588,7 @@ describe('AccountController - Password Management', () => {
       const forgotDto = { email: 'test@example.com' };
       const expectedResult = {
         message:
-          '指定されたメールアドレスにパスワードリセット用のコードを送信しました',
+          'A password reset code has been sent to the specified email address',
       };
 
       mockAccountService.forgotPassword.mockResolvedValue(expectedResult);
@@ -687,7 +675,7 @@ describe('AccountController - Password Management', () => {
 
     it('should handle user ID extraction securely', async () => {
       const expectedResult = {
-        message: 'パスワードが正常に更新されました',
+        message: 'Password updated successfully',
         user: mockUser,
       };
 
