@@ -21,6 +21,9 @@ import { ResponseFormatterInterceptor } from './interceptors/response-formatter.
 import { LoggerMiddleware } from './logger-middleware/logger-middleware.middleware';
 import { RoleModule } from './role/role.module';
 import { PermissionBitcalcModule } from './permission-bitcalc/permission-bitcalc.module';
+import { TotpModule } from './totp/totp.module';
+import { MfaService } from './mfa/mfa.service';
+import { MfaModule } from './mfa/mfa.module';
 
 @Module({
   imports: [
@@ -46,6 +49,8 @@ import { PermissionBitcalcModule } from './permission-bitcalc/permission-bitcalc
     DiscordTokenModule,
     RoleModule,
     PermissionBitcalcModule,
+    TotpModule,
+    MfaModule,
   ],
   controllers: [AppController],
   providers: [
@@ -55,6 +60,7 @@ import { PermissionBitcalcModule } from './permission-bitcalc/permission-bitcalc
       provide: APP_INTERCEPTOR,
       useClass: ResponseFormatterInterceptor,
     },
+    MfaService,
   ],
   exports: [AppService],
 })

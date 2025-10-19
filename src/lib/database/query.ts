@@ -150,3 +150,17 @@ export {
   deleteRole,
   upsertRoleByName,
 } from './role-query';
+
+// ===== MFA / TOTP 関連クエリ =====
+export {
+  createUserOtp,
+  getUserOtpByUserId,
+  getUserOtpById,
+  setLastAuthenticatedAt,
+  createBackupCodes,
+  findBackupCode,
+  deleteBackupCodesForUserOtp,
+  deleteUserOtpById,
+  userHasOtpEnabled,
+  setSetupCompleted,
+} from './mfa-query';

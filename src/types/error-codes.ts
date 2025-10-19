@@ -187,4 +187,17 @@ export const AppErrorCodes = {
     'Provided permission bitmask contains invalid bits',
   ),
   PERMISSION_DENIED: new AppErrorCode(403, 'Permission denied'),
+
+  // TOTP
+  INVALID_DIGIT_CODE: new AppErrorCode(400, 'Invalid digit code'),
+  // MFA
+  MFA_NOT_ENABLED: new AppErrorCode(400, 'MFA is not enabled for this user'),
+  TOTP_ALREADY_ENABLED: new AppErrorCode(
+    400,
+    'TOTP is already enabled for this user',
+  ),
+  TOTP_SIMULTANEOUS_SETUP: new AppErrorCode(
+    409,
+    'TOTP setup is already in progress for this user',
+  ),
 };

@@ -1,0 +1,41 @@
+// Ensure module mocks are hoisted before the module under test is imported
+jest.mock('./query', () => {
+  const mockCreateMany = jest.fn().mockResolvedValue({ count: 2 });
+  return {
+    __esModule: true,
+    default: { oTPBackupCode: { createMany: mockCreateMany } },
+    // simple deterministic hash function for test
+    hashString: (s: string) => `hashed:${s}`,
+  };
+});
+
+import { createBackupCodes } from './mfa-query';
+import prismaQuery from './query';
+
+describe('mfa-query.createBackupCodes', () => {
+  it('hashes backup codes before saving via prisma.oTPBackupCode.createMany', async () => {
+    const userOtpId = 'uo-123';
+    const codes = ['CODE1', 'CODE2'];
+
+    const result = await createBackupCodes(userOtpId, codes);
+
+    expect((prismaQuery as any).oTPBackupCode.createMany).toHaveBeenCalledTimes(
+      1,
+    );
+
+    // Inspect the argument passed to createMany
+    const arg = ((prismaQuery as any).oTPBackupCode.createMany as jest.Mock)
+      .mock.calls[0][0];
+    expect(arg).toHaveProperty('data');
+    const data = arg.data;
+    expect(Array.isArray(data)).toBe(true);
+    expect(data).toHaveLength(2);
+
+    // Each entry should have userOtpId and hashedCode using our mocked hashString
+    expect(data[0]).toMatchObject({ userOtpId, hashedCode: 'hashed:CODE1' });
+    expect(data[1]).toMatchObject({ userOtpId, hashedCode: 'hashed:CODE2' });
+
+    // And the function should return the prisma result
+    expect(result).toEqual({ count: 2 });
+  });
+});

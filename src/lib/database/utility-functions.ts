@@ -8,10 +8,23 @@ export function hashString(value: string): string {
 }
 
 /**
- * ランダムな文字列生成
+ * ランダムな文字列生成（16進表記）
  */
 export function generateRandomString(length: number): string {
   return randomBytes(length).toString('hex');
+}
+
+/**
+ * バックアップコード（数字）の生成
+ * crypto の乱数から指定桁数の 0 埋め数字文字列を返す。
+ * デフォルトは 6 桁。
+ */
+export function generateBackupCode(digits = 6): string {
+  if (digits <= 0) return '';
+  const max = 10 ** digits;
+  // 32ビットの乱数で十分（6桁だと 1,000,000 未満なので OK）
+  const n = randomBytes(4).readUInt32BE(0) % max;
+  return String(n).padStart(digits, '0');
 }
 
 /**

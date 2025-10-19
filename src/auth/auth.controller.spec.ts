@@ -288,6 +288,37 @@ describe('AuthController', () => {
       });
     });
 
+    it('returns mfaRequired when user has MFA enabled', async () => {
+      const mockLoginResponse = {
+        success: true,
+        user: mockUser,
+      };
+
+      const mockSessionData = {
+        sessionId: 'session_abc123',
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      };
+
+      mockAuthService.login.mockResolvedValue(mockLoginResponse);
+      mockAuthService.createSession.mockResolvedValue(mockSessionData);
+
+      // Mock mfaService on the controller instance to report MFA required.
+      (controller as any).mfaService = {
+        checkMfaRequired: jest.fn().mockResolvedValue({ mfaRequired: true }),
+      } as any;
+
+      await controller.login(validLoginDto, mockResponse, mockRequest);
+
+      // Expect the controller to short-circuit and return mfaRequired response
+      expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
+      expect(mockJsonFn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          mfaRequired: true,
+          mfaToken: expect.any(String),
+        }),
+      );
+    });
+
     it('should handle login with email address', async () => {
       const loginWithEmail = {
         usernameOrEmail: mockUser.email,

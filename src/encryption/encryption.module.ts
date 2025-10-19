@@ -5,7 +5,9 @@ import { ExternalProviderAccessTokenService } from './external-provider-access-t
 export const ENCRYPTION_OPTIONS = 'ENCRYPTION_OPTIONS';
 
 @Module({
-  providers: [ExternalProviderAccessTokenService, EncryptionService],
+  providers: [
+    /* runtime providers are registered via forRoot */
+  ],
 })
 export class EncryptionModule {
   static forRoot(options: Partial<KeyPair>): DynamicModule {
@@ -22,8 +24,13 @@ export class EncryptionModule {
 
     return {
       module: EncryptionModule,
-      providers: [optionsProvider, serviceProvider],
-      exports: [EncryptionService],
+      global: true,
+      providers: [
+        optionsProvider,
+        serviceProvider,
+        ExternalProviderAccessTokenService,
+      ],
+      exports: [EncryptionService, ExternalProviderAccessTokenService],
     };
   }
 }

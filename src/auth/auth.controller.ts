@@ -9,9 +9,11 @@ import {
   Query,
   Param,
   UseGuards,
+  Optional,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
+import { MfaService } from '../mfa/mfa.service';
 import { RegisterDto, LoginDto } from './dto/create-auth.dto';
 import {
   safeParseRegisterInput,
@@ -52,6 +54,7 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly externalProviderAccessTokenService: ExternalProviderAccessTokenService,
     private readonly oauthProviderFactory: OAuthProviderFactory,
+    @Optional() private readonly mfaService?: MfaService,
   ) {}
 
   /**
@@ -207,7 +210,7 @@ export class AuthController {
     @Body() loginDto: LoginDto,
     @Res() res: Response,
     @Req() req: Request,
-  ): Promise<void> {
+  ): Promise<any> {
     try {
       // 入力データのバリデーション
       const validationResult = safeParseLoginInput(loginDto);
@@ -235,6 +238,8 @@ export class AuthController {
       if (!tokenResult.success) {
         throw AppErrorCodes.TOKEN_GENERATION_FAILED;
       }
+
+      await this.checkForMfa(res, { userId: result.user?.id });
 
       // 重複してトークンが生成されないようにする(既にアクセストークン作成時にJWTStateを作成しているので)
       const refreshTokenResult = await generateRefreshToken(result.user!.id, {
@@ -564,7 +569,7 @@ export class AuthController {
   async verifyToken(
     @Body() verifyTokenDto: VerifyTokenDto,
     @Res() res: Response,
-  ): Promise<void> {
+  ): Promise<any> {
     try {
       if (!verifyTokenDto.stateCode || !verifyTokenDto.oneTimeToken) {
         throw AppErrorCodes.INVALID_REQUEST;
@@ -579,6 +584,11 @@ export class AuthController {
       if (!tokenResult.profile?.sub) {
         throw AppErrorCodes.INVALID_TOKEN;
       }
+
+      // Check if user has MFA enabled; if so, return temporary MFA token for OTP verification
+      await this.checkForMfa(res, { userId: tokenResult.profile.sub });
+
+      // No MFA required: proceed with normal session/token issuance
       const sessionData = await this.authService.createSession(
         tokenResult.profile.sub,
       );
@@ -607,6 +617,30 @@ export class AuthController {
         throw error;
       }
       throw AppErrorCodes.INTERNAL_SERVER_ERROR;
+    }
+  }
+
+  async checkForMfa(res: Response, { userId }: { userId?: string }) {
+    // Check MFA requirement and if enabled return temporary MFA token instead of full login
+    if (!userId) {
+      return false;
+    }
+
+    const mfaCheck = this.mfaService
+      ? await this.mfaService.checkMfaRequired(userId)
+      : { mfaRequired: false };
+    if (mfaCheck && mfaCheck.mfaRequired) {
+      const temp = await generateJWTToken({
+        userId: userId,
+        expirationHours: 0.1667, // ~10 minutes
+      });
+      if (!temp.success) throw AppErrorCodes.TOKEN_GENERATION_FAILED;
+
+      return res.status(HttpStatus.OK).json({
+        mfaRequired: true,
+        mfaToken: temp.token,
+        expiresAt: temp.expiresAt,
+      });
     }
   }
 }

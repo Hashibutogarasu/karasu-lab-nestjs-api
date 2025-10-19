@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
-import { AppModule } from './../src/app.module';
+import { AppModule } from '../src/app.module';
 import { getGlobalModule } from '../src/utils/test/global-modules';
 
 describe('Global Response Formatter & NoInterceptor (e2e)', () => {
