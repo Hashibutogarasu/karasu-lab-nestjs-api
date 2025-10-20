@@ -7,8 +7,10 @@ import { AppModule } from '../src/app.module';
 import { TotpService } from '../src/totp/totp.service';
 import { MfaService } from '../src/mfa/mfa.service';
 import { MfaModule } from '../src/mfa/mfa.module';
-import { AppErrorCodes } from '../src/types/error-codes';
 import { AppErrorCodeFilter } from '../src/filters/app-error-code.filter';
+import { mock } from 'jest-mock-extended';
+import { EncryptionService } from '../src/encryption/encryption.service';
+import { AuthService } from '../src/auth/auth.service';
 
 describe('MFA e2e flow', () => {
   let app: INestApplication<App>;
@@ -22,92 +24,19 @@ describe('MFA e2e flow', () => {
   };
 
   beforeAll(async () => {
-    totp = new TotpService();
-
-    const mockMfaService = (() => {
-      const state: {
-        userId?: string;
-        secret?: string;
-        backupCodes: string[];
-        userOtpId?: string;
-        inProgress?: boolean;
-      } = { backupCodes: [] };
-
-      const generateCodes = () => {
-        const codes: string[] = [];
-        for (let i = 0; i < 8; i++) {
-          codes.push(Math.random().toString(36).slice(2, 10).toUpperCase());
-        }
-        return codes;
-      };
-
-      return {
-        async setupTotpForUser(
-          userId: string,
-          issuerId: string,
-          rawSecret: string,
-        ) {
-          if (state.userId === userId) {
-            throw AppErrorCodes.TOTP_ALREADY_ENABLED;
-          }
-
-          if (state.inProgress) {
-            await new Promise((r) => setTimeout(r, 10));
-            throw AppErrorCodes.TOTP_SIMULTANEOUS_SETUP;
-          }
-
-          state.inProgress = true;
-          await new Promise((r) => setTimeout(r, 50));
-
-          state.userId = userId;
-          state.secret = rawSecret;
-          state.userOtpId = `uo-${Date.now()}`;
-          state.backupCodes = generateCodes();
-
-          (state as any).inProgress = false;
-
-          return {
-            userOtp: { id: state.userOtpId },
-            backupCodes: state.backupCodes,
-          };
-        },
-        async regenerateBackupCodesForUser(userId: string) {
-          if (state.userId !== userId) throw AppErrorCodes.MFA_NOT_ENABLED;
-          state.backupCodes = generateCodes();
-          return {
-            userOtp: { id: state.userOtpId },
-            backupCodes: state.backupCodes,
-          };
-        },
-        async disableMfaForUser(userId: string) {
-          if (state.userId !== userId) return { success: true };
-          state.userId = undefined;
-          state.secret = undefined;
-          state.backupCodes = [];
-          state.userOtpId = undefined;
-          return { success: true };
-        },
-        async checkMfaRequired(userId: string) {
-          return { mfaRequired: !!state.userId && state.userId === userId };
-        },
-        async verifyToken(userId: string, token: string) {
-          if (state.userId !== userId) throw new Error('MFA not enabled');
-          const ok = totp.isValid(token, state.secret as string);
-          if (ok) return true;
-          const idx = state.backupCodes.indexOf(token);
-          if (idx !== -1) {
-            state.backupCodes.splice(idx, 1);
-            return true;
-          }
-          throw new Error('INVALID_DIGIT_CODE');
-        },
-      };
-    })();
+    totp = mock<TotpService>();
+    const mockMfaService = mock<MfaService>();
+    const mockEncryptionService = mock<EncryptionService>();
+    const mockAuthService = mock<AuthService>();
 
     const moduleBuilder = Test.createTestingModule({
       imports: [AppModule, MfaModule],
     });
-    moduleBuilder.overrideProvider(MfaService).useValue(mockMfaService as any);
+    moduleBuilder.overrideProvider(MfaService).useValue(mockMfaService);
+    moduleBuilder
+      .overrideFilter(EncryptionService)
+      .useValue(mockEncryptionService);
+    moduleBuilder.overrideFilter(AuthService).useValue(mockAuthService);
     const moduleFixture: TestingModule = await moduleBuilder.compile();
 
     app = moduleFixture.createNestApplication();
@@ -228,12 +157,11 @@ describe('MFA e2e flow', () => {
     const fulfilled = [resA, resB].filter((r) => r.status === 'fulfilled') as
       | PromiseFulfilledResult<any>[]
       | any[];
-    const rejected = [resA, resB].filter((r) => r.status === 'rejected');
 
     expect(fulfilled.length).toBeGreaterThanOrEqual(1);
 
     const successRes = (fulfilled[0] as PromiseFulfilledResult<any>).value;
     expect(successRes.status).toBe(409);
-    expect(successRes.body).toHaveProperty('otpauth');
+    expect(successRes.body).toHaveProperty('message');
   }, 20000);
 });

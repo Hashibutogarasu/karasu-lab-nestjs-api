@@ -58,6 +58,8 @@ describe('MfaController (verify)', () => {
         { provide: MfaService, useValue: mockMfaService },
         { provide: AuthService, useValue: mockAuthService },
         { provide: TotpService, useValue: mockTotpService },
+        // Provide a mock cache manager so ConcurrentRequestInterceptor can be constructed
+        { provide: 'CACHE_MANAGER', useValue: { set: jest.fn(), del: jest.fn() } },
       ],
     }).compile();
 

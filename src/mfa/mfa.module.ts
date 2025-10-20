@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { MfaService } from './mfa.service';
-import { EncryptionService } from '../encryption/encryption.service';
 import { TotpModule } from '../totp/totp.module';
 import { EncryptionModule } from '../encryption/encryption.module';
 

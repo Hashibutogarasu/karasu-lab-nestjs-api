@@ -85,7 +85,13 @@ export class EncryptionService {
     ]);
 
     try {
-      return result.toString('base64');
+      const res = result.toString('base64');
+
+      if (!res) {
+        throw AppErrorCodes.MISSING_ENCRYPTED_TEXT;
+      }
+
+      return res;
     } catch (err) {
       throw AppErrorCodes.ENCRYPTION_FAILED.setCustomMesage(
         String((err as Error).message || err),

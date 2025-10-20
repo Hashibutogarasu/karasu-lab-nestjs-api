@@ -36,36 +36,12 @@ export class MfaService {
   async setupTotpForUser(userId: string, issuerId: string, rawSecret: string) {
     if (!rawSecret) throw AppErrorCodes.MISSING_PLAIN_TEXT;
 
-    const already = await userHasOtpEnabled(userId);
-    if (already) throw AppErrorCodes.TOTP_ALREADY_ENABLED;
-
     const encrypted = this.encryptionService.encrypt(rawSecret);
 
-    let rec: UserOTP;
-    try {
-      rec = await createUserOtp({
-        userId,
-        issuerId,
-        secretEncrypted: encrypted,
-      });
-    } catch (err: any) {
-      if (err && err.code === 'P2002') {
-        try {
-          const existing = await getUserOtpByUserId(userId);
-          if (existing && existing.setupCompleted === false) {
-            await deleteUserOtpById(existing.id);
-            throw new Error('PARTIAL_USEROTP_CLEARED');
-          }
-        } catch (e) {
-          // ignore errors
-        }
-
-        throw AppErrorCodes.TOTP_SIMULTANEOUS_SETUP;
-      }
-
-      const nowHas = await userHasOtpEnabled(userId);
-      if (nowHas) throw AppErrorCodes.TOTP_SIMULTANEOUS_SETUP;
-      throw err;
+    const existing = await getUserOtpByUserId(userId);
+    if (existing && existing.setupCompleted === false) {
+      await deleteBackupCodesForUserOtp(existing.id);
+      await deleteUserOtpById(existing.id);
     }
 
     const codes: string[] = [];
@@ -74,11 +50,16 @@ export class MfaService {
       codes.push(c);
     }
 
-    await createBackupCodes(rec.id, codes);
+    const created = await createUserOtp({
+      userId,
+      issuerId,
+      secretEncrypted: encrypted,
+    });
 
-    await setSetupCompleted(rec.id, true);
+    await createBackupCodes(created.id, codes);
+    await setSetupCompleted(created.id, true);
 
-    return { userOtp: rec, backupCodes: codes };
+    return { backupCodes: codes };
   }
 
   async verifyToken(userId: string, token: string) {

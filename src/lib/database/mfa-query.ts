@@ -1,6 +1,5 @@
 import prisma, { hashString } from './query';
 
-// Create a new UserOTP entry
 export async function createUserOtp(data: {
   userId: string;
   issuerId: string;
@@ -36,7 +35,6 @@ export async function setLastAuthenticatedAt(userOtpId: string, at: Date) {
   });
 }
 
-// Backup codes: store hashed codes
 export async function createBackupCodes(userOtpId: string, codes: string[]) {
   const now = new Date();
   const createMany = codes.map((c) => ({

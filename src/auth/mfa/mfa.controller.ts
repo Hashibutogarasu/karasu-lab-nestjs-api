@@ -8,6 +8,7 @@ import {
   UseGuards,
   Get,
   Delete,
+  UseInterceptors,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { MfaService } from '../../mfa/mfa.service';
@@ -20,8 +21,9 @@ import {
   generateJWTToken,
   generateRefreshToken,
 } from '../../lib/auth/jwt-token';
-import { AppErrorCode, AppErrorCodes } from '../../types/error-codes';
+import { AppErrorCodes } from '../../types/error-codes';
 import { TotpService } from '../../totp/totp.service';
+import { ConcurrentRequestInterceptor } from '../../interceptors/concurrent-request.interceptor';
 
 type VerifyMfaDto = {
   mfaToken?: string;
@@ -63,9 +65,6 @@ export class MfaController {
         backup_codes: result.backupCodes,
       });
     } catch (error) {
-      if (error === AppErrorCodes.TOTP_ALREADY_ENABLED) {
-        throw AppErrorCodes.TOTP_SIMULTANEOUS_SETUP;
-      }
       if (error && error.code) throw error;
       throw AppErrorCodes.INTERNAL_SERVER_ERROR;
     }

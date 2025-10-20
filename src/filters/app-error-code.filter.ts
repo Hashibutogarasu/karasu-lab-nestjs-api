@@ -5,11 +5,11 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { AppErrorCode } from '../types/error-codes';
+import { AppErrorCode, AppErrorCodes } from '../types/error-codes';
 
 @Catch()
 export class AppErrorCodeFilter implements ExceptionFilter {
-  catch(exception: unknown, host: ArgumentsHost) {
+  catch(exception: Error, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
@@ -48,8 +48,12 @@ export class AppErrorCodeFilter implements ExceptionFilter {
         timestamp: new Date().toISOString(),
         path: request.url,
       });
+
       return;
     }
-    throw exception;
+
+    throw AppErrorCodes.INTERNAL_SERVER_ERROR.setCustomMesage(
+      exception.message,
+    );
   }
 }

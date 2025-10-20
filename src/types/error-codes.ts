@@ -27,6 +27,7 @@ export const AppErrorCodes = {
   NOT_FOUND: new AppErrorCode(404, 'Resource not found'),
   UNAUTHORIZED: new AppErrorCode(401, 'Unauthorized'),
   FORBIDDEN: new AppErrorCode(403, 'Forbidden'),
+  CONFLICT: new AppErrorCode(409, 'Conflict'),
   INTERNAL_SERVER_ERROR: new AppErrorCode(500, 'Internal server error'),
 
   // External API Common Errors
@@ -44,7 +45,7 @@ export const AppErrorCodes = {
   PROVIDER_NOT_FOUND: new AppErrorCode(404, 'Provider not found'),
   EXTRA_USER_PROFILE_NOT_FOUND: new AppErrorCode(
     404,
-    'profile not found for this user',
+    'Profile not found for this user',
   ),
   INVALID_PROFILE_DATA: new AppErrorCode(400, 'Invalid profile data'),
   VALIDATION_FAILED: new AppErrorCode(400, 'Validation failed'),
@@ -153,6 +154,10 @@ export const AppErrorCodes = {
     400,
     'Plain text is required for encryption',
   ),
+  MISSING_ENCRYPTED_TEXT: new AppErrorCode(
+    400,
+    'Encrypted text is required for decryption',
+  ),
   MISSING_CIPHER_TEXT: new AppErrorCode(
     400,
     'Cipher text is required for decryption',
@@ -195,9 +200,5 @@ export const AppErrorCodes = {
   TOTP_ALREADY_ENABLED: new AppErrorCode(
     400,
     'TOTP is already enabled for this user',
-  ),
-  TOTP_SIMULTANEOUS_SETUP: new AppErrorCode(
-    409,
-    'TOTP setup is already in progress for this user',
   ),
 };

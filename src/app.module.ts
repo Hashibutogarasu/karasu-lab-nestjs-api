@@ -24,6 +24,9 @@ import { PermissionBitcalcModule } from './permission-bitcalc/permission-bitcalc
 import { TotpModule } from './totp/totp.module';
 import { MfaService } from './mfa/mfa.service';
 import { MfaModule } from './mfa/mfa.module';
+import { CacheModule } from '@nestjs/cache-manager';
+import { redisStore } from 'cache-manager-redis-store';
+import { ConcurrentRequestInterceptor } from './interceptors/concurrent-request.interceptor';
 
 @Module({
   imports: [
@@ -51,6 +54,19 @@ import { MfaModule } from './mfa/mfa.module';
     PermissionBitcalcModule,
     TotpModule,
     MfaModule,
+    process.env.REDIS_HOST
+      ? CacheModule.register({
+          store: async () =>
+            await redisStore({
+              socket: {
+                host: process.env.REDIS_HOST!,
+                port: process.env.REDIS_PORT!,
+              },
+              ttl: 10,
+            }),
+          isGlobal: true,
+        })
+      : CacheModule.register({ isGlobal: true, ttl: 10 }),
   ],
   controllers: [AppController],
   providers: [
@@ -59,6 +75,10 @@ import { MfaModule } from './mfa/mfa.module';
     {
       provide: APP_INTERCEPTOR,
       useClass: ResponseFormatterInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ConcurrentRequestInterceptor,
     },
     MfaService,
   ],
