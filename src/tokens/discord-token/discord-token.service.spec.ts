@@ -1,8 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DiscordTokenService } from './discord-token.service';
 import { getGlobalModule } from '../../utils/test/global-modules';
+import { mock } from 'jest-mock-extended';
+import { DataBaseService } from '../../data-base/data-base.service';
+import { UtilityService } from '../../data-base/utility/utility.service';
+import { RoleService } from '../../data-base/query/role/role.service';
 
-// node-fetch is used in the service; we'll mock global.fetch for tests
 describe('DiscordTokenService', () => {
   let service: DiscordTokenService;
 
@@ -15,9 +18,26 @@ describe('DiscordTokenService', () => {
     process.env.DISCORD_CLIENT_SECRET = 'discord-client-secret';
     process.env.DISCORD_CALLBACK_URL = 'http://localhost:3000/auth/callback';
 
-    // create testing module
+    const mockDatabaseService = mock<DataBaseService>();
+    const mockUtilityService = mock<UtilityService>();
+    const mockRoleService = mock<RoleService>();
+
     const module: TestingModule = await getGlobalModule({
-      providers: [DiscordTokenService],
+      providers: [
+        DiscordTokenService,
+        {
+          provide: DataBaseService,
+          useValue: mockDatabaseService,
+        },
+        {
+          provide: UtilityService,
+          useValue: mockUtilityService,
+        },
+        {
+          provide: RoleService,
+          useValue: mockRoleService,
+        },
+      ],
     }).compile();
 
     service = module.get<DiscordTokenService>(DiscordTokenService);
@@ -53,7 +73,6 @@ describe('DiscordTokenService', () => {
   });
 
   it('should revoke token successfully when 200 empty body', async () => {
-    // return 200 with empty body
     global.fetch = jest.fn().mockResolvedValueOnce({
       status: 200,
       json: async () => {

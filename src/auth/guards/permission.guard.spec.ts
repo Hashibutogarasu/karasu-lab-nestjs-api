@@ -5,21 +5,21 @@ import { PermissionType } from '../../types/permission';
 import { PermissionBitcalcService } from '../../permission-bitcalc/permission-bitcalc.service';
 import * as query from '../../lib/database/query';
 import { AppErrorCodes } from '../../types/error-codes';
-import { PERMISSION_METAKEY } from '../decorators/permission.decorator';
-
-jest.mock('../../lib/database/query', () => ({
-  findUserById: jest.fn(),
-}));
+import { mock } from 'jest-mock-extended';
+import { UserService } from '../../data-base/query/user/user.service';
+import { PERMISSION_METAKEY } from '../permission.constants';
 
 describe('PermissionGuard', () => {
   let guard: PermissionGuard;
   let bitcalc: PermissionBitcalcService;
   let reflector: Reflector & { get: jest.Mock };
+  let mockUserService: UserService;
 
   beforeEach(() => {
+    mockUserService = mock<UserService>();
     bitcalc = new PermissionBitcalcService();
     reflector = { get: jest.fn() } as unknown as Reflector & { get: jest.Mock };
-    guard = new PermissionGuard(reflector, bitcalc);
+    guard = new PermissionGuard(reflector, bitcalc, mockUserService);
   });
 
   afterEach(() => {
@@ -42,7 +42,7 @@ describe('PermissionGuard', () => {
       getHandler: () => handler,
     } as unknown as ExecutionContext;
 
-    (query.findUserById as jest.Mock).mockResolvedValue({
+    (mockUserService.findUserById as jest.Mock).mockResolvedValue({
       id: 'user-1',
       roles: [],
     });
@@ -65,7 +65,7 @@ describe('PermissionGuard', () => {
     } as unknown as ExecutionContext;
 
     // user has USER_READ and ADMIN_WRITE
-    (query.findUserById as jest.Mock).mockResolvedValue({
+    (mockUserService.findUserById as jest.Mock).mockResolvedValue({
       id: 'user-2',
       roles: [],
     });

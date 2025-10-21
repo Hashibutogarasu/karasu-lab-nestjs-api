@@ -16,6 +16,11 @@ import type { Response } from 'express';
 import { Readable } from 'stream';
 import { AppErrorCodes } from '../types/error-codes';
 import { getGlobalModule } from '../utils/test/global-modules';
+import { mock } from 'jest-mock-extended';
+import { JwtTokenService } from '../auth/jwt-token/jwt-token.service';
+import { DataBaseService } from '../data-base/data-base.service';
+import { UtilityService } from '../data-base/utility/utility.service';
+import { RoleService } from '../data-base/query/role/role.service';
 
 describe('DifyController', () => {
   let controller: DifyController;
@@ -54,6 +59,11 @@ describe('DifyController', () => {
   };
 
   beforeEach(async () => {
+    const mockJwtTokenService = mock<JwtTokenService>();
+    const mockDatabaseService = mock<DataBaseService>();
+    const mockUtilityService = mock<UtilityService>();
+    const mockRoleService = mock<RoleService>();
+
     const module: TestingModule = await getGlobalModule({
       imports: [
         JwtModule.register({
@@ -66,6 +76,22 @@ describe('DifyController', () => {
       ],
       controllers: [DifyController],
       providers: [
+        {
+          provide: JwtTokenService,
+          useValue: mockJwtTokenService,
+        },
+        {
+          provide: DataBaseService,
+          useValue: mockDatabaseService,
+        },
+        {
+          provide: UtilityService,
+          useValue: mockUtilityService,
+        },
+        {
+          provide: RoleService,
+          useValue: mockRoleService,
+        },
         {
           provide: DifyService,
           useValue: {

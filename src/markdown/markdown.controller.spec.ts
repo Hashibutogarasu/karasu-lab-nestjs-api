@@ -8,7 +8,7 @@ describe('MarkdownController', () => {
   let service: MarkdownService;
 
   beforeEach(async () => {
-    const module: TestingModule = await getGlobalModule({
+    const module: TestingModule = await Test.createTestingModule({
       controllers: [MarkdownController],
       providers: [MarkdownService],
     }).compile();

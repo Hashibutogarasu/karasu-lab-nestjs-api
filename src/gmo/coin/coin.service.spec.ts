@@ -1,23 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CoinService } from './coin.service';
-import { HttpException } from '@nestjs/common';
 import { PriceType, Interval } from './dto/gmo-coin-request.dto';
-import * as queryModule from '../../lib/database/query';
 import { AppErrorCodes } from '../../types/error-codes';
 import fetchJson from '../../utils/network-utils';
-import { getGlobalModule } from '../../utils/test/global-modules';
-
-// Mock DB save functions to avoid contacting real database during unit tests
-jest.mock('../../lib/database/query', () => ({
-  saveGmoCoinStatus: jest.fn().mockResolvedValue(null),
-  saveGmoCoinTicker: jest.fn().mockResolvedValue(null),
-  saveGmoCoinKline: jest.fn().mockResolvedValue(null),
-  saveGmoCoinRules: jest.fn().mockResolvedValue(null),
-  getLatestGmoCoinTicker: jest.fn().mockResolvedValue(null),
-  getLatestGmoCoinStatus: jest.fn().mockResolvedValue(null),
-  getLatestGmoCoinKline: jest.fn().mockResolvedValue(null),
-  getLatestGmoCoinRules: jest.fn().mockResolvedValue(null),
-}));
+import { mock } from 'jest-mock-extended';
+import { GmocoinService } from '../../data-base/query/gmocoin/gmocoin.service';
+import { DataBaseService } from '../../data-base/data-base.service';
+import { UtilityService } from '../../data-base/utility/utility.service';
+import { RoleService } from '../../data-base/query/role/role.service';
+import { JwtTokenService } from '../../auth/jwt-token/jwt-token.service';
+import prisma from '../../lib/database/query';
 
 // Mock fetchJson helper instead of global.fetch to avoid changing network-utils
 jest.mock('../../utils/network-utils', () => ({
@@ -27,10 +19,41 @@ jest.mock('../../utils/network-utils', () => ({
 
 describe('CoinService', () => {
   let service: CoinService;
+  let mockGmoCoinService: GmocoinService;
 
   beforeEach(async () => {
-    const module: TestingModule = await getGlobalModule({
-      providers: [CoinService],
+    mockGmoCoinService = mock<GmocoinService>();
+    const mockDatabaseService = mock<DataBaseService>({
+      prisma: jest.fn().mockResolvedValue(prisma),
+    });
+    const mockUtilityService = mock<UtilityService>();
+    const mockRoleService = mock<RoleService>();
+    const mockJwtTokenService = mock<JwtTokenService>();
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        CoinService,
+        {
+          provide: GmocoinService,
+          useValue: mockGmoCoinService,
+        },
+        {
+          provide: DataBaseService,
+          useValue: mockDatabaseService,
+        },
+        {
+          provide: UtilityService,
+          useValue: mockUtilityService,
+        },
+        {
+          provide: RoleService,
+          useValue: mockRoleService,
+        },
+        {
+          provide: JwtTokenService,
+          useValue: mockJwtTokenService,
+        },
+      ],
     }).compile();
 
     service = module.get<CoinService>(CoinService);
@@ -68,9 +91,9 @@ describe('CoinService', () => {
         responsetime: new Date('2025-10-10T02:45:39.342Z'),
       };
 
-      (queryModule.getLatestGmoCoinStatus as jest.Mock).mockResolvedValueOnce(
-        dbEntry,
-      );
+      (
+        mockGmoCoinService.getLatestGmoCoinStatus as jest.Mock
+      ).mockResolvedValueOnce(dbEntry);
 
       const result = await service.getStatus({
         cache: true,
@@ -84,9 +107,9 @@ describe('CoinService', () => {
     });
 
     it('should throw NotFoundException when cache=true and DB empty', async () => {
-      (queryModule.getLatestGmoCoinStatus as jest.Mock).mockResolvedValueOnce(
-        null,
-      );
+      (
+        mockGmoCoinService.getLatestGmoCoinStatus as jest.Mock
+      ).mockResolvedValueOnce(null);
 
       await expect(
         service.getStatus({ cache: true, updateDb: false } as any),
@@ -156,9 +179,9 @@ describe('CoinService', () => {
         ],
       };
 
-      (queryModule.getLatestGmoCoinTicker as jest.Mock).mockResolvedValueOnce(
-        dbEntry,
-      );
+      (
+        mockGmoCoinService.getLatestGmoCoinTicker as jest.Mock
+      ).mockResolvedValueOnce(dbEntry);
 
       const result = await service.getTicker({
         cache: true,
@@ -180,9 +203,9 @@ describe('CoinService', () => {
     });
 
     it('should throw NotFoundException when ticker cache requested but DB empty', async () => {
-      (queryModule.getLatestGmoCoinTicker as jest.Mock).mockResolvedValueOnce(
-        null,
-      );
+      (
+        mockGmoCoinService.getLatestGmoCoinTicker as jest.Mock
+      ).mockResolvedValueOnce(null);
 
       await expect(
         service.getTicker({ cache: true, updateDb: false } as any),
@@ -257,9 +280,9 @@ describe('CoinService', () => {
         ],
       };
 
-      (queryModule.getLatestGmoCoinKline as jest.Mock).mockResolvedValueOnce(
-        dbEntry,
-      );
+      (
+        mockGmoCoinService.getLatestGmoCoinKline as jest.Mock
+      ).mockResolvedValueOnce(dbEntry);
 
       const params = {
         symbol: 'USD_JPY',
@@ -288,9 +311,9 @@ describe('CoinService', () => {
     });
 
     it('should throw NotFoundException when kline cache requested but DB empty', async () => {
-      (queryModule.getLatestGmoCoinKline as jest.Mock).mockResolvedValueOnce(
-        null,
-      );
+      (
+        mockGmoCoinService.getLatestGmoCoinKline as jest.Mock
+      ).mockResolvedValueOnce(null);
 
       const params = {
         symbol: 'USD_JPY',
@@ -361,9 +384,9 @@ describe('CoinService', () => {
         ],
       };
 
-      (queryModule.getLatestGmoCoinRules as jest.Mock).mockResolvedValueOnce(
-        dbEntry,
-      );
+      (
+        mockGmoCoinService.getLatestGmoCoinRules as jest.Mock
+      ).mockResolvedValueOnce(dbEntry);
 
       const result = await service.getRules({
         cache: true,
@@ -385,9 +408,9 @@ describe('CoinService', () => {
     });
 
     it('should throw NotFoundException when rules cache requested but DB empty', async () => {
-      (queryModule.getLatestGmoCoinRules as jest.Mock).mockResolvedValueOnce(
-        null,
-      );
+      (
+        mockGmoCoinService.getLatestGmoCoinRules as jest.Mock
+      ).mockResolvedValueOnce(null);
 
       await expect(
         service.getRules({ cache: true, updateDb: false } as any),
@@ -419,9 +442,9 @@ describe('CoinService', () => {
         ],
       };
 
-      (queryModule.getLatestGmoCoinTicker as jest.Mock).mockResolvedValueOnce(
-        dbEntry,
-      );
+      mockGmoCoinService.getLatestGmoCoinTicker = jest
+        .fn()
+        .mockResolvedValueOnce(dbEntry);
 
       const emissions: any[] = [];
       const sub = service
@@ -453,7 +476,9 @@ describe('CoinService', () => {
       await Promise.resolve();
 
       expect(emissions.length).toBe(2);
-      expect(queryModule.getLatestGmoCoinTicker).toHaveBeenCalledTimes(2);
+      expect(mockGmoCoinService.getLatestGmoCoinTicker).toHaveBeenCalledTimes(
+        2,
+      );
 
       sub.unsubscribe();
     });

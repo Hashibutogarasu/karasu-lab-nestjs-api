@@ -89,6 +89,7 @@ export const AppErrorCodes = {
     503,
     'The specified provider is not available',
   ),
+  INVALID_STATE_CODE: new AppErrorCode(400, 'Invalid state code'),
 
   // Account Errors
   NOW_PASSWORD_IS_NOT_INVALID: new AppErrorCode(
@@ -201,4 +202,7 @@ export const AppErrorCodes = {
     400,
     'TOTP is already enabled for this user',
   ),
+
+  // Role
+  ROLE_NOT_FOUND: new AppErrorCode(404, 'Role not found'),
 };

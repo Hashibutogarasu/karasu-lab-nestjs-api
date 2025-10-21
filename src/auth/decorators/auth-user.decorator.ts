@@ -4,7 +4,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Prisma, Role, User } from '@prisma/client';
-import { findUserById } from '../../lib';
+import { ModuleRef } from '@nestjs/core';
 
 /**
  * JWT認証されたユーザー情報を取得するデコレーター
@@ -33,7 +33,18 @@ export const AuthUser = createParamDecorator(
       throw new UnauthorizedException('Missing authenticated user');
     }
 
-    const user = await findUserById(request.user.id);
+    const mr: ModuleRef | undefined = (global as any).__authModuleRef;
+    if (!mr) {
+      throw new UnauthorizedException('User service not available');
+    }
+
+    // get by provider token name to avoid static import
+    const userService = mr.get('UserService', { strict: false });
+    if (!userService) {
+      throw new UnauthorizedException('User service not available');
+    }
+
+    const user = await userService.findUserById(request.user.id);
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
@@ -42,3 +53,7 @@ export const AuthUser = createParamDecorator(
     return publicUser as PublicUser;
   },
 );
+
+export const setAuthUserModuleRef = (mr: ModuleRef) => {
+  (global as any).__authModuleRef = mr;
+};

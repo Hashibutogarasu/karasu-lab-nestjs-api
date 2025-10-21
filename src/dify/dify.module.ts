@@ -7,8 +7,6 @@ import { DomainModule } from '../lib/domain';
 
 @Module({
   imports: [
-    AuthModule,
-    JwtModule,
     DomainModule.forRoot({
       allowedDomains: [process.env.PRIVATE_DOMAIN!],
     }),

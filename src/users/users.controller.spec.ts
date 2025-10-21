@@ -1,23 +1,26 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersController } from './users.controller';
-import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { createMock } from '@golevelup/ts-jest';
 import type { DiscordUser } from '../types/discord-user';
 import type { GoogleUser } from '../types/google-user';
-import * as queryModule from '../lib/database/query';
 import { getGlobalModule } from '../utils/test/global-modules';
 import { PermissionBitcalcService } from '../permission-bitcalc/permission-bitcalc.service';
 import { PermissionGuard } from '../auth/guards/permission.guard';
 import { Reflector } from '@nestjs/core';
-import { PERMISSION_METAKEY } from '../auth/decorators/permission.decorator';
 import { PermissionType } from '../types/permission';
 import { AppErrorCodes } from '../types/error-codes';
 import { ExecutionContext } from '@nestjs/common';
+import { UserService } from '../data-base/query/user/user.service';
+import { PERMISSION_METAKEY } from '../auth/permission.constants';
+import { mock } from 'jest-mock-extended';
+import { DataBaseService } from '../data-base/data-base.service';
+import { UtilityService } from '../data-base/utility/utility.service';
+import { RoleService } from '../data-base/query/role/role.service';
 
 describe('UsersController', () => {
   let controller: UsersController;
-  let usersService: UsersService;
+  let userService: UserService;
 
   // Mock data
   const mockDiscordProfile = {
@@ -152,16 +155,39 @@ describe('UsersController', () => {
     extraProfiles: [],
   };
 
+  let mockPermissionbitcalcService: PermissionBitcalcService;
+
   beforeEach(async () => {
+    const mockDatabaseService = mock<DataBaseService>();
+    const mockJwtAuthGuard = mock<JwtAuthGuard>();
+    const mockUtilityService = mock<UtilityService>();
+    mockPermissionbitcalcService = mock<PermissionBitcalcService>();
+    const mockRoleService = mock<RoleService>();
+
     const module: TestingModule = await getGlobalModule({
       controllers: [UsersController],
       providers: [
-        UsersService,
+        UserService,
+        {
+          provide: DataBaseService,
+          useValue: mockDatabaseService,
+        },
         {
           provide: JwtAuthGuard,
-          useValue: createMock<JwtAuthGuard>(),
+          useValue: mockJwtAuthGuard,
         },
-        PermissionBitcalcService,
+        {
+          provide: UtilityService,
+          useValue: mockUtilityService,
+        },
+        {
+          provide: PermissionBitcalcService,
+          useValue: mockPermissionbitcalcService,
+        },
+        {
+          provide: RoleService,
+          useValue: mockRoleService,
+        },
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -169,7 +195,7 @@ describe('UsersController', () => {
       .compile();
 
     controller = module.get<UsersController>(UsersController);
-    usersService = module.get<UsersService>(UsersService);
+    userService = module.get<UserService>(UserService);
   });
 
   afterEach(() => {
@@ -182,9 +208,9 @@ describe('UsersController', () => {
 
   describe('GET /users/list (findAllUsers)', () => {
     it('allows user with VIEW_ALL_USERS permission to list users', async () => {
-      // Arrange: mock usersService.findAll
+      // Arrange: mock userService.findAll
       const fakeUsers = [{ id: 'u1' }, { id: 'u2' }];
-      jest.spyOn(usersService, 'findAll').mockResolvedValue(fakeUsers as any);
+      userService.findAll = jest.fn().mockResolvedValue(fakeUsers as any);
 
       // Act: call controller.findAllUsers (Permission decorator is applied at runtime via guard,
       // but here we test controller method directly since guards run in integration tests).
@@ -197,9 +223,12 @@ describe('UsersController', () => {
 
     it('rejects when user lacks VIEW_ALL_USERS permission (PermissionGuard behavior)', async () => {
       // We'll directly test PermissionGuard logic via a minimal ExecutionContext mock.
-      const bitcalc = new PermissionBitcalcService();
       const reflector = new Reflector();
-      const guard = new PermissionGuard(reflector, bitcalc);
+      const guard = new PermissionGuard(
+        reflector,
+        mockPermissionbitcalcService,
+        userService,
+      );
 
       // set required permission metadata to VIEW_ALL_USERS
       const handler = () => undefined;
@@ -220,8 +249,8 @@ describe('UsersController', () => {
       } as unknown as ExecutionContext;
 
       // mock findUserById to return a user without roles
-      jest
-        .spyOn(queryModule, 'findUserById')
+      userService.findUserById = jest
+        .fn()
         .mockResolvedValue({ id: 'no-roles-user', roles: [] } as any);
 
       await expect(guard.canActivate(ctx)).rejects.toBe(
@@ -232,9 +261,8 @@ describe('UsersController', () => {
 
   describe('GET /users/discord/me', () => {
     it('should successfully retrieve user with Discord profile', async () => {
-      // Arrange
-      jest
-        .spyOn(queryModule, 'findUserById')
+      userService.findUserById = jest
+        .fn()
         .mockResolvedValue(mockUserWithDiscord as any);
 
       const mockDiscordUser: DiscordUser = mockDiscordProfile as DiscordUser;
@@ -251,9 +279,8 @@ describe('UsersController', () => {
     });
 
     it('should reject user without Discord profile', async () => {
-      // Arrange
-      jest
-        .spyOn(queryModule, 'findUserById')
+      userService.findUserById = jest
+        .fn()
         .mockResolvedValue(mockUserNoProfiles as any);
 
       // Act & Assert
@@ -263,7 +290,7 @@ describe('UsersController', () => {
 
       // Since we cannot directly test the decorator in this controller test,
       // we verify that the mock setup is correct
-      const user = await queryModule.findUserById('user-4');
+      const user = await userService.findUserById('user-4');
       const discordProfile = user?.extraProfiles?.find(
         (profile) => profile.provider === 'discord',
       );
@@ -272,9 +299,8 @@ describe('UsersController', () => {
     });
 
     it('should reject user with only Google profile', async () => {
-      // Arrange
-      jest
-        .spyOn(queryModule, 'findUserById')
+      userService.findUserById = jest
+        .fn()
         .mockResolvedValue(mockUserWithGoogle as any);
 
       // Act & Assert
@@ -284,7 +310,7 @@ describe('UsersController', () => {
 
       // Since we cannot directly test the decorator in this controller test,
       // we verify that the mock setup is correct
-      const user = await queryModule.findUserById('user-2');
+      const user = await userService.findUserById('user-2');
       const discordProfile = user?.extraProfiles?.find(
         (profile) => profile.provider === 'discord',
       );
@@ -298,9 +324,8 @@ describe('UsersController', () => {
     });
 
     it('should retrieve only Discord profile when user has both Google and Discord profiles', async () => {
-      // Arrange
-      jest
-        .spyOn(queryModule, 'findUserById')
+      userService.findUserById = jest
+        .fn()
         .mockResolvedValue(mockUserWithBothProfiles as any);
 
       const mockDiscordUser: DiscordUser = mockDiscordProfile as DiscordUser;
@@ -322,9 +347,8 @@ describe('UsersController', () => {
 
   describe('GET /users/me/google', () => {
     it('should successfully retrieve user with Google profile', async () => {
-      // Arrange
-      jest
-        .spyOn(queryModule, 'findUserById')
+      userService.findUserById = jest
+        .fn()
         .mockResolvedValue(mockUserWithGoogle as any);
 
       const mockGoogleUserData: GoogleUser = mockGoogleProfile as GoogleUser;
@@ -343,9 +367,8 @@ describe('UsersController', () => {
     });
 
     it('should reject user without Google profile', async () => {
-      // Arrange
-      jest
-        .spyOn(queryModule, 'findUserById')
+      userService.findUserById = jest
+        .fn()
         .mockResolvedValue(mockUserNoProfiles as any);
 
       // Act & Assert
@@ -355,7 +378,7 @@ describe('UsersController', () => {
 
       // Since we cannot directly test the decorator in this controller test,
       // we verify that the mock setup is correct
-      const user = await queryModule.findUserById('user-4');
+      const user = await userService.findUserById('user-4');
       const googleProfile = user?.extraProfiles?.find(
         (profile) => profile.provider === 'google',
       );
@@ -364,9 +387,8 @@ describe('UsersController', () => {
     });
 
     it('should reject user with only Discord profile', async () => {
-      // Arrange
-      jest
-        .spyOn(queryModule, 'findUserById')
+      userService.findUserById = jest
+        .fn()
         .mockResolvedValue(mockUserWithDiscord as any);
 
       // Act & Assert
@@ -376,7 +398,7 @@ describe('UsersController', () => {
 
       // Since we cannot directly test the decorator in this controller test,
       // we verify that the mock setup is correct
-      const user = await queryModule.findUserById('user-1');
+      const user = await userService.findUserById('user-1');
       const googleProfile = user?.extraProfiles?.find(
         (profile) => profile.provider === 'google',
       );
@@ -390,9 +412,8 @@ describe('UsersController', () => {
     });
 
     it('should retrieve only Google profile when user has both Google and Discord profiles', async () => {
-      // Arrange
-      jest
-        .spyOn(queryModule, 'findUserById')
+      userService.findUserById = jest
+        .fn()
         .mockResolvedValue(mockUserWithBothProfiles as any);
 
       const mockGoogleUserData: GoogleUser = mockGoogleProfile as GoogleUser;

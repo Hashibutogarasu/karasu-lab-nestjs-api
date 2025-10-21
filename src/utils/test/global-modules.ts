@@ -1,11 +1,11 @@
 import { Test, TestingModuleBuilder } from '@nestjs/testing';
 import { ModuleMetadata } from '@nestjs/common';
-import { UsersService } from '../../users/users.service';
+import { UserService } from '../../data-base/query/user/user.service';
 
 export function getGlobalModule(
   metaData: ModuleMetadata,
 ): TestingModuleBuilder {
-  const autoProviders = [UsersService];
+  const autoProviders = [UserService];
 
   const incomingImports = Array.isArray(metaData.imports)
     ? (metaData.imports as unknown[])

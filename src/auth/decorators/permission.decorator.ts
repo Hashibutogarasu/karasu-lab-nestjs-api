@@ -1,8 +1,7 @@
 import { applyDecorators, SetMetadata, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../jwt-auth.guard';
 import { PermissionGuard } from '../guards/permission.guard';
-
-export const PERMISSION_METAKEY = 'required_permissions_mask';
+import { PERMISSION_METAKEY } from '../permission.constants';
 
 /**
  * Usage: @Permission([Permission.USER_READ, Permission.USER_WRITE])

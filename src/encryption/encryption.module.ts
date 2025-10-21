@@ -1,6 +1,5 @@
 import { DynamicModule, Module, Provider } from '@nestjs/common';
 import { EncryptionService, KeyPair } from './encryption.service';
-import { ExternalProviderAccessTokenService } from './external-provider-access-token/external-provider-access-token.service';
 
 export const ENCRYPTION_OPTIONS = 'ENCRYPTION_OPTIONS';
 
@@ -25,12 +24,8 @@ export class EncryptionModule {
     return {
       module: EncryptionModule,
       global: true,
-      providers: [
-        optionsProvider,
-        serviceProvider,
-        ExternalProviderAccessTokenService,
-      ],
-      exports: [EncryptionService, ExternalProviderAccessTokenService],
+      providers: [optionsProvider, serviceProvider],
+      exports: [EncryptionService],
     };
   }
 }

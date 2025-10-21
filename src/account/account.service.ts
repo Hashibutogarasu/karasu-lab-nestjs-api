@@ -10,40 +10,35 @@ import {
   ConfirmResetPasswordDto,
   SetPasswordDto,
 } from './dto/password-reset.dto';
-import {
-  findUserByEmail,
-  findUserById,
-  createPasswordReset,
-  findValidPasswordReset,
-  markPasswordResetAsUsed,
-  updateUserPassword,
-  verifyUserPassword,
-  updateUserNameById,
-  createPendingEmailChangeProcess,
-  findPendingByCode,
-  markPendingAsUsed,
-  deletePendingById,
-  updateUser,
-} from '../lib/database/query';
 import { ResendService } from '../resend/resend.service';
 import { UpdateUserNameDto } from './dto/update-user-name.dto';
 import { AppErrorCodes } from '../types/error-codes';
+import { UserService } from '../data-base/query/user/user.service';
+import { PasswordService } from '../data-base/utility/password/password.service';
+import { PendingEmailChangeProcessService } from '../data-base/query/pending-email-change-process/pending-email-change-process.service';
 
 @Injectable()
 export class AccountService {
-  constructor(private readonly resendService: ResendService) {}
+  constructor(
+    private readonly resendService: ResendService,
+    private readonly userService: UserService,
+    private readonly passwordService: PasswordService,
+    private readonly pendingEmailChangeProcessService: PendingEmailChangeProcessService,
+  ) {}
   /**
    * サインイン済みユーザーのパスワード変更（旧パスワード必要）
    */
   async resetPassword(userId: string, dto: ResetPasswordDto) {
-    const user = await findUserById(userId, { passwordHash: true });
+    const user = await this.userService.findUserById(userId, {
+      passwordHash: true,
+    });
     if (!user) {
       throw AppErrorCodes.USER_NOT_FOUND;
     }
 
     // SNSユーザー（パスワードハッシュがnull）の場合は、旧パスワード検証をスキップ
     if (user.passwordHash) {
-      const verifiedUser = await verifyUserPassword(
+      const verifiedUser = await this.userService.verifyUserPassword(
         user.username,
         dto.oldPassword,
       );
@@ -52,7 +47,10 @@ export class AccountService {
       }
     }
 
-    const updatedUser = await updateUserPassword(userId, dto.newPassword);
+    const updatedUser = await this.passwordService.updateUserPassword(
+      userId,
+      dto.newPassword,
+    );
     return {
       message: 'Password updated successfully',
       user: updatedUser,
@@ -63,7 +61,7 @@ export class AccountService {
    * パスワードリセット用のコード送信（サインインしていない場合）
    */
   async forgotPassword(dto: ForgotPasswordDto) {
-    const user = await findUserByEmail(dto.email);
+    const user = await this.userService.findUserByEmail(dto.email);
     if (!user) {
       // セキュリティ上、ユーザーが存在しない場合でも成功レスポンスを返す
       return {
@@ -72,7 +70,7 @@ export class AccountService {
       };
     }
 
-    const resetData = await createPasswordReset(user.id);
+    const resetData = await this.passwordService.createPasswordReset(user.id);
 
     // メールを送信
     try {
@@ -103,19 +101,21 @@ export class AccountService {
    * リセットコードを使用したパスワード変更
    */
   async confirmResetPassword(dto: ConfirmResetPasswordDto) {
-    const passwordReset = await findValidPasswordReset(dto.resetCode);
+    const passwordReset = await this.passwordService.findValidPasswordReset(
+      dto.resetCode,
+    );
     if (!passwordReset) {
       throw AppErrorCodes.INVALID_RESET_CODE;
     }
 
     // パスワードを更新
-    const updatedUser = await updateUserPassword(
+    const updatedUser = await this.passwordService.updateUserPassword(
       passwordReset.userId,
       dto.newPassword,
     );
 
     // リセットコードを使用済みにマーク
-    await markPasswordResetAsUsed(passwordReset.id);
+    await this.passwordService.markPasswordResetAsUsed(passwordReset.id);
 
     return {
       message: 'Password has been reset successfully',
@@ -124,7 +124,9 @@ export class AccountService {
   }
 
   async getProfile(userId: string) {
-    const user = await findUserById(userId, { passwordHash: true });
+    const user = await this.userService.findUserById(userId, {
+      passwordHash: true,
+    });
     if (!user) {
       throw AppErrorCodes.USER_NOT_FOUND;
     }
@@ -136,22 +138,25 @@ export class AccountService {
    * メールアドレス変更リクエストを作成し、確認コードを送信する
    */
   async requestEmailChange(userId: string, newEmail: string) {
-    const user = await findUserById(userId);
+    const user = await this.userService.findUserById(userId);
     if (!user) {
       throw AppErrorCodes.USER_NOT_FOUND;
     }
 
     // 既に同じメールが他ユーザーに使われていないかチェック
-    const existing = await findUserByEmail(newEmail);
+    const existing = await this.userService.findUserByEmail(newEmail);
     if (existing && existing.id !== userId) {
       throw AppErrorCodes.EMAIL_ALREADY_IN_USE;
     }
 
     // Create pending record and get verification code
-    const pending = await createPendingEmailChangeProcess({
-      userId,
-      newEmail,
-    });
+    const pending =
+      await this.pendingEmailChangeProcessService.createPendingEmailChangeProcess(
+        {
+          userId,
+          newEmail,
+        },
+      );
 
     // Send email with code
     try {
@@ -184,21 +189,27 @@ export class AccountService {
    * 確認コードを検証してユーザーのメールアドレスを更新する
    */
   async verifyEmailChange(userId: string, code: string) {
-    const user = await findUserById(userId);
+    const user = await this.userService.findUserById(userId);
     if (!user) throw AppErrorCodes.USER_NOT_FOUND;
 
-    const pending = await findPendingByCode(userId, code);
+    const pending =
+      await this.pendingEmailChangeProcessService.findPendingByCode(
+        userId,
+        code,
+      );
     if (!pending) throw AppErrorCodes.INVALID_REQUEST;
 
     // Update user's email
-    const updated = await updateUser(userId, { email: pending.newEmail });
+    const updated = await this.userService.updateUser(userId, {
+      email: pending.newEmail,
+    });
 
     // Mark pending as used
-    await markPendingAsUsed(pending.id);
+    await this.pendingEmailChangeProcessService.markPendingAsUsed(pending.id);
 
     // Optionally delete the pending record
     try {
-      await deletePendingById(pending.id);
+      await this.pendingEmailChangeProcessService.deletePendingById(pending.id);
     } catch (err) {
       console.error('Failed to delete pending email change record', err);
     }
@@ -210,13 +221,13 @@ export class AccountService {
   }
 
   async updateProfile(userId: string, dto: UpdateUserNameDto) {
-    const user = await findUserById(userId);
+    const user = await this.userService.findUserById(userId);
     if (!user) {
       throw AppErrorCodes.USER_NOT_FOUND;
     }
 
     try {
-      await updateUserNameById(userId, dto.username);
+      await this.userService.updateUserNameById(userId, dto.username);
       return {
         message: 'Username updated successfully',
       };
@@ -230,7 +241,9 @@ export class AccountService {
    * パスワードハッシュがnullのユーザーのみ設定可能
    */
   async setPassword(userId: string, dto: SetPasswordDto) {
-    const user = await findUserById(userId, { passwordHash: true });
+    const user = await this.userService.findUserById(userId, {
+      passwordHash: true,
+    });
     if (!user) {
       throw AppErrorCodes.USER_NOT_FOUND;
     }
@@ -240,7 +253,10 @@ export class AccountService {
       throw AppErrorCodes.PASSWORD_ALREADY_SET;
     }
 
-    const updatedUser = await updateUserPassword(userId, dto.newPassword);
+    const updatedUser = await this.passwordService.updateUserPassword(
+      userId,
+      dto.newPassword,
+    );
     return {
       message: 'Password set successfully',
       user: updatedUser,
@@ -252,7 +268,9 @@ export class AccountService {
    * JWT認証したユーザーが外部プロバイダーでパスワードを持たないかどうかを判定
    */
   async canSetPassword(userId: string) {
-    const user = await findUserById(userId, { passwordHash: false });
+    const user = await this.userService.findUserById(userId, {
+      passwordHash: false,
+    });
     if (!user) {
       throw AppErrorCodes.USER_NOT_FOUND;
     }

@@ -8,17 +8,17 @@ import {
   Put,
   Post,
 } from '@nestjs/common';
-import { JwtStateService } from './jwt-state.service';
-import { UpdateJwtStateDto } from './dto/jwt-state.dto';
+import { UpdateJwtStateDto } from '../data-base/query/jwtstate/jwt-state.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AuthUser } from '../auth/decorators/auth-user.decorator';
 import * as client from '@prisma/client';
+import { JwtstateService } from '../data-base/query/jwtstate/jwtstate.service';
 import { IsAdmin } from '../auth/decorators/is-admin.decorator';
 
 @UseGuards(JwtAuthGuard)
 @Controller('jwt-state')
 export class JwtStateController {
-  constructor(private readonly jwtStateService: JwtStateService) {}
+  constructor(private readonly jwtStateService: JwtstateService) {}
 
   @Post('create')
   createJWT(@AuthUser() user: client.User) {

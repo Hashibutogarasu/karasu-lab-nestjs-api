@@ -1,4 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { TestingModule } from '@nestjs/testing';
 import {
   HttpStatus,
   HttpException,
@@ -6,88 +6,92 @@ import {
   UnauthorizedException,
   ConflictException,
 } from '@nestjs/common';
-import type { Request, Response } from 'express';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { RegisterDto, LoginDto } from './dto/create-auth.dto';
-import { ExternalProviderAccessTokenService } from '../encryption/external-provider-access-token/external-provider-access-token.service';
 import { OAuthProviderFactory } from '../lib/auth/oauth-provider.factory';
-import { GoogleOAuthProvider } from '../lib/auth/google-oauth.provider';
-import { DiscordOAuthProvider } from '../lib/auth/discord-oauth.provider';
-import { AppErrorCode, AppErrorCodes } from '../types/error-codes';
+import { AppErrorCodes } from '../types/error-codes';
 import { getGlobalModule } from '../utils/test/global-modules';
 import { mockUser } from '../utils/test/mock-data';
 import {
-  mockAuthService,
   mockDiscordProvider,
-  mockExternalProviderAccessTokenService,
   mockGoogleProvider,
 } from '../utils/test/mock-services';
 import { mockRequest, mockResponse } from '../utils/test/mock-networking';
 import { mockJsonFn, mockStatusFn } from '../utils/test/mock-fuctions';
-
-// Mock the JWT token generation function
-// Note: jest.mock calls are hoisted; avoid referencing local variables (mockUser) here to prevent TDZ.
-jest.mock('../lib/auth/jwt-token', () => ({
-  generateJWTToken: jest.fn().mockResolvedValue({
-    success: true,
-    jwtId: 'jwt_state_123',
-    token: 'mock_jwt_token_abc123',
-    profile: {
-      sub: 'user_123',
-      name: 'testuser',
-      email: 'test@example.com',
-      providers: [],
-    },
-    user: {
-      role: 'user',
-    },
-    expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-  }),
-  generateRefreshToken: jest.fn().mockResolvedValue({
-    success: true,
-    jwtId: 'jwt_state_refresh_123',
-    token: 'mock_refresh_token_abc123',
-    profile: {
-      sub: 'user_123',
-      name: 'testuser',
-      email: 'test@example.com',
-      providers: [],
-    },
-    user: {
-      role: 'user',
-    },
-    expiresAt: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000),
-  }),
-}));
-
-// Mock the createJWTState function (for backward compatibility)
-jest.mock('../lib/database/query', () => ({
-  createJWTState: jest.fn().mockResolvedValue({ id: 'jwt_state_123' }),
-}));
+import { ExternalProviderAccessTokenService } from '../data-base/query/external-provider-access-token/external-provider-access-token.service';
+import { mock } from 'jest-mock-extended';
+import { JwtTokenService } from './jwt-token/jwt-token.service';
+import { DataBaseService } from '../data-base/data-base.service';
+import { UtilityService } from '../data-base/utility/utility.service';
+import { RoleService } from '../data-base/query/role/role.service';
+import { AuthStateService } from '../data-base/query/auth-state/auth-state.service';
+import { AuthCoreService } from './sns/auth-core/auth-core.service';
 
 describe('AuthController', () => {
   let controller: AuthController;
-  let service: AuthService;
-
-  // Mock Response object
-
-  const mockOAuthProviderFactory = {
-    getProvider: jest.fn((provider: string) => {
-      if (provider === 'google') return mockGoogleProvider;
-      if (provider === 'discord') return mockDiscordProvider;
-      throw AppErrorCodes.PROVIDER_NOT_FOUND;
-    }),
-    getAllProviders: jest
-      .fn()
-      .mockReturnValue([mockGoogleProvider, mockDiscordProvider]),
-    getAvailableProviderNames: jest.fn().mockReturnValue(['google', 'discord']),
-    getConfiguredProviders: jest
-      .fn()
-      .mockReturnValue([mockGoogleProvider, mockDiscordProvider]),
-  };
+  let mockAuthService: AuthService;
 
   beforeEach(async () => {
+    mockAuthService = mock<AuthService>();
+    const mockExternalProviderAccessTokenService =
+      mock<ExternalProviderAccessTokenService>();
+    const mockJwtTokenService = mock<JwtTokenService>({
+      generateJWTToken: jest.fn().mockResolvedValue({
+        success: true,
+        jwtId: 'jwt_state_123',
+        token: 'mock_jwt_token_abc123',
+        profile: {
+          sub: 'user_123',
+          name: 'testuser',
+          email: 'test@example.com',
+          providers: [],
+        },
+        user: {
+          role: 'user',
+        },
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+      }),
+      generateRefreshToken: jest.fn().mockResolvedValue({
+        success: true,
+        jwtId: 'jwt_state_refresh_123',
+        token: 'mock_refresh_token_abc123',
+        profile: {
+          sub: 'user_123',
+          name: 'testuser',
+          email: 'test@example.com',
+          providers: [],
+        },
+        user: {
+          role: 'user',
+        },
+        expiresAt: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000),
+      }),
+    });
+
+    const mockOAuthProviderFactory = {
+      getProvider: jest.fn((provider: string) => {
+        if (provider === 'google') return mockGoogleProvider;
+        if (provider === 'discord') return mockDiscordProvider;
+        throw AppErrorCodes.PROVIDER_NOT_FOUND;
+      }),
+      getAllProviders: jest
+        .fn()
+        .mockReturnValue([mockGoogleProvider, mockDiscordProvider]),
+      getAvailableProviderNames: jest
+        .fn()
+        .mockReturnValue(['google', 'discord']),
+      getConfiguredProviders: jest
+        .fn()
+        .mockReturnValue([mockGoogleProvider, mockDiscordProvider]),
+    };
+
+    const mockDatabaseService = mock<DataBaseService>();
+    const mockUtilityService = mock<UtilityService>();
+    const mockRoleService = mock<RoleService>();
+    const mockAuthStateService = mock<AuthStateService>();
+    const mockAuthCoreService = mock<AuthCoreService>();
+
     const module: TestingModule = await getGlobalModule({
       controllers: [AuthController],
       providers: [
@@ -103,11 +107,35 @@ describe('AuthController', () => {
           provide: OAuthProviderFactory,
           useValue: mockOAuthProviderFactory,
         },
+        {
+          provide: JwtTokenService,
+          useValue: mockJwtTokenService,
+        },
+        {
+          provide: DataBaseService,
+          useValue: mockDatabaseService,
+        },
+        {
+          provide: UtilityService,
+          useValue: mockUtilityService,
+        },
+        {
+          provide: RoleService,
+          useValue: mockRoleService,
+        },
+        {
+          provide: AuthStateService,
+          useValue: mockAuthStateService,
+        },
+        {
+          provide: AuthCoreService,
+          useValue: mockAuthCoreService,
+        },
       ],
     }).compile();
 
     controller = module.get<AuthController>(AuthController);
-    service = module.get<AuthService>(AuthService);
+    mockAuthService = module.get<AuthService>(AuthService);
 
     jest.clearAllMocks();
 
@@ -133,7 +161,7 @@ describe('AuthController', () => {
         user: mockUser,
       };
 
-      mockAuthService.register.mockResolvedValue(mockAuthResponse);
+      mockAuthService.register = jest.fn().mockResolvedValue(mockAuthResponse);
 
       await controller.register(validRegisterDto, mockResponse);
 
@@ -164,7 +192,7 @@ describe('AuthController', () => {
         errorDescription: 'User with this email or username already exists',
       };
 
-      mockAuthService.register.mockResolvedValue(mockAuthResponse);
+      mockAuthService.register = jest.fn().mockResolvedValue(mockAuthResponse);
 
       await expect(
         controller.register(validRegisterDto, mockResponse),
@@ -178,7 +206,7 @@ describe('AuthController', () => {
         errorDescription: 'Password does not meet security requirements',
       };
 
-      mockAuthService.register.mockResolvedValue(mockAuthResponse);
+      mockAuthService.register = jest.fn().mockResolvedValue(mockAuthResponse);
 
       await expect(
         controller.register(validRegisterDto, mockResponse),
@@ -192,7 +220,7 @@ describe('AuthController', () => {
         errorDescription: 'An internal server error occurred',
       };
 
-      mockAuthService.register.mockResolvedValue(mockAuthResponse);
+      mockAuthService.register = jest.fn().mockResolvedValue(mockAuthResponse);
 
       await expect(
         controller.register(validRegisterDto, mockResponse),
@@ -200,9 +228,9 @@ describe('AuthController', () => {
     });
 
     it('should handle unexpected exceptions', async () => {
-      mockAuthService.register.mockRejectedValue(
-        new Error('Database connection failed'),
-      );
+      mockAuthService.register = jest
+        .fn()
+        .mockRejectedValue(new Error('Database connection failed'));
 
       await expect(
         controller.register(validRegisterDto, mockResponse),
@@ -268,8 +296,10 @@ describe('AuthController', () => {
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       };
 
-      mockAuthService.login.mockResolvedValue(mockLoginResponse);
-      mockAuthService.createSession.mockResolvedValue(mockSessionData);
+      mockAuthService.login = jest.fn().mockResolvedValue(mockLoginResponse);
+      mockAuthService.createSession = jest
+        .fn()
+        .mockResolvedValue(mockSessionData);
 
       await controller.login(validLoginDto, mockResponse, mockRequest);
 
@@ -299,8 +329,10 @@ describe('AuthController', () => {
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       };
 
-      mockAuthService.login.mockResolvedValue(mockLoginResponse);
-      mockAuthService.createSession.mockResolvedValue(mockSessionData);
+      mockAuthService.login = jest.fn().mockResolvedValue(mockLoginResponse);
+      mockAuthService.createSession = jest
+        .fn()
+        .mockResolvedValue(mockSessionData);
 
       // Mock mfaService on the controller instance to report MFA required.
       (controller as any).mfaService = {
@@ -335,8 +367,10 @@ describe('AuthController', () => {
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       };
 
-      mockAuthService.login.mockResolvedValue(mockLoginResponse);
-      mockAuthService.createSession.mockResolvedValue(mockSessionData);
+      mockAuthService.login = jest.fn().mockResolvedValue(mockLoginResponse);
+      mockAuthService.createSession = jest
+        .fn()
+        .mockResolvedValue(mockSessionData);
 
       await controller.login(loginWithEmail, mockResponse, mockRequest);
 
@@ -361,7 +395,7 @@ describe('AuthController', () => {
         errorDescription: 'Invalid username/email or password',
       };
 
-      mockAuthService.login.mockResolvedValue(mockLoginResponse);
+      mockAuthService.login = jest.fn().mockResolvedValue(mockLoginResponse);
 
       await expect(
         controller.login(validLoginDto, mockResponse, mockRequest),
@@ -386,7 +420,7 @@ describe('AuthController', () => {
         errorDescription: 'An internal server error occurred',
       };
 
-      mockAuthService.login.mockResolvedValue(mockLoginResponse);
+      mockAuthService.login = jest.fn().mockResolvedValue(mockLoginResponse);
 
       await expect(
         controller.login(validLoginDto, mockResponse, mockRequest),
@@ -394,9 +428,9 @@ describe('AuthController', () => {
     });
 
     it('should handle unexpected exceptions during login', async () => {
-      mockAuthService.login.mockRejectedValue(
-        new Error('Database connection failed'),
-      );
+      mockAuthService.login = jest
+        .fn()
+        .mockRejectedValue(new Error('Database connection failed'));
 
       await expect(
         controller.login(validLoginDto, mockResponse, mockRequest),
@@ -413,10 +447,10 @@ describe('AuthController', () => {
         },
       };
 
-      mockAuthService.login.mockResolvedValue(mockLoginResponse);
-      mockAuthService.createSession.mockRejectedValue(
-        new Error('Session creation failed'),
-      );
+      mockAuthService.login = jest.fn().mockResolvedValue(mockLoginResponse);
+      mockAuthService.createSession = jest
+        .fn()
+        .mockRejectedValue(new Error('Session creation failed'));
 
       await expect(
         controller.login(validLoginDto, mockResponse, mockRequest),
@@ -452,7 +486,7 @@ describe('AuthController', () => {
     // so tests should pass the user object directly instead of relying on headers.
 
     it('should get user profile successfully', async () => {
-      mockAuthService.getProfile.mockResolvedValue(mockUser);
+      mockAuthService.getProfile = jest.fn().mockResolvedValue(mockUser);
 
       await controller.getProfile(mockRequest, mockResponse, mockUser);
 
@@ -476,7 +510,7 @@ describe('AuthController', () => {
     });
 
     it('should handle invalid session', async () => {
-      mockAuthService.getProfile.mockResolvedValue(null);
+      mockAuthService.getProfile = jest.fn().mockResolvedValue(null);
 
       await expect(
         controller.getProfile(mockRequest, mockResponse, mockUser),
@@ -484,7 +518,7 @@ describe('AuthController', () => {
     });
 
     it('should handle expired session', async () => {
-      mockAuthService.getProfile.mockResolvedValue(null);
+      mockAuthService.getProfile = jest.fn().mockResolvedValue(null);
 
       await expect(
         controller.getProfile(mockRequest, mockResponse, mockUser),
@@ -492,7 +526,9 @@ describe('AuthController', () => {
     });
 
     it('should handle server errors during profile retrieval', async () => {
-      mockAuthService.getProfile.mockRejectedValue(new Error('Database error'));
+      mockAuthService.getProfile = jest
+        .fn()
+        .mockRejectedValue(new Error('Database error'));
 
       await expect(
         controller.getProfile(mockRequest, mockResponse, mockUser),
@@ -513,7 +549,7 @@ describe('AuthController', () => {
     it('should handle session ID from different header formats', async () => {
       // Since controller uses @AuthUser, this test ensures AuthUser propagation works
       const mockUserProfile = { ...mockUser };
-      mockAuthService.getProfile.mockResolvedValue(mockUserProfile);
+      mockAuthService.getProfile = jest.fn().mockResolvedValue(mockUserProfile);
 
       await controller.getProfile(mockRequest, mockResponse, mockUserProfile);
 
@@ -528,7 +564,7 @@ describe('AuthController', () => {
 
     it('should logout user successfully', async () => {
       mockRequest.headers = { 'x-session-id': validSessionId };
-      mockAuthService.logout.mockResolvedValue(true);
+      mockAuthService.logout = jest.fn().mockResolvedValue(true);
 
       await controller.logout(mockRequest, mockResponse);
 
@@ -553,7 +589,7 @@ describe('AuthController', () => {
 
     it('should handle logout with invalid session', async () => {
       mockRequest.headers = { 'x-session-id': 'invalid_session' };
-      mockAuthService.logout.mockResolvedValue(false);
+      mockAuthService.logout = jest.fn().mockResolvedValue(false);
 
       await controller.logout(mockRequest, mockResponse);
 
@@ -566,7 +602,9 @@ describe('AuthController', () => {
 
     it('should handle server errors during logout', async () => {
       mockRequest.headers = { 'x-session-id': validSessionId };
-      mockAuthService.logout.mockRejectedValue(new Error('Database error'));
+      mockAuthService.logout = jest
+        .fn()
+        .mockRejectedValue(new Error('Database error'));
 
       await expect(
         controller.logout(mockRequest, mockResponse),
@@ -584,7 +622,7 @@ describe('AuthController', () => {
 
     it('should handle session cleanup', async () => {
       mockRequest.headers = { 'x-session-id': validSessionId };
-      mockAuthService.logout.mockResolvedValue(true);
+      mockAuthService.logout = jest.fn().mockResolvedValue(true);
 
       await controller.logout(mockRequest, mockResponse);
 
@@ -657,7 +695,7 @@ describe('AuthController', () => {
         roles: [],
       };
 
-      mockAuthService.getProfile.mockResolvedValue(mockUserProfile);
+      mockAuthService.getProfile = jest.fn().mockResolvedValue(mockUserProfile);
 
       // Simulate concurrent requests
       const promises = Array(5)
@@ -753,7 +791,7 @@ describe('AuthController', () => {
         },
       };
 
-      mockAuthService.register.mockResolvedValue(mockAuthResponse);
+      mockAuthService.register = jest.fn().mockResolvedValue(mockAuthResponse);
 
       await controller.register(validBoundaryDto, mockResponse);
 
@@ -779,7 +817,7 @@ describe('AuthController', () => {
         },
       };
 
-      mockAuthService.register.mockResolvedValue(mockAuthResponse);
+      mockAuthService.register = jest.fn().mockResolvedValue(mockAuthResponse);
 
       await controller.register(specialCharDto, mockResponse);
 
@@ -793,7 +831,7 @@ describe('AuthController', () => {
       const expiredSessionId = 'session_expired';
       mockRequest.headers = { 'x-session-id': expiredSessionId };
 
-      mockAuthService.getProfile.mockResolvedValue(null);
+      mockAuthService.getProfile = jest.fn().mockResolvedValue(null);
 
       await expect(
         controller.getProfile(mockRequest, mockResponse, mockUser),
@@ -805,7 +843,7 @@ describe('AuthController', () => {
       mockRequest.headers = { 'x-session-id': sessionId };
 
       const mockProfile = { ...mockUser };
-      mockAuthService.getProfile.mockResolvedValue(mockProfile);
+      mockAuthService.getProfile = jest.fn().mockResolvedValue(mockProfile);
 
       await controller.getProfile(
         mockRequest,
@@ -820,7 +858,7 @@ describe('AuthController', () => {
       const sessionId = 'session_to_logout';
       mockRequest.headers = { 'x-session-id': sessionId };
 
-      mockAuthService.logout.mockResolvedValue(true);
+      mockAuthService.logout = jest.fn().mockResolvedValue(true);
 
       // First logout
       await controller.logout(mockRequest, mockResponse);

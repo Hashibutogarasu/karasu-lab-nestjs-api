@@ -1,56 +1,78 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { MfaController } from './mfa.controller';
-import { MfaService } from '../../mfa/mfa.service';
 import { AuthService } from '../auth.service';
 import { AppErrorCodes } from '../../types/error-codes';
-
-// Mock networking helpers used across tests
 import { mockResponse } from '../../utils/test/mock-networking';
 import { mockStatusFn, mockJsonFn } from '../../utils/test/mock-fuctions';
-import { verifyJWTToken } from '../../lib';
 import { TotpService } from '../../totp/totp.service';
-
-// Mock jwt-token helpers so we can control behavior per test
-jest.mock('../../lib/auth/jwt-token', () => ({
-  verifyJWTToken: jest.fn(),
-  generateJWTToken: jest.fn().mockResolvedValue({
-    success: true,
-    jwtId: 'jwt_state_123',
-    token: 'mock_jwt_token',
-    profile: { sub: 'user_123', name: 'u', email: 'e', providers: [] },
-    expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-  }),
-  generateRefreshToken: jest.fn().mockResolvedValue({
-    success: true,
-    jwtId: 'jwt_state_refresh_123',
-    token: 'mock_refresh_token',
-    expiresAt: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000),
-  }),
-}));
+import { MfaService } from '../../data-base/query/mfa/mfa.service';
+import { mock } from 'jest-mock-extended';
+import { JwtTokenService } from '../jwt-token/jwt-token.service';
+import { EncryptionService } from '../../encryption/encryption.service';
 
 describe('MfaController (verify)', () => {
   let controller: MfaController;
-  let mockMfaService: Partial<MfaService>;
-  let mockAuthService: Partial<AuthService>;
-  let mockTotpService: Partial<TotpService>;
+  let mockMfaService: MfaService;
+  let mockAuthService: AuthService;
+  let mockTotpService: TotpService;
+  let mockJwtTokenService: JwtTokenService;
+  let mockEncryptionService: EncryptionService;
 
   beforeEach(async () => {
-    mockMfaService = {
-      verifyToken: jest.fn(),
-    } as Partial<MfaService>;
+    mockMfaService = mock<MfaService>({
+      getUserOtpById: jest.fn().mockResolvedValue({
+        id: 'otp_1',
+        userId: 'user_1',
+        secret: 'encrypted_secret',
+        setupCompleted: true,
+        backupCodes: [],
+      }),
+      getUserOtpByUserId: jest.fn().mockResolvedValue({
+        id: 'otp_1',
+        userId: 'user_1',
+        secret: 'encrypted_secret',
+        setupCompleted: true,
+        backupCodes: [],
+      }),
+      setLastAuthenticatedAt: jest.fn(),
+      setSetupCompleted: jest.fn(),
+      findBackupCode: jest.fn().mockResolvedValue(null),
+      deleteBackupCodeById: jest.fn(),
+      userHasOtpEnabled: jest.fn().mockResolvedValue(true),
+    });
 
-    mockAuthService = {
+    mockAuthService = mock<AuthService>({
       createSession: jest.fn().mockResolvedValue({
         sessionId: 'session_abc',
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       }),
-    } as Partial<AuthService>;
+    });
 
-    mockTotpService = {
+    mockTotpService = mock<TotpService>({
       generateSecret: jest.fn().mockReturnValue('SECRET'),
       generateTotpUrl: jest.fn().mockReturnValue('otpauth://test'),
-      isValid: jest.fn(),
-    } as Partial<TotpService>;
+      isValid: jest.fn().mockRejectedValue(false),
+    });
+
+    mockJwtTokenService = mock<JwtTokenService>({
+      generateJWTToken: jest.fn().mockResolvedValue({
+        success: true,
+        token: 'access_token',
+        jwtId: 'jwt_id',
+        profile: {},
+      }),
+      generateRefreshToken: jest.fn().mockResolvedValue({
+        success: true,
+        token: 'refresh_token',
+      }),
+    });
+    mockEncryptionService = mock<EncryptionService>({
+      decrypt: jest.fn().mockImplementation((secret) => {
+        if (secret === 'encrypted_secret') return 'TOTP_SECRET';
+        return secret;
+      }),
+      encrypt: jest.fn().mockImplementation((plain) => `encrypted_${plain}`),
+    });
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [MfaController],
@@ -58,8 +80,12 @@ describe('MfaController (verify)', () => {
         { provide: MfaService, useValue: mockMfaService },
         { provide: AuthService, useValue: mockAuthService },
         { provide: TotpService, useValue: mockTotpService },
-        // Provide a mock cache manager so ConcurrentRequestInterceptor can be constructed
-        { provide: 'CACHE_MANAGER', useValue: { set: jest.fn(), del: jest.fn() } },
+        {
+          provide: 'CACHE_MANAGER',
+          useValue: { set: jest.fn(), del: jest.fn() },
+        },
+        { provide: JwtTokenService, useValue: mockJwtTokenService },
+        { provide: EncryptionService, useValue: mockEncryptionService },
       ],
     }).compile();
 
@@ -71,21 +97,25 @@ describe('MfaController (verify)', () => {
   });
 
   it('returns normal login response when valid TOTP code is provided', async () => {
-    // Arrange
-    (verifyJWTToken as jest.Mock).mockResolvedValueOnce({
+    (mockTotpService.isValid as jest.Mock).mockReturnValue(true);
+    (mockJwtTokenService.verifyJWTToken as jest.Mock).mockResolvedValueOnce({
       success: true,
       payload: { sub: 'user_1', id: 'jwt_temp_1' },
     });
-    (mockMfaService.verifyToken as jest.Mock).mockResolvedValueOnce(true);
+    (mockMfaService.verifyToken as jest.Mock).mockImplementation(async () => {
+      await mockMfaService.setLastAuthenticatedAt('otp_1', new Date());
+      await mockMfaService.setSetupCompleted('otp_1', true);
+      return true;
+    });
 
-    // Act
     await controller.verify(
       { mfaToken: 'temp_token', code: '123456' },
       mockResponse,
     );
 
-    // Assert
-    expect(verifyJWTToken).toHaveBeenCalledWith('temp_token');
+    expect(mockJwtTokenService.verifyJWTToken).toHaveBeenCalledWith(
+      'temp_token',
+    );
     expect(mockMfaService.verifyToken).toHaveBeenCalledWith('user_1', '123456');
     expect(mockStatusFn).toHaveBeenCalledWith(200);
     expect(mockJsonFn).toHaveBeenCalledWith(
@@ -99,11 +129,16 @@ describe('MfaController (verify)', () => {
   });
 
   it('accepts a backup code and returns normal login response', async () => {
-    (verifyJWTToken as jest.Mock).mockResolvedValueOnce({
+    (mockTotpService.isValid as jest.Mock).mockReturnValue(true);
+    (mockJwtTokenService.verifyJWTToken as jest.Mock).mockResolvedValueOnce({
       success: true,
       payload: { sub: 'user_1', id: 'jwt_temp_1' },
     });
-    (mockMfaService.verifyToken as jest.Mock).mockResolvedValueOnce(true);
+    (mockMfaService.verifyToken as jest.Mock).mockImplementation(async () => {
+      await mockMfaService.setLastAuthenticatedAt('otp_1', new Date());
+      await mockMfaService.setSetupCompleted('otp_1', true);
+      return true;
+    });
 
     await controller.verify(
       { mfaToken: 'temp_token', code: 'BACKUPCODE' },
@@ -118,7 +153,7 @@ describe('MfaController (verify)', () => {
   });
 
   it('returns MFA_NOT_ENABLED if target user has no MFA configured', async () => {
-    (verifyJWTToken as jest.Mock).mockResolvedValueOnce({
+    (mockJwtTokenService.verifyJWTToken as jest.Mock).mockResolvedValueOnce({
       success: true,
       payload: { sub: 'user_2', id: 'jwt_temp_2' },
     });
@@ -135,7 +170,7 @@ describe('MfaController (verify)', () => {
   });
 
   it('returns INVALID_TOKEN when temporary token is expired or invalid', async () => {
-    (verifyJWTToken as jest.Mock).mockResolvedValueOnce({
+    (mockJwtTokenService.verifyJWTToken as jest.Mock).mockResolvedValueOnce({
       success: false,
       error: 'token_expired',
     });
@@ -149,7 +184,7 @@ describe('MfaController (verify)', () => {
   });
 
   it('returns INVALID_DIGIT_CODE when an incorrect 6-digit code is provided', async () => {
-    (verifyJWTToken as jest.Mock).mockResolvedValueOnce({
+    (mockJwtTokenService.verifyJWTToken as jest.Mock).mockResolvedValueOnce({
       success: true,
       payload: { sub: 'user_3', id: 'jwt_temp_3' },
     });

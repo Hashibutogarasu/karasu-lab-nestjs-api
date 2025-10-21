@@ -1,24 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UpdateAuthDto } from './dto/update-auth.dto';
-import {
-  registerUser,
-  loginUser,
-  SessionManager,
-  validatePasswordStrength,
-  validateEmailFormat,
-  validateUsernameFormat,
-  AuthResponse,
-} from '../lib/auth/authentication';
-import {
-  deleteUser,
-  findAllUsers,
-  findUserById,
-  updateUser,
-  findAuthState,
-  createJWTState,
-  isJWTStateRevoked,
-} from '../lib/database/query';
+import { AuthResponse } from '../lib/auth/authentication';
+import { WorkflowService } from './sns/workflow/workflow.service';
+import { ManagerService } from './session/manager/manager.service';
+import { UserService } from '../data-base/query/user/user.service';
+import { AuthStateService } from '../data-base/query/auth-state/auth-state.service';
+import { JwtstateService } from '../data-base/query/jwtstate/jwtstate.service';
 import type {
   RegisterInput,
   LoginInput,
@@ -39,14 +27,23 @@ interface TokenResponse {
 
 @Injectable()
 export class AuthService {
-  constructor(private jwtService: JwtService) {}
+  constructor(
+    private jwtService: JwtService,
+    private readonly userService: UserService,
+    private readonly authStateService: AuthStateService,
+    private readonly jwtstateService: JwtstateService,
+    private readonly workflowService: WorkflowService,
+    private readonly managerService: ManagerService,
+  ) {}
   /**
    * ユーザー登録処理
    */
   async register(registerInput: RegisterInput): Promise<AuthResponse> {
     try {
       // 詳細なバリデーション
-      const usernameValidation = validateUsernameFormat(registerInput.username);
+      const usernameValidation = this.workflowService.validateUsernameFormat(
+        registerInput.username,
+      );
       if (!usernameValidation.isValid) {
         return {
           success: false,
@@ -55,7 +52,7 @@ export class AuthService {
         };
       }
 
-      if (!validateEmailFormat(registerInput.email)) {
+      if (!this.workflowService.validateEmailFormat(registerInput.email)) {
         return {
           success: false,
           error: 'invalid_request',
@@ -63,7 +60,7 @@ export class AuthService {
         };
       }
 
-      const passwordValidation = validatePasswordStrength(
+      const passwordValidation = this.workflowService.validatePasswordStrength(
         registerInput.password,
       );
       if (!passwordValidation.isValid) {
@@ -75,13 +72,44 @@ export class AuthService {
       }
 
       // ユーザー登録実行
-      const result = await registerUser({
+      // 重複チェック
+      const existingByUsername = await this.userService.findUserByUsername(
+        registerInput.username,
+      );
+      if (existingByUsername) {
+        return {
+          success: false,
+          error: 'user_exists',
+          errorDescription: 'Username is already taken.',
+        };
+      }
+
+      const existingByEmail = await this.userService.findUserByEmail(
+        registerInput.email,
+      );
+      if (existingByEmail) {
+        return {
+          success: false,
+          error: 'user_exists',
+          errorDescription: 'Email is already registered.',
+        };
+      }
+
+      const newUser = await this.userService.createUser({
         username: registerInput.username,
         email: registerInput.email,
         password: registerInput.password,
       });
 
-      return result;
+      return {
+        success: true,
+        user: {
+          id: newUser.id,
+          username: newUser.username,
+          email: newUser.email,
+          roles: newUser.roles ?? [],
+        },
+      };
     } catch (error) {
       return {
         success: false,
@@ -96,12 +124,28 @@ export class AuthService {
    */
   async login(loginInput: LoginInput): Promise<AuthResponse> {
     try {
-      const result = await loginUser({
-        usernameOrEmail: loginInput.usernameOrEmail,
-        password: loginInput.password,
-      });
+      const verified = await this.userService.verifyUserPassword(
+        loginInput.usernameOrEmail,
+        loginInput.password,
+      );
 
-      return result;
+      if (!verified) {
+        return {
+          success: false,
+          error: 'invalid_credentials',
+          errorDescription: 'Invalid username/email or password',
+        };
+      }
+
+      return {
+        success: true,
+        user: {
+          id: verified.id,
+          username: verified.username,
+          email: verified.email,
+          roles: verified.roles ?? [],
+        },
+      };
     } catch (error) {
       return {
         success: false,
@@ -115,7 +159,7 @@ export class AuthService {
    * セッション作成
    */
   async createSession(userId: string): Promise<SessionResponse> {
-    const sessionId = SessionManager.createSession(userId);
+    const sessionId = this.managerService.createSession(userId);
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24時間後
 
     return {
@@ -129,7 +173,7 @@ export class AuthService {
    */
   async getProfile(userId: string): Promise<UserResponse | null> {
     try {
-      const user = await findUserById(userId);
+      const user = await this.userService.findById(userId);
       if (!user) {
         return null;
       }
@@ -151,7 +195,7 @@ export class AuthService {
    */
   async logout(sessionId: string): Promise<boolean> {
     try {
-      return SessionManager.deleteSession(sessionId);
+      return this.managerService.deleteSession(sessionId);
     } catch (error) {
       return false;
     }
@@ -162,7 +206,7 @@ export class AuthService {
    */
   async validateSession(sessionId: string): Promise<boolean> {
     try {
-      const session = SessionManager.getSession(sessionId);
+      const session = this.managerService.getSession(sessionId);
       return session !== null;
     } catch (error) {
       return false;
@@ -176,7 +220,7 @@ export class AuthService {
     isValid: boolean;
     errors: string[];
   } {
-    return validatePasswordStrength(password);
+    return this.workflowService.validatePasswordStrength(password);
   }
 
   /**
@@ -186,21 +230,21 @@ export class AuthService {
     isValid: boolean;
     errors: string[];
   } {
-    return validateUsernameFormat(username);
+    return this.workflowService.validateUsernameFormat(username);
   }
 
   /**
    * メールアドレス形式チェック（公開メソッド）
    */
   validateEmail(email: string): boolean {
-    return validateEmailFormat(email);
+    return this.workflowService.validateEmailFormat(email);
   }
 
   /**
    * 期限切れセッションのクリーンアップ
    */
   async cleanupExpiredSessions(): Promise<void> {
-    SessionManager.cleanupExpiredSessions();
+    this.managerService.cleanupExpiredSessions();
   }
 
   /**
@@ -220,7 +264,7 @@ export class AuthService {
    */
   async findAll(): Promise<UserResponse[]> {
     try {
-      const users = await findAllUsers();
+      const users = await this.userService.findAllUsers();
       return users.map((user) => ({
         id: user.id,
         username: user.username,
@@ -238,7 +282,7 @@ export class AuthService {
    */
   async findOne(id: string): Promise<UserResponse | null> {
     try {
-      const user = await findUserById(id);
+      const user = await this.userService.findById(id);
       if (!user) {
         return null;
       }
@@ -267,7 +311,7 @@ export class AuthService {
       const updateData: any = {};
 
       if (updateAuthDto.username) {
-        const usernameValidation = validateUsernameFormat(
+        const usernameValidation = this.workflowService.validateUsernameFormat(
           updateAuthDto.username,
         );
         if (!usernameValidation.isValid) {
@@ -277,23 +321,22 @@ export class AuthService {
       }
 
       if (updateAuthDto.email) {
-        if (!validateEmailFormat(updateAuthDto.email)) {
+        if (!this.workflowService.validateEmailFormat(updateAuthDto.email)) {
           throw AppErrorCodes.INVALID_EMAIL_FORMAT;
         }
         updateData.email = updateAuthDto.email;
       }
 
       if (updateAuthDto.password) {
-        const passwordValidation = validatePasswordStrength(
-          updateAuthDto.password,
-        );
+        const passwordValidation =
+          this.workflowService.validatePasswordStrength(updateAuthDto.password);
         if (!passwordValidation.isValid) {
           throw AppErrorCodes.WEAK_PASSWORD;
         }
         updateData.password = updateAuthDto.password;
       }
 
-      const updatedUser = await updateUser(id, updateData);
+      const updatedUser = await this.userService.updateUser(id, updateData);
 
       return {
         id: updatedUser.id,
@@ -313,7 +356,7 @@ export class AuthService {
   async remove(id: string): Promise<{ success: boolean; message: string }> {
     try {
       // ユーザーが存在するかチェック
-      const existingUser = await findUserById(id);
+      const existingUser = await this.userService.findById(id);
       if (!existingUser) {
         return {
           success: false,
@@ -321,7 +364,7 @@ export class AuthService {
         };
       }
 
-      await deleteUser(id);
+      await this.userService.deleteUser(id);
 
       return {
         success: true,
@@ -340,7 +383,7 @@ export class AuthService {
    */
   async getAuthState(stateCode: string) {
     try {
-      return await findAuthState(stateCode);
+      return await this.authStateService.findAuthState(stateCode);
     } catch (error) {
       return null;
     }
@@ -351,7 +394,7 @@ export class AuthService {
    */
   async getUserProfileById(userId: string): Promise<UserResponse | null> {
     try {
-      const user = await findUserById(userId);
+      const user = await this.userService.findById(userId);
       if (!user) {
         return null;
       }
@@ -370,7 +413,7 @@ export class AuthService {
 
   async isJWTStateRevoked(payload: JwtPayload): Promise<boolean> {
     try {
-      const revoked = await isJWTStateRevoked(payload.id);
+      const revoked = await this.jwtstateService.isJWTStateRevoked(payload.id);
       return revoked;
     } catch (error) {
       return false;

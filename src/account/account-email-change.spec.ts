@@ -3,43 +3,23 @@ import { TestingModule } from '@nestjs/testing';
 import { getGlobalModule } from '../utils/test/global-modules';
 import { AccountController } from './account.controller';
 import { AccountService } from './account.service';
-import * as query from '../lib/database/query';
 import { ResendService } from '../resend/resend.service';
 import { AppErrorCodes } from '../types/error-codes';
-
-jest.mock('../lib/database/query');
+import { mock } from 'jest-mock-extended';
+import { UserService } from '../data-base/query/user/user.service';
+import { PendingEmailChangeProcessService } from '../data-base/query/pending-email-change-process/pending-email-change-process.service';
+import { PasswordService } from '../data-base/utility/password/password.service';
+import { JwtTokenService } from '../auth/jwt-token/jwt-token.service';
 
 describe('Account Email Change Flow', () => {
   let service: AccountService;
 
-  const mockResendService = {
-    sendEmail: jest.fn(async function (this: void) {
-      return true;
-    }),
-  } as unknown as ResendService;
-
-  const mockFindUserById = query.findUserById as jest.MockedFunction<
-    typeof query.findUserById
-  >;
-  const mockFindUserByEmail = query.findUserByEmail as jest.MockedFunction<
-    typeof query.findUserByEmail
-  >;
-  const mockCreatePending =
-    query.createPendingEmailChangeProcess as jest.MockedFunction<
-      typeof query.createPendingEmailChangeProcess
-    >;
-  const mockFindPendingByCode = query.findPendingByCode as jest.MockedFunction<
-    typeof query.findPendingByCode
-  >;
-  const mockMarkPendingUsed = query.markPendingAsUsed as jest.MockedFunction<
-    typeof query.markPendingAsUsed
-  >;
-  const mockDeletePending = query.deletePendingById as jest.MockedFunction<
-    typeof query.deletePendingById
-  >;
-  const mockUpdateUser = query.updateUser as jest.MockedFunction<
-    typeof query.updateUser
-  >;
+  const mockResendService = mock<ResendService>();
+  const mockUserService = mock<UserService>();
+  const mockPendingEmailChangeService =
+    mock<PendingEmailChangeProcessService>();
+  const mockPasswordService = mock<PasswordService>();
+  const mockJwtTokenService = mock<JwtTokenService>();
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -49,6 +29,13 @@ describe('Account Email Change Flow', () => {
       providers: [
         AccountService,
         { provide: ResendService, useValue: mockResendService },
+        { provide: UserService, useValue: mockUserService },
+        {
+          provide: PendingEmailChangeProcessService,
+          useValue: mockPendingEmailChangeService,
+        },
+        { provide: PasswordService, useValue: mockPasswordService },
+        { provide: JwtTokenService, useValue: mockJwtTokenService },
       ],
     }).compile();
 
@@ -66,9 +53,9 @@ describe('Account Email Change Flow', () => {
     updatedAt: new Date(),
   };
 
-  it('happy path: request change and verify deletes pending and updates email', async () => {
-    mockFindUserById.mockResolvedValue(fakeUser as any);
-    mockFindUserByEmail.mockResolvedValue(null as any);
+  it('request change and verify deletes pending and updates email', async () => {
+    mockUserService.findUserById.mockResolvedValue(fakeUser as any);
+    mockUserService.findUserByEmail.mockResolvedValue(null as any);
 
     const pendingRecord = {
       id: 'p1',
@@ -80,7 +67,9 @@ describe('Account Email Change Flow', () => {
       createdAt: new Date(),
     } as any;
 
-    mockCreatePending.mockResolvedValue(pendingRecord);
+    mockPendingEmailChangeService.createPendingEmailChangeProcess.mockResolvedValue(
+      pendingRecord,
+    );
 
     const reqRes = await service.requestEmailChange(
       'user_1',
@@ -91,30 +80,38 @@ describe('Account Email Change Flow', () => {
 
     // now verify
     // findPendingByCode should return record when correct code is provided
-    mockFindPendingByCode.mockResolvedValue({
+    mockPendingEmailChangeService.findPendingByCode.mockResolvedValue({
       ...pendingRecord,
       id: 'p1',
     });
-    mockUpdateUser.mockResolvedValue({
+    mockUserService.updateUser.mockResolvedValue({
       ...fakeUser,
       email: 'new@example.com',
     } as any);
-    mockMarkPendingUsed.mockResolvedValue({} as any);
-    mockDeletePending.mockResolvedValue({} as any);
+    mockPendingEmailChangeService.markPendingAsUsed.mockResolvedValue(
+      {} as any,
+    );
+    mockPendingEmailChangeService.deletePendingById.mockResolvedValue(
+      {} as any,
+    );
 
     const verifyRes = await service.verifyEmailChange('user_1', '123456');
     expect(verifyRes).toHaveProperty('message');
-    expect(mockUpdateUser).toHaveBeenCalledWith('user_1', {
+    expect(mockUserService.updateUser).toHaveBeenCalledWith('user_1', {
       email: 'new@example.com',
     });
-    expect(mockMarkPendingUsed).toHaveBeenCalledWith('p1');
-    expect(mockDeletePending).toHaveBeenCalledWith('p1');
+    expect(
+      mockPendingEmailChangeService.markPendingAsUsed,
+    ).toHaveBeenCalledWith('p1');
+    expect(
+      mockPendingEmailChangeService.deletePendingById,
+    ).toHaveBeenCalledWith('p1');
   });
 
   it('requesting email change to an email already in use should return EMAIL_ALREADY_IN_USE', async () => {
-    mockFindUserById.mockResolvedValue(fakeUser as any);
+    mockUserService.findUserById.mockResolvedValue(fakeUser as any);
     // Simulate that another user already has the new email
-    mockFindUserByEmail.mockResolvedValue({
+    mockUserService.findUserByEmail.mockResolvedValue({
       id: 'user_2',
       email: 'taken@example.com',
     } as any);
@@ -125,8 +122,10 @@ describe('Account Email Change Flow', () => {
   });
 
   it('invalid code returns bad request', async () => {
-    mockFindUserById.mockResolvedValue(fakeUser as any);
-    mockFindPendingByCode.mockResolvedValue(null as any);
+    mockUserService.findUserById.mockResolvedValue(fakeUser as any);
+    mockPendingEmailChangeService.findPendingByCode.mockResolvedValue(
+      null as any,
+    );
 
     await expect(service.verifyEmailChange('user_1', '000000')).rejects.toBe(
       AppErrorCodes.INVALID_REQUEST,
@@ -134,9 +133,11 @@ describe('Account Email Change Flow', () => {
   });
 
   it('code for another user should be rejected', async () => {
-    mockFindUserById.mockResolvedValue(fakeUser as any);
+    mockUserService.findUserById.mockResolvedValue(fakeUser as any);
     // findPendingByCode returns a record but for different user id -> function should have searched by userId so null
-    mockFindPendingByCode.mockResolvedValue(null as any);
+    mockPendingEmailChangeService.findPendingByCode.mockResolvedValue(
+      null as any,
+    );
 
     await expect(service.verifyEmailChange('user_1', '999999')).rejects.toBe(
       AppErrorCodes.INVALID_REQUEST,
@@ -144,7 +145,7 @@ describe('Account Email Change Flow', () => {
   });
 
   it('wrong length codes (5 or 7 digits) are rejected', async () => {
-    mockFindUserById.mockResolvedValue(fakeUser as any);
+    mockUserService.findUserById.mockResolvedValue(fakeUser as any);
     await expect(service.verifyEmailChange('user_1', '12345')).rejects.toBe(
       AppErrorCodes.INVALID_REQUEST,
     );
@@ -154,8 +155,10 @@ describe('Account Email Change Flow', () => {
   });
 
   it('expired code is rejected', async () => {
-    mockFindUserById.mockResolvedValue(fakeUser as any);
-    mockFindPendingByCode.mockResolvedValue(null as any);
+    mockUserService.findUserById.mockResolvedValue(fakeUser as any);
+    mockPendingEmailChangeService.findPendingByCode.mockResolvedValue(
+      null as any,
+    );
     // service.findPendingByCode internally checks expiry; our mock returns null to indicate invalid
     await expect(service.verifyEmailChange('user_1', '111111')).rejects.toBe(
       AppErrorCodes.INVALID_REQUEST,
@@ -163,9 +166,11 @@ describe('Account Email Change Flow', () => {
   });
 
   it('concurrent pending request: second request should be rejected', async () => {
-    mockFindUserById.mockResolvedValue(fakeUser as any);
+    mockUserService.findUserById.mockResolvedValue(fakeUser as any);
     // Simulate createPending returning a record, but if there's already one, createPendingEmailChangeProcess may still create; we should check behavior: we'll simulate that function throws
-    mockCreatePending.mockRejectedValue(AppErrorCodes.ALREADY_PENDING);
+    mockPendingEmailChangeService.createPendingEmailChangeProcess.mockRejectedValue(
+      AppErrorCodes.ALREADY_PENDING,
+    );
 
     await expect(
       service.requestEmailChange('user_1', 'another@example.com'),
@@ -173,7 +178,7 @@ describe('Account Email Change Flow', () => {
   });
 
   it('unauthenticated user cannot verify (simulate missing user)', async () => {
-    mockFindUserById.mockResolvedValue(null as any);
+    mockUserService.findUserById.mockResolvedValue(null as any);
     await expect(service.verifyEmailChange('no_user', '123456')).rejects.toBe(
       AppErrorCodes.USER_NOT_FOUND,
     );

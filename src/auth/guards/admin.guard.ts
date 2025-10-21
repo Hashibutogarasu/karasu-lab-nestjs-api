@@ -5,8 +5,8 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { User } from '@prisma/client';
-import { findUserById } from '../../lib';
 import { AppErrorCodes } from '../../types/error-codes';
+import { UserService } from '../../data-base/query/user/user.service';
 
 /**
  * 管理者権限を持つユーザーのみ通過させるガード
@@ -24,11 +24,13 @@ import { AppErrorCodes } from '../../types/error-codes';
  */
 @Injectable()
 export class AdminGuard implements CanActivate {
+  constructor(private readonly users: UserService) {}
+
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const user: User = request.user;
 
-    const dbUser = await findUserById(user.id);
+    const dbUser = await this.users.findUserById(user.id);
 
     if (!dbUser) {
       throw AppErrorCodes.USER_NOT_FOUND;

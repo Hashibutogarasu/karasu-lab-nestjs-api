@@ -30,7 +30,7 @@ export interface IOAuthProvider {
    */
   getAuthorizationUrl(
     redirectUri: string,
-    state: string,
+    state?: string,
     codeChallenge?: string,
   ): string;
 

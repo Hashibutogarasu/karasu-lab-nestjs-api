@@ -5,16 +5,21 @@ import { App } from 'supertest/types';
 import { JwtService } from '@nestjs/jwt';
 import { AppModule } from '../src/app.module';
 import { TotpService } from '../src/totp/totp.service';
-import { MfaService } from '../src/mfa/mfa.service';
 import { MfaModule } from '../src/mfa/mfa.module';
 import { AppErrorCodeFilter } from '../src/filters/app-error-code.filter';
 import { mock } from 'jest-mock-extended';
 import { EncryptionService } from '../src/encryption/encryption.service';
 import { AuthService } from '../src/auth/auth.service';
+import { MfaService } from '../src/data-base/query/mfa/mfa.service';
+import { UserService } from '../src/data-base/query/user/user.service';
+import { DataBaseService } from '../src/data-base/data-base.service';
+import { AuthModule } from '../src/auth/auth.module';
+import { DataBaseModule } from '../src/data-base/data-base.module';
+import prisma from '../src/lib/database/query';
 
 describe('MFA e2e flow', () => {
   let app: INestApplication<App>;
-  let server: any;
+  let server: App;
   let totp: TotpService;
 
   const testUser = {
@@ -28,15 +33,20 @@ describe('MFA e2e flow', () => {
     const mockMfaService = mock<MfaService>();
     const mockEncryptionService = mock<EncryptionService>();
     const mockAuthService = mock<AuthService>();
+    const mockUserService = mock<UserService>();
+    const mockDatabaseService = mock<DataBaseService>({
+      prisma: jest.fn().mockReturnValue(prisma)
+    });
 
     const moduleBuilder = Test.createTestingModule({
-      imports: [AppModule, MfaModule],
+      imports: [AuthModule, DataBaseModule, MfaModule],
     });
     moduleBuilder.overrideProvider(MfaService).useValue(mockMfaService);
-    moduleBuilder
-      .overrideFilter(EncryptionService)
-      .useValue(mockEncryptionService);
-    moduleBuilder.overrideFilter(AuthService).useValue(mockAuthService);
+    moduleBuilder.overrideProvider(EncryptionService).useValue(mockEncryptionService);
+    moduleBuilder.overrideProvider(AuthService).useValue(mockAuthService);
+    moduleBuilder.overrideProvider(UserService).useValue(mockUserService);
+    moduleBuilder.overrideProvider(DataBaseService).useValue(mockDatabaseService);
+
     const moduleFixture: TestingModule = await moduleBuilder.compile();
 
     app = moduleFixture.createNestApplication();

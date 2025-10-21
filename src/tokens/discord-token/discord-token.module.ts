@@ -2,8 +2,10 @@ import { Module, DynamicModule } from '@nestjs/common';
 import { AuthService } from '../../auth/auth.service';
 import { DiscordTokenService } from './discord-token.service';
 import { AuthModule } from '../../auth/auth.module';
-
-export const DISCORD_TOKEN_OPTIONS = 'DISCORD_TOKEN_OPTIONS';
+import { DataBaseModule } from '../../data-base/data-base.module';
+import { WorkflowService } from '../../auth/sns/workflow/workflow.service';
+import { ManagerService } from '../../auth/session/manager/manager.service';
+import { DISCORD_TOKEN_OPTIONS } from './discord-token.constants';
 
 export interface DiscordTokenModuleOptions {
   clientId: string;
@@ -12,8 +14,13 @@ export interface DiscordTokenModuleOptions {
 }
 
 @Module({
-  imports: [AuthModule],
-  providers: [AuthService, DiscordTokenService],
+  imports: [],
+  providers: [
+    AuthService,
+    DiscordTokenService,
+    WorkflowService,
+    ManagerService,
+  ],
   exports: [DiscordTokenService],
 })
 export class DiscordTokenModule {

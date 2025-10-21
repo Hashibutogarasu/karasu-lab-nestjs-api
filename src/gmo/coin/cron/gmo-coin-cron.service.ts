@@ -1,12 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { CoinService } from '../coin.service';
 
 @Injectable()
 export class GmoCoinCronService {
-  private readonly logger = new Logger(GmoCoinCronService.name);
+  private readonly logger: Logger;
 
-  constructor(private readonly coinService: CoinService) {}
+  constructor(private readonly coinService: CoinService) {
+    this.logger = new Logger(GmoCoinCronService.name);
+  }
 
   /**
    * Cron: 定期的に最新ティッカーを取得して履歴へ保存する

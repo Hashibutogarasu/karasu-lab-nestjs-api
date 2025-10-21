@@ -1,15 +1,16 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { TestingModule } from '@nestjs/testing';
 import { JwtStateController } from './jwt-state.controller';
-import { JwtStateService } from './jwt-state.service';
 import { getGlobalModule } from '../utils/test/global-modules';
+import { JwtstateService } from '../data-base/query/jwtstate/jwtstate.service';
+import { mock } from 'jest-mock-extended';
+import { DataBaseService } from '../data-base/data-base.service';
+import { UtilityService } from '../data-base/utility/utility.service';
+import { RoleService } from '../data-base/query/role/role.service';
+import { JwtTokenService } from '../auth/jwt-token/jwt-token.service';
 
 describe('JwtStateController', () => {
   let controller: JwtStateController;
-
-  // 追加: ServiceのMock
   let jwtStateService: { findAll: jest.Mock; remove: jest.Mock };
-
-  // 追加: ユーザーモック
   const user = { id: 'user1', role: 'user' } as any;
   const admin = { id: 'admin1', role: 'admin' } as any;
   const jwtStates = [
@@ -18,14 +19,25 @@ describe('JwtStateController', () => {
   ];
 
   beforeEach(async () => {
-    jwtStateService = {
+    const mockDatabaseService = mock<DataBaseService>();
+    const mockUtilityService = mock<UtilityService>();
+    const mockRoleService = mock<RoleService>();
+    const mockJwtTokenService = mock<JwtTokenService>();
+
+    jwtStateService = mock<JwtstateService>({
       findAll: jest.fn(),
       remove: jest.fn(),
-    };
+    });
 
     const module: TestingModule = await getGlobalModule({
       controllers: [JwtStateController],
-      providers: [{ provide: JwtStateService, useValue: jwtStateService }],
+      providers: [
+        { provide: JwtstateService, useValue: jwtStateService },
+        { provide: DataBaseService, useValue: mockDatabaseService },
+        { provide: UtilityService, useValue: mockUtilityService },
+        { provide: RoleService, useValue: mockRoleService },
+        { provide: JwtTokenService, useValue: mockJwtTokenService },
+      ],
     }).compile();
 
     controller = module.get<JwtStateController>(JwtStateController);

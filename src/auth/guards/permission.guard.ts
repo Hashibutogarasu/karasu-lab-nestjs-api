@@ -2,16 +2,17 @@ import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
 import { PermissionBitcalcService } from '../../permission-bitcalc/permission-bitcalc.service';
-import { PERMISSION_METAKEY } from '../decorators/permission.decorator';
+import { PERMISSION_METAKEY } from '../permission.constants';
 import { AppErrorCodes } from '../../types/error-codes';
-import { findUserById } from '../../lib/database/query';
 import { PermissionType } from '../../types/permission';
+import { UserService } from '../../data-base/query/user/user.service';
 
 @Injectable()
 export class PermissionGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly bitcalc: PermissionBitcalcService,
+    private readonly userService: UserService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -25,7 +26,7 @@ export class PermissionGuard implements CanActivate {
     const req = context.switchToHttp().getRequest<Request>();
     const id = (req.user! as any).id;
 
-    const user = await findUserById(id);
+    const user = await this.userService.findUserById(id);
 
     if (!user) {
       throw AppErrorCodes.UNAUTHORIZED;

@@ -1,0 +1,50 @@
+import { Module, forwardRef } from '@nestjs/common';
+import { AuthModule } from '../auth/auth.module';
+import { UtilityService } from './utility/utility.service';
+import { PasswordService } from './utility/password/password.service';
+import { JwtstateService } from './query/jwtstate/jwtstate.service';
+import { GmocoinService } from './query/gmocoin/gmocoin.service';
+import { ExternalProviderAccessTokenService } from './query/external-provider-access-token/external-provider-access-token.service';
+import { RoleService } from './query/role/role.service';
+import { MfaService } from './query/mfa/mfa.service';
+import { DataBaseService } from './data-base.service';
+import { AuthStateService } from './query/auth-state/auth-state.service';
+import { UserService } from './query/user/user.service';
+import { ExtraProfileService } from './query/extra-profile/extra-profile.service';
+import { TotpService } from '../totp/totp.service';
+import { PermissionBitcalcModule } from '../permission-bitcalc/permission-bitcalc.module';
+
+@Module({
+  imports: [
+    forwardRef(() => AuthModule),
+    forwardRef(() => PermissionBitcalcModule),
+  ],
+  providers: [
+    UtilityService,
+    PasswordService,
+    JwtstateService,
+    GmocoinService,
+    ExternalProviderAccessTokenService,
+    RoleService,
+    MfaService,
+    DataBaseService,
+    AuthStateService,
+    UserService,
+    ExtraProfileService,
+    TotpService,
+  ],
+  exports: [
+    UtilityService,
+    PasswordService,
+    JwtstateService,
+    GmocoinService,
+    ExternalProviderAccessTokenService,
+    RoleService,
+    MfaService,
+    DataBaseService,
+    AuthStateService,
+    UserService,
+    ExtraProfileService,
+  ],
+})
+export class DataBaseModule {}

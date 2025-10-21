@@ -20,14 +20,13 @@
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
     "strictBindCallApply": false,
-    "noFallthroughCasesInSwitch": false
+    "noFallthroughCasesInSwitch": false,
+    "types": ["@types/jest"]
   },
   "include": [
     "src/**/*",
     "test/**/*",
-    "jest.config.js"
+    "jest.config.js",
   ],
-  "exclude": [
-    "dist"
-  ]
+  "exclude": ["dist"]
 }

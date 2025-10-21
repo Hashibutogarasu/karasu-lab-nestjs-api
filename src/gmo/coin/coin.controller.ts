@@ -8,7 +8,6 @@ import {
   GmoCoinKlineResponseDto,
   GmoCoinRulesResponseDto,
 } from './dto/gmo-coin.dto-response';
-import { getGmoCoinTickers } from '../../lib/database/query';
 import { GetKlineDto } from './dto/gmo-coin-request.dto';
 import { AdminGuard } from '../../auth/guards/admin.guard';
 
@@ -98,7 +97,7 @@ export class CoinController {
     @Query('limit') limit?: string,
   ): Promise<GmoCoinTickerResponseDto[]> {
     const n = limit ? parseInt(limit, 10) : 10;
-    const rows = await getGmoCoinTickers(n);
+    const rows = await this.coinService.getGmoCoinTickers(n);
 
     // map to response DTO shape
     return rows.map((row) => ({

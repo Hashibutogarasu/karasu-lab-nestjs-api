@@ -3,10 +3,11 @@ import { AccountService } from './account.service';
 import { AccountController } from './account.controller';
 import { ResendService } from '../resend/resend.service';
 import { AuthModule } from '../auth/auth.module';
+import { PendingEmailChangeProcessService } from '../data-base/query/pending-email-change-process/pending-email-change-process.service';
 
 @Module({
-  imports: [AuthModule],
+  imports: [],
   controllers: [AccountController],
-  providers: [AccountService, ResendService],
+  providers: [AccountService, ResendService, PendingEmailChangeProcessService],
 })
 export class AccountModule {}

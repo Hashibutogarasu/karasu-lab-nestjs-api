@@ -3,12 +3,15 @@ import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { AppErrorCodes } from '../types/error-codes';
-import { verifyJWTToken } from '../lib/auth/jwt-token';
-import { UsersService } from '../users/users.service';
+import { UserService } from '../data-base/query/user/user.service';
+import { JwtTokenService } from './jwt-token/jwt-token.service';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
-  constructor(@Optional() private usersService?: UsersService) {
+  constructor(
+    private readonly userService: UserService,
+    private readonly jwtTokenService: JwtTokenService,
+  ) {
     super();
   }
 
@@ -20,15 +23,13 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     }
 
     try {
-      const result = await verifyJWTToken(token);
+      const result = await this.jwtTokenService.verifyJWTToken(token);
       if (!result.success || !result.payload) {
         throw AppErrorCodes.INVALID_TOKEN;
       }
 
-      if (this.usersService) {
-        if (!(await this.usersService.exists(result.payload.sub))) {
-          throw AppErrorCodes.USER_NOT_FOUND;
-        }
+      if (!(await this.userService.exists(result.payload.sub))) {
+        throw AppErrorCodes.USER_NOT_FOUND;
       }
 
       request.user = { id: result.payload.sub };

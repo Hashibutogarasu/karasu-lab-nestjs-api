@@ -1,5 +1,4 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
-import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AuthDiscordUser } from '../auth/decorators/auth-discord-user.decorator';
 import { AuthGoogleUser } from '../auth/decorators/auth-google-user.decorator';
@@ -7,12 +6,12 @@ import type { DiscordUser } from '../types/discord-user';
 import type { GoogleUser } from '../types/google-user';
 import { Permission } from '../auth/decorators/permission.decorator';
 import { PermissionType } from '../types/permission';
-import { PublicUser } from '../auth/decorators/auth-user.decorator';
+import { UserService } from '../data-base/query/user/user.service';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly userService: UserService) {}
 
   /**
    * GET /users/me/discord
@@ -46,6 +45,6 @@ export class UsersController {
   @Permission([PermissionType.VIEW_ALL_USERS])
   @Get('list')
   async findAllUsers() {
-    return this.usersService.findAll();
+    return this.userService.findAll();
   }
 }

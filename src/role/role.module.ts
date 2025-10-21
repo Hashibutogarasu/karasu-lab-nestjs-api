@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
 import { RoleController } from './role.controller';
-import { RoleService } from './role.service';
 import { PermissionBitcalcService } from '../permission-bitcalc/permission-bitcalc.service';
 import { DomainModule } from '../lib/domain';
+import { RoleService } from '../data-base/query/role/role.service';
+import { JwtTokenService } from '../auth/jwt-token/jwt-token.service';
 
 @Module({
   imports: [
@@ -11,7 +12,7 @@ import { DomainModule } from '../lib/domain';
     }),
   ],
   controllers: [RoleController],
-  providers: [RoleService, PermissionBitcalcService],
+  providers: [RoleService, PermissionBitcalcService, JwtTokenService],
   exports: [RoleService],
 })
 export class RoleModule {}

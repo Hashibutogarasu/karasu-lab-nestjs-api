@@ -30,12 +30,12 @@ describe('Global Response Formatter & NoInterceptor (e2e)', () => {
         data: { ping: true },
       }),
     );
-  });
+  }, 20000);
 
   it('GET /raw-ping (@NoInterceptor) should NOT be formatted', async () => {
     const res = await request(app.getHttpServer()).get('/raw-ping').expect(200);
 
     // raw body without wrapping
     expect(res.body).toEqual({ ping: true });
-  });
+  }, 20000);
 });

@@ -10,6 +10,12 @@ import {
 } from '../../types/gmo-coin';
 import { GetKlineDto, Interval, PriceType } from './dto/gmo-coin-request.dto';
 import { getGlobalModule } from '../../utils/test/global-modules';
+import { mock } from 'jest-mock-extended';
+import { GmocoinService } from '../../data-base/query/gmocoin/gmocoin.service';
+import { DataBaseService } from '../../data-base/data-base.service';
+import { UtilityService } from '../../data-base/utility/utility.service';
+import { RoleService } from '../../data-base/query/role/role.service';
+import { JwtTokenService } from '../../auth/jwt-token/jwt-token.service';
 
 describe('CoinController', () => {
   let controller: CoinController;
@@ -72,20 +78,46 @@ describe('CoinController', () => {
     responsetime: '2025-10-10T02:50:00.000Z',
   };
 
-  const mockCoinService = {
+  const mockCoinService = mock<CoinService>({
     getStatus: jest.fn().mockResolvedValue(mockStatus),
     getTicker: jest.fn().mockResolvedValue(mockTicker),
     getKline: jest.fn().mockResolvedValue(mockKline),
     getRules: jest.fn().mockResolvedValue(mockRules),
-  };
+  });
 
   beforeEach(async () => {
+    const mockGmoCoinService = mock<GmocoinService>();
+    const mockDatabaseService = mock<DataBaseService>();
+    const mockUtilityService = mock<UtilityService>();
+    const mockRoleService = mock<RoleService>();
+    const mockJwtTokenService = mock<JwtTokenService>();
+
     const module: TestingModule = await getGlobalModule({
       controllers: [CoinController],
       providers: [
         {
           provide: CoinService,
           useValue: mockCoinService,
+        },
+        {
+          provide: GmocoinService,
+          useValue: mockGmoCoinService,
+        },
+        {
+          provide: DataBaseService,
+          useValue: mockDatabaseService,
+        },
+        {
+          provide: UtilityService,
+          useValue: mockUtilityService,
+        },
+        {
+          provide: RoleService,
+          useValue: mockRoleService,
+        },
+        {
+          provide: JwtTokenService,
+          useValue: mockJwtTokenService,
         },
       ],
     }).compile();

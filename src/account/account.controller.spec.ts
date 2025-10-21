@@ -11,26 +11,20 @@ import {
 } from './dto/password-reset.dto';
 import { getGlobalModule } from '../utils/test/global-modules';
 import { AppErrorCodes } from '../types/error-codes';
+import { mock } from 'jest-mock-extended';
+import { JwtTokenService } from '../auth/jwt-token/jwt-token.service';
+import { PasswordService } from '../data-base/utility/password/password.service';
+import { PendingEmailChangeProcessService } from '../data-base/query/pending-email-change-process/pending-email-change-process.service';
+import { UserService } from '../data-base/query/user/user.service';
+import { ResendService } from '../resend/resend.service';
 
 describe('AccountController - Password Management', () => {
   let controller: AccountController;
-  let service: AccountService;
-
-  const mockAccountService = {
-    resetPassword: jest.fn(),
-    forgotPassword: jest.fn(),
-    confirmResetPassword: jest.fn(),
-    setPassword: jest.fn(),
-    canSetPassword: jest.fn(),
-  };
+  let mockAccountService: AccountService;
 
   // Mock Response object
   const mockStatusFn = jest.fn();
   const mockJsonFn = jest.fn();
-  const mockResponse = {
-    status: mockStatusFn.mockReturnThis(),
-    json: mockJsonFn.mockReturnThis(),
-  } as unknown as Response;
 
   // Mock Request object
   const mockRequest = {
@@ -55,13 +49,25 @@ describe('AccountController - Password Management', () => {
   };
 
   beforeEach(async () => {
+    const mockResendService = mock<ResendService>();
+    const mockUserService = mock<UserService>();
+    const mockPendingEmailChangeService =
+      mock<PendingEmailChangeProcessService>();
+    const mockPasswordService = mock<PasswordService>();
+    const mockJwtTokenService = mock<JwtTokenService>();
+
     const module: TestingModule = await getGlobalModule({
       controllers: [AccountController],
       providers: [
+        AccountService,
+        { provide: ResendService, useValue: mockResendService },
+        { provide: UserService, useValue: mockUserService },
         {
-          provide: AccountService,
-          useValue: mockAccountService,
+          provide: PendingEmailChangeProcessService,
+          useValue: mockPendingEmailChangeService,
         },
+        { provide: PasswordService, useValue: mockPasswordService },
+        { provide: JwtTokenService, useValue: mockJwtTokenService },
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -69,13 +75,18 @@ describe('AccountController - Password Management', () => {
       .compile();
 
     controller = module.get<AccountController>(AccountController);
-    service = module.get<AccountService>(AccountService);
+    mockAccountService = module.get<AccountService>(AccountService);
 
     jest.clearAllMocks();
 
     // Reset mock response methods
     mockStatusFn.mockReturnThis();
     mockJsonFn.mockReturnThis();
+    mockAccountService.resetPassword = jest.fn();
+    mockAccountService.forgotPassword = jest.fn();
+    mockAccountService.confirmResetPassword = jest.fn();
+    mockAccountService.setPassword = jest.fn();
+    mockAccountService.canSetPassword = jest.fn();
   });
 
   it('should be defined', () => {
@@ -94,7 +105,9 @@ describe('AccountController - Password Management', () => {
         user: mockUser,
       };
 
-      mockAccountService.resetPassword.mockResolvedValue(expectedResult);
+      (mockAccountService.resetPassword as jest.Mock).mockResolvedValue(
+        expectedResult,
+      );
 
       await controller.resetPassword(mockUser as any, validResetDto);
 
@@ -105,7 +118,7 @@ describe('AccountController - Password Management', () => {
     });
 
     it('should handle user not found error', async () => {
-      mockAccountService.resetPassword.mockRejectedValue(
+      (mockAccountService.resetPassword as jest.Mock).mockRejectedValue(
         AppErrorCodes.USER_NOT_FOUND,
       );
 
@@ -118,7 +131,7 @@ describe('AccountController - Password Management', () => {
     });
 
     it('should handle incorrect old password error', async () => {
-      mockAccountService.resetPassword.mockRejectedValue(
+      (mockAccountService.resetPassword as jest.Mock).mockRejectedValue(
         AppErrorCodes.NOW_PASSWORD_IS_NOT_INVALID,
       );
 
@@ -141,7 +154,9 @@ describe('AccountController - Password Management', () => {
         user: { ...mockUser, id: 'user_123' },
       };
 
-      mockAccountService.resetPassword.mockResolvedValue(expectedResult);
+      (mockAccountService.resetPassword as jest.Mock).mockResolvedValue(
+        expectedResult,
+      );
 
       await controller.resetPassword(mockUser as any, validResetDto);
 
@@ -200,7 +215,9 @@ describe('AccountController - Password Management', () => {
         },
       };
 
-      mockAccountService.forgotPassword.mockResolvedValue(expectedResult);
+      (mockAccountService.forgotPassword as jest.Mock).mockResolvedValue(
+        expectedResult,
+      );
 
       await controller.forgotPassword(validForgotDto);
 
@@ -215,7 +232,9 @@ describe('AccountController - Password Management', () => {
           'A password reset code has been sent to the specified email address',
       };
 
-      mockAccountService.forgotPassword.mockResolvedValue(expectedResult);
+      (mockAccountService.forgotPassword as jest.Mock).mockResolvedValue(
+        expectedResult,
+      );
 
       const nonExistentEmailDto = {
         email: 'nonexistent@example.com',
@@ -240,7 +259,9 @@ describe('AccountController - Password Management', () => {
           'A password reset code has been sent to the specified email address',
       };
 
-      mockAccountService.forgotPassword.mockResolvedValue(mockResult);
+      (mockAccountService.forgotPassword as jest.Mock).mockResolvedValue(
+        mockResult,
+      );
 
       await controller.forgotPassword(invalidEmailDto as any);
 
@@ -259,7 +280,9 @@ describe('AccountController - Password Management', () => {
           'A password reset code has been sent to the specified email address',
       };
 
-      mockAccountService.forgotPassword.mockResolvedValue(mockResult);
+      (mockAccountService.forgotPassword as jest.Mock).mockResolvedValue(
+        mockResult,
+      );
 
       await controller.forgotPassword(emptyEmailDto as any);
 
@@ -289,7 +312,9 @@ describe('AccountController - Password Management', () => {
         user: mockUser,
       };
 
-      mockAccountService.confirmResetPassword.mockResolvedValue(expectedResult);
+      (mockAccountService.confirmResetPassword as jest.Mock).mockResolvedValue(
+        expectedResult,
+      );
 
       await controller.confirmResetPassword(validConfirmDto);
 
@@ -299,7 +324,7 @@ describe('AccountController - Password Management', () => {
     });
 
     it('should handle invalid reset code', async () => {
-      mockAccountService.confirmResetPassword.mockRejectedValue(
+      (mockAccountService.confirmResetPassword as jest.Mock).mockRejectedValue(
         AppErrorCodes.INVALID_RESET_CODE,
       );
 
@@ -317,7 +342,7 @@ describe('AccountController - Password Management', () => {
     });
 
     it('should handle expired reset code', async () => {
-      mockAccountService.confirmResetPassword.mockRejectedValue(
+      (mockAccountService.confirmResetPassword as jest.Mock).mockRejectedValue(
         AppErrorCodes.INVALID_RESET_CODE,
       );
 
@@ -336,7 +361,9 @@ describe('AccountController - Password Management', () => {
         resetCode: 'AB12', // Too short
         newPassword: 'NewPass123',
       };
-
+      (mockAccountService.confirmResetPassword as jest.Mock).mockRejectedValue(
+        AppErrorCodes.INVALID_RESET_CODE,
+      );
       await expect(
         controller.confirmResetPassword(invalidCodeDto as any),
       ).rejects.toThrow(AppErrorCodes.INVALID_RESET_CODE);
@@ -347,7 +374,9 @@ describe('AccountController - Password Management', () => {
         resetCode: 'ABC123',
         newPassword: 'weak', // Doesn't meet requirements
       };
-
+      (mockAccountService.confirmResetPassword as jest.Mock).mockRejectedValue(
+        AppErrorCodes.INVALID_RESET_CODE,
+      );
       await expect(
         controller.confirmResetPassword(weakPasswordDto as any),
       ).rejects.toThrow(AppErrorCodes.INVALID_RESET_CODE);
@@ -375,7 +404,9 @@ describe('AccountController - Password Management', () => {
         user: mockUser,
       };
 
-      mockAccountService.setPassword.mockResolvedValue(expectedResult);
+      (mockAccountService.setPassword as jest.Mock).mockResolvedValue(
+        expectedResult,
+      );
 
       await controller.setPassword(mockRequest, validSetPasswordDto);
 
@@ -386,7 +417,7 @@ describe('AccountController - Password Management', () => {
     });
 
     it('should handle user not found error', async () => {
-      mockAccountService.setPassword.mockRejectedValue(
+      (mockAccountService.setPassword as jest.Mock).mockRejectedValue(
         AppErrorCodes.USER_NOT_FOUND,
       );
 
@@ -399,7 +430,7 @@ describe('AccountController - Password Management', () => {
     });
 
     it('should handle user with existing password error', async () => {
-      mockAccountService.setPassword.mockRejectedValue(
+      (mockAccountService.setPassword as jest.Mock).mockRejectedValue(
         AppErrorCodes.PASSWORD_ALREADY_SET,
       );
 
@@ -432,7 +463,9 @@ describe('AccountController - Password Management', () => {
         user: { ...mockUser, id: 'sns_user_456' },
       };
 
-      mockAccountService.setPassword.mockResolvedValue(expectedResult);
+      (mockAccountService.setPassword as jest.Mock).mockResolvedValue(
+        expectedResult,
+      );
 
       await controller.setPassword(customRequest, validSetPasswordDto);
 
@@ -448,7 +481,7 @@ describe('AccountController - Password Management', () => {
       };
 
       // In production, this would be caught by validation pipes
-      mockAccountService.setPassword.mockRejectedValue(
+      (mockAccountService.setPassword as jest.Mock).mockRejectedValue(
         AppErrorCodes.WEAK_PASSWORD,
       );
 
@@ -467,7 +500,9 @@ describe('AccountController - Password Management', () => {
         providers: ['google', 'discord'],
       };
 
-      mockAccountService.canSetPassword.mockResolvedValue(expectedResult);
+      (mockAccountService.canSetPassword as jest.Mock).mockResolvedValue(
+        expectedResult,
+      );
 
       await controller.canSetPassword(mockRequest, mockUser as any);
 
@@ -484,7 +519,9 @@ describe('AccountController - Password Management', () => {
         providers: ['google'],
       };
 
-      mockAccountService.canSetPassword.mockResolvedValue(expectedResult);
+      (mockAccountService.canSetPassword as jest.Mock).mockResolvedValue(
+        expectedResult,
+      );
 
       await controller.canSetPassword(mockRequest, mockUser as any);
 
@@ -501,7 +538,9 @@ describe('AccountController - Password Management', () => {
         providers: [],
       };
 
-      mockAccountService.canSetPassword.mockResolvedValue(expectedResult);
+      (mockAccountService.canSetPassword as jest.Mock).mockResolvedValue(
+        expectedResult,
+      );
 
       await controller.canSetPassword(mockRequest, mockUser as any);
 
@@ -511,7 +550,7 @@ describe('AccountController - Password Management', () => {
     });
 
     it('should handle user not found error', async () => {
-      mockAccountService.canSetPassword.mockRejectedValue(
+      (mockAccountService.canSetPassword as jest.Mock).mockRejectedValue(
         AppErrorCodes.USER_NOT_FOUND,
       );
 
@@ -546,7 +585,9 @@ describe('AccountController - Password Management', () => {
         providers: ['discord'],
       };
 
-      mockAccountService.canSetPassword.mockResolvedValue(expectedResult);
+      (mockAccountService.canSetPassword as jest.Mock).mockResolvedValue(
+        expectedResult,
+      );
 
       await controller.canSetPassword(customRequest, mockUser as any);
 
@@ -565,7 +606,9 @@ describe('AccountController - Password Management', () => {
           'A password reset code has been sent to the specified email address',
       };
 
-      mockAccountService.forgotPassword.mockResolvedValue(forgotResult);
+      (mockAccountService.forgotPassword as jest.Mock).mockResolvedValue(
+        forgotResult,
+      );
 
       await controller.forgotPassword(forgotDto);
 
@@ -579,7 +622,9 @@ describe('AccountController - Password Management', () => {
         user: mockUser,
       };
 
-      mockAccountService.confirmResetPassword.mockResolvedValue(confirmResult);
+      (mockAccountService.confirmResetPassword as jest.Mock).mockResolvedValue(
+        confirmResult,
+      );
 
       await controller.confirmResetPassword(confirmDto);
     });
@@ -591,7 +636,9 @@ describe('AccountController - Password Management', () => {
           'A password reset code has been sent to the specified email address',
       };
 
-      mockAccountService.forgotPassword.mockResolvedValue(expectedResult);
+      (mockAccountService.forgotPassword as jest.Mock).mockResolvedValue(
+        expectedResult,
+      );
 
       // Simulate multiple concurrent requests
       const promises = Array(5)
@@ -608,7 +655,7 @@ describe('AccountController - Password Management', () => {
 
   describe('Error Handling', () => {
     it('should handle service layer exceptions', async () => {
-      mockAccountService.resetPassword.mockRejectedValue(
+      (mockAccountService.resetPassword as jest.Mock).mockRejectedValue(
         new Error('Database connection failed'),
       );
 
@@ -633,7 +680,9 @@ describe('AccountController - Password Management', () => {
 
     it('should handle missing user in request object', async () => {
       const requestWithoutUser = {} as any;
-
+      (mockAccountService.resetPassword as jest.Mock).mockRejectedValue(
+        new Error('Missing user in request object'),
+      );
       await expect(
         controller.resetPassword(requestWithoutUser, {
           oldPassword: 'test',
@@ -679,7 +728,9 @@ describe('AccountController - Password Management', () => {
         user: mockUser,
       };
 
-      mockAccountService.resetPassword.mockResolvedValue(expectedResult);
+      (mockAccountService.resetPassword as jest.Mock).mockResolvedValue(
+        expectedResult,
+      );
 
       await controller.resetPassword(mockUser as any, {
         oldPassword: 'old',

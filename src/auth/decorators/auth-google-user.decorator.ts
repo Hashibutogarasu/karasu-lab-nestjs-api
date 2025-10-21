@@ -1,16 +1,29 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
+import { UtilityService } from '../../data-base/utility/utility.service';
 import { GoogleUserSchema } from '../../types/google-user';
-import { getAuthenticatedUserProfile } from './auth-base.decorator';
+
+let _authProfileModuleRef: ModuleRef | null = null;
+export const setAuthGoogleProfileModuleRef = (mr: ModuleRef) => {
+  _authProfileModuleRef = mr;
+};
 
 /**
  * Google ユーザーデコレーター
- * JWT認証済みユーザーの Google プロフィールを取得する
- * ExtraProfile の raw_profile から Google ユーザー情報をパース
+ * UtilityService.getAuthenticatedUserProfile を使って ExtraProfile を取得しパースする
  */
 export const AuthGoogleUser = createParamDecorator(
   async (data: unknown, ctx: ExecutionContext) => {
-    return getAuthenticatedUserProfile(ctx, 'google', (rawProfile) =>
-      GoogleUserSchema.parse(rawProfile),
+    const mr = _authProfileModuleRef;
+    if (!mr) return null;
+
+    const utilityService = mr.get(UtilityService, { strict: false });
+    if (!utilityService) return null;
+
+    return utilityService.getAuthenticatedUserProfile(
+      ctx,
+      'google',
+      (rawProfile: any) => GoogleUserSchema.parse(rawProfile),
     );
   },
 );

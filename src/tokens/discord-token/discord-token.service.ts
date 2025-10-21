@@ -11,7 +11,7 @@ import {
   DiscordTokenResponse,
   DiscordRevokeResponse,
 } from '../../types/discord-token';
-import { DISCORD_TOKEN_OPTIONS } from './discord-token.module';
+import { DISCORD_TOKEN_OPTIONS } from './discord-token.constants';
 import type { DiscordTokenModuleOptions } from './discord-token.module';
 
 @Injectable()

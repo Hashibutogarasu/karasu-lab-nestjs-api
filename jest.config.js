@@ -1,4 +1,4 @@
-import { createDefaultPreset } from 'ts-jest';
+const { createDefaultPreset } = require('ts-jest');
 
 const tsJestTransformCfg = createDefaultPreset().transform;
 
@@ -8,4 +8,4 @@ const config = {
   transform: tsJestTransformCfg,
 };
 
-export default config;
+module.exports = config;

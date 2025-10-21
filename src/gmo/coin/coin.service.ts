@@ -12,21 +12,14 @@ import {
   GmoCoinKline,
   GmoCoinRules,
 } from '../../types/gmo-coin';
-import {
-  saveGmoCoinStatus,
-  saveGmoCoinTicker,
-  saveGmoCoinKline,
-  saveGmoCoinRules,
-  getLatestGmoCoinStatus,
-  getLatestGmoCoinTicker,
-  getLatestGmoCoinKline,
-  getLatestGmoCoinRules,
-} from '../../lib/database/query';
 import { GetKlineDto } from './dto/gmo-coin-request.dto';
 import { AppErrorCodes } from '../../types/error-codes';
+import { GmocoinService } from '../../data-base/query/gmocoin/gmocoin.service';
 
 @Injectable()
 export class CoinService {
+  constructor(private readonly gmoCoinService: GmocoinService) {}
+
   private readonly baseUrl = 'https://forex-api.coin.z.com/public';
   private readonly logger = new Logger(CoinService.name);
 
@@ -51,7 +44,7 @@ export class CoinService {
     },
   ): Promise<GmoCoinStatus> {
     if (cache) {
-      const dbEntry = await getLatestGmoCoinStatus();
+      const dbEntry = await this.gmoCoinService.getLatestGmoCoinStatus();
       if (!dbEntry) {
         throw AppErrorCodes.EXTERNAL_API_REQUEST_FAILED;
       }
@@ -70,7 +63,7 @@ export class CoinService {
     );
 
     if (updateDb) {
-      await saveGmoCoinStatus(parsed);
+      await this.gmoCoinService.saveGmoCoinStatus(parsed);
     }
     return parsed;
   }
@@ -85,7 +78,7 @@ export class CoinService {
     },
   ): Promise<GmoCoinTicker> {
     if (cache) {
-      const dbEntry = await getLatestGmoCoinTicker();
+      const dbEntry = await this.gmoCoinService.getLatestGmoCoinTicker();
       if (!dbEntry) {
         throw AppErrorCodes.EXTERNAL_API_REQUEST_FAILED;
       }
@@ -112,7 +105,7 @@ export class CoinService {
     if (updateDb) {
       // インメモリ履歴に追加
       this.addTickerToHistory(parsed);
-      await saveGmoCoinTicker(parsed);
+      await this.gmoCoinService.saveGmoCoinTicker(parsed);
 
       // ライブ通知を行う（SSE リスナーへ即時配信）
       try {
@@ -182,7 +175,7 @@ export class CoinService {
     },
   ): Promise<GmoCoinKline> {
     if (cache) {
-      const dbEntry = await getLatestGmoCoinKline();
+      const dbEntry = await this.gmoCoinService.getLatestGmoCoinKline();
       if (!dbEntry) {
         throw AppErrorCodes.EXTERNAL_API_REQUEST_FAILED;
       }
@@ -214,7 +207,7 @@ export class CoinService {
     );
 
     if (updateDb) {
-      await saveGmoCoinKline(parsed);
+      await this.gmoCoinService.saveGmoCoinKline(parsed);
     }
     return parsed;
   }
@@ -229,7 +222,7 @@ export class CoinService {
     },
   ): Promise<GmoCoinRules> {
     if (cache) {
-      const dbEntry = await getLatestGmoCoinRules();
+      const dbEntry = await this.gmoCoinService.getLatestGmoCoinRules();
       if (!dbEntry) {
         throw AppErrorCodes.EXTERNAL_API_REQUEST_FAILED;
       }
@@ -254,7 +247,7 @@ export class CoinService {
     );
 
     if (updateDb) {
-      await saveGmoCoinRules(parsed);
+      await this.gmoCoinService.saveGmoCoinRules(parsed);
     }
     return parsed;
   }
@@ -266,7 +259,7 @@ export class CoinService {
     // DBポーリング Observable: 即時1回、その後30秒ごとにDBの最新キャッシュを取得
     const dbPolling$ = interval(30000).pipe(
       startWith(0),
-      switchMap(() => from(getLatestGmoCoinTicker())),
+      switchMap(() => from(this.gmoCoinService.getLatestGmoCoinTicker())),
       map((dbEntry) => {
         let payload: any;
         if (dbEntry) {
@@ -333,5 +326,9 @@ export class CoinService {
     // DBポーリングとライブ通知をマージして返す。これにより既存のDBポーリングの即時送信を維持しつつ、
     // cronなどで getTicker() が呼ばれたときに接続済みクライアントへ即時配信される。
     return merge(dbPolling$, live$);
+  }
+
+  async getGmoCoinTickers(limit: number) {
+    return this.gmoCoinService.getGmoCoinTickers(limit);
   }
 }

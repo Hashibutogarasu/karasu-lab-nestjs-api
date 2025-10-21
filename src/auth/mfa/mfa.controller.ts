@@ -11,19 +11,14 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import type { Response } from 'express';
-import { MfaService } from '../../mfa/mfa.service';
 import { AuthService } from '../auth.service';
 import { JwtAuthGuard } from '../jwt-auth.guard';
 import { AuthUser } from '../decorators/auth-user.decorator';
 import type { PublicUser } from '../decorators/auth-user.decorator';
-import {
-  verifyJWTToken,
-  generateJWTToken,
-  generateRefreshToken,
-} from '../../lib/auth/jwt-token';
 import { AppErrorCodes } from '../../types/error-codes';
 import { TotpService } from '../../totp/totp.service';
-import { ConcurrentRequestInterceptor } from '../../interceptors/concurrent-request.interceptor';
+import { MfaService } from '../../data-base/query/mfa/mfa.service';
+import { JwtTokenService } from '../jwt-token/jwt-token.service';
 
 type VerifyMfaDto = {
   mfaToken?: string;
@@ -36,6 +31,7 @@ export class MfaController {
     private readonly mfaService: MfaService,
     private readonly authService: AuthService,
     private readonly totp: TotpService,
+    private readonly jwtTokenService: JwtTokenService,
   ) {}
 
   @Post('setup')
@@ -112,7 +108,7 @@ export class MfaController {
         throw AppErrorCodes.INVALID_REQUEST;
       }
 
-      const verifyResult = await verifyJWTToken(mfaToken);
+      const verifyResult = await this.jwtTokenService.verifyJWTToken(mfaToken);
       if (!verifyResult.success || !verifyResult.payload) {
         throw AppErrorCodes.INVALID_TOKEN;
       }
@@ -129,7 +125,7 @@ export class MfaController {
 
       const sessionData = await this.authService.createSession(userId);
 
-      const tokenResult = await generateJWTToken({
+      const tokenResult = await this.jwtTokenService.generateJWTToken({
         userId,
         expirationHours: 1,
         jwtStateId,
@@ -138,9 +134,12 @@ export class MfaController {
         throw AppErrorCodes.TOKEN_GENERATION_FAILED;
       }
 
-      const refreshResult = await generateRefreshToken(userId, {
-        jwtStateId: tokenResult.jwtId,
-      });
+      const refreshResult = await this.jwtTokenService.generateRefreshToken(
+        userId,
+        {
+          jwtStateId: tokenResult.jwtId,
+        },
+      );
       if (!refreshResult.success || !refreshResult.token) {
         throw AppErrorCodes.TOKEN_GENERATION_FAILED;
       }

@@ -1,16 +1,29 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
+import { UtilityService } from '../../data-base/utility/utility.service';
 import { DiscordUserSchema } from '../../types/discord-user';
-import { getAuthenticatedUserProfile } from './auth-base.decorator';
+
+let _authProfileModuleRef: ModuleRef | null = null;
+export const setAuthDiscordProfileModuleRef = (mr: ModuleRef) => {
+  _authProfileModuleRef = mr;
+};
 
 /**
  * Discord ユーザーデコレーター
- * JWT認証済みユーザーの Discord プロフィールを取得する
- * ExtraProfile の raw_profile から Discord ユーザー情報をパース
+ * UtilityService.getAuthenticatedUserProfile を使って ExtraProfile を取得しパースする
  */
 export const AuthDiscordUser = createParamDecorator(
   async (data: unknown, ctx: ExecutionContext) => {
-    return getAuthenticatedUserProfile(ctx, 'discord', (rawProfile) =>
-      DiscordUserSchema.parse(rawProfile),
+    const mr = _authProfileModuleRef;
+    if (!mr) return null;
+
+    const utilityService = mr.get(UtilityService, { strict: false });
+    if (!utilityService) return null;
+
+    return utilityService.getAuthenticatedUserProfile(
+      ctx,
+      'discord',
+      (rawProfile: any) => DiscordUserSchema.parse(rawProfile),
     );
   },
 );

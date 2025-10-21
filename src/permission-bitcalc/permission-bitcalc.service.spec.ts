@@ -1,15 +1,31 @@
-import { TestingModule } from '@nestjs/testing';
+import { Test, TestingModule } from '@nestjs/testing';
 import { PermissionBitcalcService } from './permission-bitcalc.service';
 import { getGlobalModule } from '../utils/test/global-modules';
 import { PermissionType } from '../types/permission';
 import { AppErrorCodes } from '../types/error-codes';
+import { DataBaseService } from '../data-base/data-base.service';
+import { mock } from 'jest-mock-extended';
+import { UtilityService } from '../data-base/utility/utility.service';
 
 describe('PermissionBitcalcService', () => {
   let service: PermissionBitcalcService;
 
   beforeEach(async () => {
-    const module: TestingModule = await getGlobalModule({
-      providers: [PermissionBitcalcService],
+    const mockDatabaseServie = mock<DataBaseService>();
+    const mockUtilityService = mock<UtilityService>();
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        PermissionBitcalcService,
+        {
+          provide: DataBaseService,
+          useValue: mockDatabaseServie,
+        },
+        {
+          provide: UtilityService,
+          useValue: mockUtilityService,
+        },
+      ],
     }).compile();
 
     service = module.get<PermissionBitcalcService>(PermissionBitcalcService);
