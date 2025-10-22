@@ -51,4 +51,4 @@ RUN if [ -d prisma ]; then npx prisma generate; else echo "no prisma dir"; fi
 EXPOSE 3000
 
 # Define the command to run the application
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/src/main.js"]

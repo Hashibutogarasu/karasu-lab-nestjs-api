@@ -3,21 +3,19 @@ import {
   Post,
   Body,
   Res,
-  HttpException,
-  HttpStatus,
   Request,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { DifyService } from './dify.service';
 import { ChatMessageRequestDto } from './dify/dify.dto';
 import { DomainProtected } from '../lib/domain';
-import { AppErrorCodes } from '../types/error-codes';
 import { NoInterceptor } from '../interceptors/no-interceptor.decorator';
-
+import { AuthUser } from '../auth/decorators/auth-user.decorator';
+import type { PublicUser } from '../auth/decorators/auth-user.decorator';
 @NoInterceptor()
 @Controller('dify')
 export class DifyController {
-  constructor(private readonly difyService: DifyService) {}
+  constructor(private readonly difyService: DifyService) { }
 
   @Post('chat/stream')
   @DomainProtected()
@@ -25,29 +23,20 @@ export class DifyController {
     @Body() chatRequest: ChatMessageRequestDto,
     @Res() res: Response,
     @Request() req: any,
+    @AuthUser() user: PublicUser,
   ) {
     try {
-      // JWTトークンからユーザーIDを取得してuserフィールドに設定
-      const userId = req.user?.sub || req.user?.id;
-      if (!userId) {
-        throw AppErrorCodes.USER_NOT_FOUND;
-      }
+      chatRequest.user = user.id;
 
-      // リクエストにユーザーIDを設定
-      chatRequest.user = userId;
-
-      // SSEヘッダーを設定
       res.setHeader('Content-Type', 'text/event-stream');
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Headers', 'Cache-Control');
 
-      // Dify APIからストリームを取得
       const stream = await this.difyService.sendChatMessageStream(chatRequest);
       const parsedStream = this.difyService.parseSSEStream(stream);
 
-      // ストリームデータをSSE形式で送信
       parsedStream.on('data', (data) => {
         if (data) {
           res.write(`data: ${JSON.stringify(data)}\n\n`);
@@ -67,7 +56,6 @@ export class DifyController {
         res.end();
       });
 
-      // クライアントが接続を切断した場合のハンドリング
       req.on('close', () => {
         parsedStream.destroy();
       });

@@ -4,6 +4,7 @@ import { AppModule } from './app.module';
 import { AppErrorCodeFilter } from './filters/app-error-code.filter';
 import { ResponseFormatterInterceptor } from './interceptors/response-formatter.interceptor';
 import { Reflector } from '@nestjs/core';
+import { ZodValidationPipe } from 'nestjs-zod';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -12,6 +13,7 @@ async function bootstrap() {
 
   const reflector = app.get(Reflector);
   app.useGlobalInterceptors(new ResponseFormatterInterceptor(reflector));
+  app.useGlobalPipes(new ZodValidationPipe());
 
   app.enableCors({
     origin: true,

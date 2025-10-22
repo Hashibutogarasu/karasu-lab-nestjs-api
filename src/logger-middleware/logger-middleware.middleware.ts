@@ -14,11 +14,6 @@ export class LoggerMiddleware implements NestMiddleware {
 
   private createMessage(req: Request): string {
     const { ip, method, url } = req;
-    let msg = `[${ip}] [${method}] [${url}]`;
-    if (req.body !== undefined) {
-      msg += `\n${JSON.stringify(req.body)}`;
-    }
-
-    return msg;
+    return `[${ip}] [${method}] [${url}]`;
   }
 }
