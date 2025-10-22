@@ -20,16 +20,16 @@ describe('RoleController', () => {
     const mockUtilityService = mock<UtilityService>();
     const mockJwtTokenService = mock<JwtTokenService>();
     const mockRoleService = mock<RoleService>({
-      updateAdminUsers: jest
-        .fn()
-        .mockImplementation(async (users: any[]) => {
-          const adminDomain = process.env.ADMIN_DOMAIN;
-          const invalid = users.find((u) => u.email.split('@')[1] !== adminDomain);
-          if (invalid) {
-            throw AppErrorCodes.PERMISSION_DENIED;
-          }
-          return Promise.resolve();
-        })
+      updateAdminUsers: jest.fn().mockImplementation(async (users: any[]) => {
+        const adminDomain = process.env.ADMIN_DOMAIN;
+        const invalid = users.find(
+          (u) => u.email.split('@')[1] !== adminDomain,
+        );
+        if (invalid) {
+          throw AppErrorCodes.PERMISSION_DENIED;
+        }
+        return Promise.resolve();
+      }),
     });
 
     const module: TestingModule = await getGlobalModule({

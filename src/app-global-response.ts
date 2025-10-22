@@ -1,4 +1,4 @@
-import z from "zod";
+import z from 'zod';
 
 const baseResponseSchema = z.object({
   success: z.boolean(),

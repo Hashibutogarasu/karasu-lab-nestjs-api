@@ -45,7 +45,10 @@ import { JwtModule } from '@nestjs/jwt';
     ScheduleModule.forRoot(),
     OauthModule,
     AccountModule,
-    ...(process.env.DISCORD_BOT_TOKEN ? [DiscordAppModule] : []),
+    ...(process.env.DISCORD_BOT_TOKEN ? [{
+      global: true,
+      module: DiscordAppModule,
+    }] : []),
     MarkdownModule,
     McpServerModule,
     DifyModule,
@@ -62,16 +65,16 @@ import { JwtModule } from '@nestjs/jwt';
     MfaModule,
     process.env.REDIS_HOST
       ? CacheModule.register({
-          store: async () =>
-            await redisStore({
-              socket: {
-                host: process.env.REDIS_HOST!,
-                port: process.env.REDIS_PORT!,
-              },
-              ttl: 10,
-            }),
-          isGlobal: true,
-        })
+        store: async () =>
+          await redisStore({
+            socket: {
+              host: process.env.REDIS_HOST!,
+              port: process.env.REDIS_PORT!,
+            },
+            ttl: 10,
+          }),
+        isGlobal: true,
+      })
       : CacheModule.register({ isGlobal: true, ttl: 10 }),
     {
       global: true,

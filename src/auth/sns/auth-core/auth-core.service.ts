@@ -309,6 +309,11 @@ export class AuthCoreService {
    * エラーレスポンス用のリダイレクト
    */
   buildErrorRedirect(callbackUrl: string, error: string): string {
-    return this.snsAuthCallback.buildCallbackRedirect(callbackUrl, '', '', error);
+    return this.snsAuthCallback.buildCallbackRedirect(
+      callbackUrl,
+      '',
+      '',
+      error,
+    );
   }
 }

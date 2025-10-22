@@ -35,14 +35,25 @@ describe('MFA e2e flow', () => {
     totp = mock<TotpService>({
       generateToken: jest.fn().mockImplementation((s: string) => '123456'),
       generateSecret: jest.fn().mockReturnValue('plain_secret'),
-      generateTotpUrl: jest.fn().mockImplementation((userIdent: string, issuer: string, secret: string) => `otpauth://totp/${issuer}:${userIdent}?secret=${secret}`),
-      isValid: jest.fn().mockImplementation((token: string, secret: string) => token === '123456'),
+      generateTotpUrl: jest
+        .fn()
+        .mockImplementation(
+          (userIdent: string, issuer: string, secret: string) =>
+            `otpauth://totp/${issuer}:${userIdent}?secret=${secret}`,
+        ),
+      isValid: jest
+        .fn()
+        .mockImplementation(
+          (token: string, secret: string) => token === '123456',
+        ),
     });
 
     const mockMfaService = mock<MfaService>({
       checkMfaRequired: jest.fn().mockResolvedValue({ mfaRequired: false }),
       verifyToken: jest.fn().mockResolvedValue(true),
-      regenerateBackupCodesForUser: jest.fn().mockResolvedValue({ backupCodes: ['BC1', 'BC2'] }),
+      regenerateBackupCodesForUser: jest
+        .fn()
+        .mockResolvedValue({ backupCodes: ['BC1', 'BC2'] }),
       disableMfaForUser: jest.fn().mockResolvedValue({ success: true }),
     });
     // make setupTotpForUser succeed once and then fail with CONFLICT to simulate simultaneous setup race
@@ -73,7 +84,7 @@ describe('MFA e2e flow', () => {
       createSession: jest.fn().mockResolvedValue({
         sessionId: 'sess_test',
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      })
+      }),
     });
     const mockUserService = mock<UserService>({
       findUserById: jest.fn().mockResolvedValue({
@@ -84,10 +95,10 @@ describe('MFA e2e flow', () => {
         passwordHash: null,
         createdAt: new Date(),
         updatedAt: new Date(),
-      })
+      }),
     });
     const mockDatabaseService = mock<DataBaseService>({
-      prisma: jest.fn().mockReturnValue(prisma)
+      prisma: jest.fn().mockReturnValue(prisma),
     });
 
     const mockJwtTokenService = mock<JwtTokenService>({
@@ -95,12 +106,21 @@ describe('MFA e2e flow', () => {
         success: true,
         jwtId: 'jwt_test',
         token: 'access_test',
-        profile: { sub: 'user_test', name: testUser.username, email: testUser.email, providers: [] },
+        profile: {
+          sub: 'user_test',
+          name: testUser.username,
+          email: testUser.email,
+          providers: [],
+        },
         user: { roles: [] },
         expiresAt: new Date(Date.now() + 60 * 60 * 1000),
       }),
-      generateRefreshToken: jest.fn().mockResolvedValue({ success: true, token: 'refresh_test' }),
-      verifyJWTToken: jest.fn().mockResolvedValue({ success: true, payload: { sub: 'user_test' } }),
+      generateRefreshToken: jest
+        .fn()
+        .mockResolvedValue({ success: true, token: 'refresh_test' }),
+      verifyJWTToken: jest
+        .fn()
+        .mockResolvedValue({ success: true, payload: { sub: 'user_test' } }),
     });
 
     const moduleBuilder = Test.createTestingModule({
@@ -123,11 +143,17 @@ describe('MFA e2e flow', () => {
 
     moduleBuilder.overrideProvider(MfaService).useValue(mockMfaService);
     moduleBuilder.overrideProvider(TotpService).useValue(totp);
-    moduleBuilder.overrideProvider(EncryptionService).useValue(mockEncryptionService);
+    moduleBuilder
+      .overrideProvider(EncryptionService)
+      .useValue(mockEncryptionService);
     moduleBuilder.overrideProvider(AuthService).useValue(mockAuthService);
     moduleBuilder.overrideProvider(UserService).useValue(mockUserService);
-    moduleBuilder.overrideProvider(DataBaseService).useValue(mockDatabaseService);
-    moduleBuilder.overrideProvider(JwtTokenService).useValue((mockJwtTokenService));
+    moduleBuilder
+      .overrideProvider(DataBaseService)
+      .useValue(mockDatabaseService);
+    moduleBuilder
+      .overrideProvider(JwtTokenService)
+      .useValue(mockJwtTokenService);
 
     const moduleFixture: TestingModule = await moduleBuilder.compile();
 
@@ -135,7 +161,8 @@ describe('MFA e2e flow', () => {
     (global as any).__authModuleRef = {
       get: (token: any, options?: any) => {
         // The decorator requests 'UserService' by string token
-        if (token === 'UserService' || token === 'UserService') return (mockUserService as any);
+        if (token === 'UserService' || token === 'UserService')
+          return mockUserService as any;
         try {
           return moduleFixture.get(token as any, options);
         } catch (err) {
@@ -185,7 +212,11 @@ describe('MFA e2e flow', () => {
     if (setupRes.status !== 201) {
       // debug output to help identify cause of 500
       // eslint-disable-next-line no-console
-      console.log('DEBUG: /auth/mfa/setup response', setupRes.status, setupRes.body);
+      console.log(
+        'DEBUG: /auth/mfa/setup response',
+        setupRes.status,
+        setupRes.body,
+      );
     }
 
     expect(setupRes.status).toBe(201);
@@ -274,7 +305,11 @@ describe('MFA e2e flow', () => {
     const successRes = (fulfilled[0] as PromiseFulfilledResult<any>).value;
     if (successRes.status !== 409) {
       // eslint-disable-next-line no-console
-      console.log('DEBUG: concurrent setup successRes', successRes.status, successRes.body);
+      console.log(
+        'DEBUG: concurrent setup successRes',
+        successRes.status,
+        successRes.body,
+      );
     }
     expect(successRes.status).toBe(409);
     expect(successRes.body).toHaveProperty('message');

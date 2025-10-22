@@ -443,9 +443,9 @@ describe('CoinService', () => {
       };
 
       // return the same DB entry for every poll during this test
-      mockGmoCoinService.getLatestGmoCoinTicker = jest.fn().mockResolvedValue(
-        dbEntry,
-      );
+      mockGmoCoinService.getLatestGmoCoinTicker = jest
+        .fn()
+        .mockResolvedValue(dbEntry);
 
       const emissions: any[] = [];
       const sub = service
@@ -503,10 +503,10 @@ describe('CoinService', () => {
       (fetchJson as jest.Mock).mockResolvedValueOnce(mockResponse);
 
       // subscribe to SSE stream
-          // ensure DB polling mock is set before subscribing (subscription can trigger immediate poll)
-          mockGmoCoinService.getLatestGmoCoinTicker = jest
-            .fn()
-            .mockResolvedValueOnce(null);
+      // ensure DB polling mock is set before subscribing (subscription can trigger immediate poll)
+      mockGmoCoinService.getLatestGmoCoinTicker = jest
+        .fn()
+        .mockResolvedValueOnce(null);
 
       const emissions: any[] = [];
       const sub = service

@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Post,
-  Body,
-  Res,
-  Request,
-} from '@nestjs/common';
+import { Controller, Post, Body, Res, Request } from '@nestjs/common';
 import type { Response } from 'express';
 import { DifyService } from './dify.service';
 import { ChatMessageRequestDto } from './dify/dify.dto';
@@ -15,7 +9,7 @@ import type { PublicUser } from '../auth/decorators/auth-user.decorator';
 @NoInterceptor()
 @Controller('dify')
 export class DifyController {
-  constructor(private readonly difyService: DifyService) { }
+  constructor(private readonly difyService: DifyService) {}
 
   @Post('chat/stream')
   @DomainProtected()

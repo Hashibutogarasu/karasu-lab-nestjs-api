@@ -1,9 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { CreateDiscordAppDto } from './dto/create-discord-app.dto';
-import { UpdateDiscordAppDto } from './dto/update-discord-app.dto';
 import * as necord from 'necord';
 import { Client } from 'discord.js';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { AppErrorCodes } from '../types/error-codes';
 
 @Injectable()
@@ -20,6 +17,10 @@ export class DiscordAppService {
   @necord.On('warn')
   public onWarn(@necord.Context() [message]: necord.ContextOf<'warn'>) {
     this.logger.warn(message);
+  }
+
+  getJoinedGuildCount(): number {
+    return this.client.guilds.cache.size;
   }
 
   /**

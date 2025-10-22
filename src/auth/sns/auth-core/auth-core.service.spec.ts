@@ -31,7 +31,7 @@ describe('CoreService', () => {
         { provide: ExtraProfileService, useValue: mockExtraProfileService },
         { provide: JwtTokenService, useValue: mockJwtTokenService },
         { provide: JwtstateService, useValue: mockJwtStateService },
-        { provide: SnsAuthCallback, useValue: mockSnsAuthCallback }
+        { provide: SnsAuthCallback, useValue: mockSnsAuthCallback },
       ],
     }).compile();
 

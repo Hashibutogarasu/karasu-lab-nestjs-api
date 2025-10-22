@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { McpService } from './mcp.service';
 import { McpModule } from '@nestjs-mcp/server';
-import { CoinService } from '../gmo/coin/coin.service';
+import { DiscordAppService } from '../discord-app/discord-app.service';
 
 @Module({
   imports: [
@@ -13,6 +13,6 @@ import { CoinService } from '../gmo/coin/coin.service';
       transports: { sse: { enabled: false } },
     }),
   ],
-  providers: [McpService, CoinService],
+  providers: [McpService, DiscordAppService],
 })
 export class McpServerModule {}

@@ -162,8 +162,7 @@ export class AuthController {
       // APIのベースURLを取得してバックエンドのコールバックURIを構築
       // Use explicit BASE_URL if set, otherwise fall back to the current request host.
       const baseUrl =
-        process.env.BASE_URL ||
-        `${req.protocol}://${req.headers.host}`;
+        process.env.BASE_URL || `${req.protocol}://${req.headers.host}`;
       const backendRedirectUri = `${baseUrl.replace(/\/$/, '')}/auth/callback/${provider}`;
 
       // 認証ステートを作成（フロントエンドのコールバックURLを保存）
@@ -421,8 +420,7 @@ export class AuthController {
 
       // Use explicit BASE_URL if set, otherwise fall back to BASE_URL or the current request host.
       const baseUrl =
-        process.env.BASE_URL! ||
-        `${req.protocol}://${req.headers.host}`;
+        process.env.BASE_URL! || `${req.protocol}://${req.headers.host}`;
       const backendCallbackUri = `${baseUrl.replace(/\/$/, '')}/auth/callback/${authStateDto.provider}`;
 
       // AuthStateからcode_challengeを取得(X用)

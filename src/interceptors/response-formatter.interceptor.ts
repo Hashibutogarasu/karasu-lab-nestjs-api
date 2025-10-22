@@ -15,7 +15,7 @@ const messageObjectSchema = z.object({ message: z.any() }).passthrough();
 
 @Injectable()
 export class ResponseFormatterInterceptor implements NestInterceptor {
-  constructor(private readonly reflector: Reflector) { }
+  constructor(private readonly reflector: Reflector) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const handler = context.getHandler();
@@ -45,7 +45,10 @@ export class ResponseFormatterInterceptor implements NestInterceptor {
 
         const msgObjParse = messageObjectSchema.safeParse(value);
         if (msgObjParse.success) {
-          const { message: msg, ...rest } = msgObjParse.data as Record<string, unknown>;
+          const { message: msg, ...rest } = msgObjParse.data as Record<
+            string,
+            unknown
+          >;
           const message = typeof msg === 'string' ? msg : defaultMessage;
           return {
             success: true,
