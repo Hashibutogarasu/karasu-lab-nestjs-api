@@ -442,9 +442,10 @@ describe('CoinService', () => {
         ],
       };
 
-      mockGmoCoinService.getLatestGmoCoinTicker = jest
-        .fn()
-        .mockResolvedValueOnce(dbEntry);
+      // return the same DB entry for every poll during this test
+      mockGmoCoinService.getLatestGmoCoinTicker = jest.fn().mockResolvedValue(
+        dbEntry,
+      );
 
       const emissions: any[] = [];
       const sub = service
@@ -502,13 +503,26 @@ describe('CoinService', () => {
       (fetchJson as jest.Mock).mockResolvedValueOnce(mockResponse);
 
       // subscribe to SSE stream
+          // ensure DB polling mock is set before subscribing (subscription can trigger immediate poll)
+          mockGmoCoinService.getLatestGmoCoinTicker = jest
+            .fn()
+            .mockResolvedValueOnce(null);
+
       const emissions: any[] = [];
       const sub = service
         .getTickerSse()
         .subscribe((msg) => emissions.push(msg));
 
-      // allow initial DB polling emission (getLatestGmoCoinTicker is mocked to null)
+      // make sure initial DB polling resolves (mock explicitly returns null)
+      mockGmoCoinService.getLatestGmoCoinTicker = jest
+        .fn()
+        .mockResolvedValueOnce(null);
+
+      // allow pending microtasks and any scheduled timer callbacks to run
       await Promise.resolve();
+      // run any pending timers that the SSE setup might have scheduled
+      jest.runOnlyPendingTimers();
+
       expect(emissions.length).toBeGreaterThanOrEqual(1);
 
       // call getTicker() which should emit to the live subject

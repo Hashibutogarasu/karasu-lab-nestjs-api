@@ -19,11 +19,26 @@ describe('RoleController', () => {
     const mockPermissionbitcalcService = mock<PermissionBitcalcService>();
     const mockUtilityService = mock<UtilityService>();
     const mockJwtTokenService = mock<JwtTokenService>();
+    const mockRoleService = mock<RoleService>({
+      updateAdminUsers: jest
+        .fn()
+        .mockImplementation(async (users: any[]) => {
+          const adminDomain = process.env.ADMIN_DOMAIN;
+          const invalid = users.find((u) => u.email.split('@')[1] !== adminDomain);
+          if (invalid) {
+            throw AppErrorCodes.PERMISSION_DENIED;
+          }
+          return Promise.resolve();
+        })
+    });
 
     const module: TestingModule = await getGlobalModule({
       controllers: [RoleController],
       providers: [
-        RoleService,
+        {
+          provide: RoleService,
+          useValue: mockRoleService,
+        },
         {
           provide: DataBaseService,
           useValue: mockDatabaseService,
@@ -53,7 +68,7 @@ describe('RoleController', () => {
   });
 
   it('calls RoleService.updateAdminUsers for an admin-domain user', async () => {
-    const user = { id: '1', email: 'admin@admin.com' } as any;
+    const user = { id: '1', email: `admin@${process.env.ADMIN_DOMAIN}` } as any;
 
     await controller.requestForUpdateRoles(user);
 

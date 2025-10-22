@@ -4,6 +4,7 @@ import { JWTState, PrismaClient, User } from '@prisma/client';
 import { DataBaseService } from '../../data-base.service';
 import { CreateJwtStateDto, UpdateJwtStateDto } from './jwt-state.dto';
 import { JwtTokenService } from '../../../auth/jwt-token/jwt-token.service';
+import { AppErrorCodes } from '../../../types/error-codes';
 
 @Injectable()
 export class JwtstateService {
@@ -137,16 +138,13 @@ export class JwtstateService {
     const state = await this.getJWTStateById(id);
 
     if (!state) {
-      throw new HttpException('JWT state not found', HttpStatus.NOT_FOUND);
+      throw AppErrorCodes.JWT_STATE_NOT_FOUND;
     }
 
     if (state.userId === user.id || isAdmin) {
       return await this.deleteJWTState(id);
     }
 
-    throw new HttpException(
-      'You can remove only your jwt state',
-      HttpStatus.UNAUTHORIZED,
-    );
+    throw AppErrorCodes.FORBIDDEN;
   }
 }

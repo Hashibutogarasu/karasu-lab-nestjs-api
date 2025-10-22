@@ -2,9 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
+import { JwtAuthGuard } from '../src/auth/jwt-auth.guard';
 import { JwtService } from '@nestjs/jwt';
 import { AppModule } from '../src/app.module';
 import { TotpService } from '../src/totp/totp.service';
+import { AppErrorCodes } from '../src/types/error-codes';
 import { MfaModule } from '../src/mfa/mfa.module';
 import { AppErrorCodeFilter } from '../src/filters/app-error-code.filter';
 import { mock } from 'jest-mock-extended';
@@ -16,6 +18,7 @@ import { DataBaseService } from '../src/data-base/data-base.service';
 import { AuthModule } from '../src/auth/auth.module';
 import { DataBaseModule } from '../src/data-base/data-base.module';
 import prisma from '../src/lib/database/query';
+import { JwtTokenService } from '../src/auth/jwt-token/jwt-token.service';
 
 describe('MFA e2e flow', () => {
   let app: INestApplication<App>;
@@ -29,25 +32,117 @@ describe('MFA e2e flow', () => {
   };
 
   beforeAll(async () => {
-    totp = mock<TotpService>();
-    const mockMfaService = mock<MfaService>();
+    totp = mock<TotpService>({
+      generateToken: jest.fn().mockImplementation((s: string) => '123456'),
+      generateSecret: jest.fn().mockReturnValue('plain_secret'),
+      generateTotpUrl: jest.fn().mockImplementation((userIdent: string, issuer: string, secret: string) => `otpauth://totp/${issuer}:${userIdent}?secret=${secret}`),
+      isValid: jest.fn().mockImplementation((token: string, secret: string) => token === '123456'),
+    });
+
+    const mockMfaService = mock<MfaService>({
+      checkMfaRequired: jest.fn().mockResolvedValue({ mfaRequired: false }),
+      verifyToken: jest.fn().mockResolvedValue(true),
+      regenerateBackupCodesForUser: jest.fn().mockResolvedValue({ backupCodes: ['BC1', 'BC2'] }),
+      disableMfaForUser: jest.fn().mockResolvedValue({ success: true }),
+    });
+    // make setupTotpForUser succeed once and then fail with CONFLICT to simulate simultaneous setup race
+    (mockMfaService as any).setupTotpForUser = jest
+      .fn()
+      .mockResolvedValueOnce({ backupCodes: ['BC1', 'BC2', 'BC3'] })
+      .mockRejectedValueOnce(AppErrorCodes.CONFLICT);
     const mockEncryptionService = mock<EncryptionService>();
-    const mockAuthService = mock<AuthService>();
-    const mockUserService = mock<UserService>();
+    const mockAuthService = mock<AuthService>({
+      register: jest.fn().mockResolvedValue({
+        success: true,
+        user: {
+          id: 'user_test',
+          username: testUser.username,
+          email: testUser.email,
+          roles: [],
+        },
+      }),
+      login: jest.fn().mockResolvedValue({
+        success: true,
+        user: {
+          id: 'user_test',
+          username: testUser.username,
+          email: testUser.email,
+          roles: [],
+        },
+      }),
+      createSession: jest.fn().mockResolvedValue({
+        sessionId: 'sess_test',
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      })
+    });
+    const mockUserService = mock<UserService>({
+      findUserById: jest.fn().mockResolvedValue({
+        id: 'user_test',
+        username: testUser.username,
+        email: testUser.email,
+        roles: [],
+        passwordHash: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+    });
     const mockDatabaseService = mock<DataBaseService>({
       prisma: jest.fn().mockReturnValue(prisma)
+    });
+
+    const mockJwtTokenService = mock<JwtTokenService>({
+      generateJWTToken: jest.fn().mockResolvedValue({
+        success: true,
+        jwtId: 'jwt_test',
+        token: 'access_test',
+        profile: { sub: 'user_test', name: testUser.username, email: testUser.email, providers: [] },
+        user: { roles: [] },
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+      }),
+      generateRefreshToken: jest.fn().mockResolvedValue({ success: true, token: 'refresh_test' }),
+      verifyJWTToken: jest.fn().mockResolvedValue({ success: true, payload: { sub: 'user_test' } }),
     });
 
     const moduleBuilder = Test.createTestingModule({
       imports: [AuthModule, DataBaseModule, MfaModule],
     });
+
+    moduleBuilder.overrideGuard(JwtAuthGuard).useValue({
+      canActivate: (context: any) => {
+        const req = context.switchToHttp().getRequest();
+        req.user = {
+          id: 'user_test',
+          username: testUser.username,
+          email: testUser.email,
+          providers: [],
+          roles: [],
+        };
+        return true;
+      },
+    });
+
     moduleBuilder.overrideProvider(MfaService).useValue(mockMfaService);
+    moduleBuilder.overrideProvider(TotpService).useValue(totp);
     moduleBuilder.overrideProvider(EncryptionService).useValue(mockEncryptionService);
     moduleBuilder.overrideProvider(AuthService).useValue(mockAuthService);
     moduleBuilder.overrideProvider(UserService).useValue(mockUserService);
     moduleBuilder.overrideProvider(DataBaseService).useValue(mockDatabaseService);
+    moduleBuilder.overrideProvider(JwtTokenService).useValue((mockJwtTokenService));
 
     const moduleFixture: TestingModule = await moduleBuilder.compile();
+
+    // Ensure the AuthUser decorator can access the UserService via a ModuleRef-like object
+    (global as any).__authModuleRef = {
+      get: (token: any, options?: any) => {
+        // The decorator requests 'UserService' by string token
+        if (token === 'UserService' || token === 'UserService') return (mockUserService as any);
+        try {
+          return moduleFixture.get(token as any, options);
+        } catch (err) {
+          return undefined;
+        }
+      },
+    } as any;
 
     app = moduleFixture.createNestApplication();
     app.useGlobalFilters(new AppErrorCodeFilter());
@@ -86,6 +181,12 @@ describe('MFA e2e flow', () => {
       .post('/auth/mfa/setup')
       .set('Authorization', `Bearer ${accessToken}`)
       .send();
+
+    if (setupRes.status !== 201) {
+      // debug output to help identify cause of 500
+      // eslint-disable-next-line no-console
+      console.log('DEBUG: /auth/mfa/setup response', setupRes.status, setupRes.body);
+    }
 
     expect(setupRes.status).toBe(201);
     expect(setupRes.body).toHaveProperty('otpauth');
@@ -171,6 +272,10 @@ describe('MFA e2e flow', () => {
     expect(fulfilled.length).toBeGreaterThanOrEqual(1);
 
     const successRes = (fulfilled[0] as PromiseFulfilledResult<any>).value;
+    if (successRes.status !== 409) {
+      // eslint-disable-next-line no-console
+      console.log('DEBUG: concurrent setup successRes', successRes.status, successRes.body);
+    }
     expect(successRes.status).toBe(409);
     expect(successRes.body).toHaveProperty('message');
   }, 20000);

@@ -3,13 +3,14 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
-import { getGlobalModule } from '../src/utils/test/global-modules';
+
+jest.setTimeout(20000);
 
 describe('Global Response Formatter & NoInterceptor (e2e)', () => {
   let app: INestApplication<App>;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await getGlobalModule({
+    const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
 

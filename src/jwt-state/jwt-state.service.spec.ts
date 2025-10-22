@@ -1,11 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { HttpException } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { JwtstateService } from '../data-base/query/jwtstate/jwtstate.service';
 import { mock } from 'jest-mock-extended';
 import { DataBaseService } from '../data-base/data-base.service';
 import { UtilityService } from '../data-base/utility/utility.service';
 import { JwtTokenService } from '../auth/jwt-token/jwt-token.service';
+import { AppErrorCodes } from '../types/error-codes';
 
 describe('JwtStateService', () => {
   const mockUser: User = {
@@ -33,7 +33,31 @@ describe('JwtStateService', () => {
   let mockUtilityService: UtilityService;
 
   beforeEach(async () => {
-    mockDatabaseService = new DataBaseService();
+    mockDatabaseService = mock<DataBaseService>();
+    (mockDatabaseService.prisma as unknown as jest.Mock) = jest.fn().mockReturnValue({
+      jWTState: {
+        create: jest.fn().mockResolvedValue(sampleJWTState),
+        findMany: jest.fn().mockImplementation(({ where }) => {
+          if (where?.userId === mockUser.id) return Promise.resolve([sampleJWTState]);
+          return Promise.resolve([]);
+        }),
+        findFirst: jest.fn().mockImplementation(({ where }) => {
+          if (where?.id === sampleJWTState.id) {
+            if (where.userId && where.userId !== mockUser.id) return Promise.resolve(null);
+            return Promise.resolve(sampleJWTState);
+          }
+          return Promise.resolve(null);
+        }),
+        update: jest.fn().mockImplementation(({ where, data }) => {
+          if (where?.id !== sampleJWTState.id) return Promise.reject(new Error('Not found'));
+          return Promise.resolve({ ...sampleJWTState, ...data });
+        }),
+        delete: jest.fn().mockImplementation(({ where }) => {
+          if (where?.id !== sampleJWTState.id) return Promise.reject(new Error('Not found'));
+          return Promise.resolve(sampleJWTState);
+        }),
+      },
+    });
     mockUtilityService = mock<UtilityService>();
     mockJwtTokenService = mock<JwtTokenService>({
       generateJWTToken: jest.fn().mockResolvedValue({
@@ -55,8 +79,8 @@ describe('JwtStateService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        JwtstateService,
         { provide: DataBaseService, useValue: mockDatabaseService },
+        JwtstateService,
         { provide: UtilityService, useValue: mockUtilityService },
         { provide: JwtTokenService, useValue: mockJwtTokenService },
       ],
@@ -115,7 +139,7 @@ describe('JwtStateService', () => {
     it('remove should throw NOT_FOUND when deleting non-existing state', async () => {
       await expect(
         mockJwtStateService.remove('nonexistent', mockUser, false),
-      ).rejects.toThrow(HttpException);
+      ).rejects.toThrow(AppErrorCodes.JWT_STATE_NOT_FOUND);
     });
   });
 });

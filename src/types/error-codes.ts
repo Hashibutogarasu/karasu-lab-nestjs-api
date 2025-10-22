@@ -205,4 +205,7 @@ export const AppErrorCodes = {
 
   // Role
   ROLE_NOT_FOUND: new AppErrorCode(404, 'Role not found'),
+
+  // JWT State
+  JWT_STATE_NOT_FOUND: new AppErrorCode(404, 'JWT state not found'),
 };

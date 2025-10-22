@@ -5,8 +5,8 @@ import { PrismaClient } from '@prisma/client';
 export class DataBaseService {
   private _prisma: PrismaClient;
 
-  constructor(client?: PrismaClient) {
-    this._prisma = client ? client : new PrismaClient();
+  constructor() {
+    this._prisma = new PrismaClient();
   }
 
   prisma() {
