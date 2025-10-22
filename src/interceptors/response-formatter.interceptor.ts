@@ -8,10 +8,14 @@ import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { NO_INTERCEPTOR_KEY } from './no-interceptor.decorator';
+import z from 'zod';
+import { createGlobalResponseSchema } from '../app-global-response';
+
+const messageObjectSchema = z.object({ message: z.any() }).passthrough();
 
 @Injectable()
 export class ResponseFormatterInterceptor implements NestInterceptor {
-  constructor(private readonly reflector: Reflector) {}
+  constructor(private readonly reflector: Reflector) { }
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const handler = context.getHandler();
@@ -30,22 +34,19 @@ export class ResponseFormatterInterceptor implements NestInterceptor {
       return next.handle();
     }
 
+    const globalRespSchema = createGlobalResponseSchema(z.any());
+
     return next.handle().pipe(
       map((value) => {
-        // Avoid double wrapping
-        if (
-          value &&
-          typeof value === 'object' &&
-          'success' in value &&
-          'data' in value
-        ) {
-          return value;
-        }
+        const parseResult = globalRespSchema.safeParse(value);
+        if (parseResult.success) return value;
 
-        let message = 'OK';
-        if (value && typeof value === 'object' && 'message' in value) {
-          const { message: msg, ...rest } = value as Record<string, any>;
-          message = typeof msg === 'string' ? msg : 'OK';
+        const defaultMessage = 'OK';
+
+        const msgObjParse = messageObjectSchema.safeParse(value);
+        if (msgObjParse.success) {
+          const { message: msg, ...rest } = msgObjParse.data as Record<string, unknown>;
+          const message = typeof msg === 'string' ? msg : defaultMessage;
           return {
             success: true,
             message,
@@ -55,7 +56,7 @@ export class ResponseFormatterInterceptor implements NestInterceptor {
 
         return {
           success: true,
-          message,
+          message: defaultMessage,
           data: value,
         };
       }),

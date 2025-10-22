@@ -160,9 +160,8 @@ export class AuthController {
       const finalCallbackUrl = callbackUrl || this.DEFAULT_CALLBACK_URL;
 
       // APIのベースURLを取得してバックエンドのコールバックURIを構築
-      // Use explicit BACKEND_BASE_URL if set, otherwise fall back to BASE_URL or the current request host.
+      // Use explicit BASE_URL if set, otherwise fall back to the current request host.
       const baseUrl =
-        process.env.BACKEND_BASE_URL ||
         process.env.BASE_URL ||
         `${req.protocol}://${req.headers.host}`;
       const backendRedirectUri = `${baseUrl.replace(/\/$/, '')}/auth/callback/${provider}`;
@@ -420,9 +419,9 @@ export class AuthController {
         throw AppErrorCodes.INTERNAL_SERVER_ERROR;
       }
 
-      // Use explicit BACKEND_BASE_URL if set, otherwise fall back to BASE_URL or the current request host.
+      // Use explicit BASE_URL if set, otherwise fall back to BASE_URL or the current request host.
       const baseUrl =
-        process.env.BACKEND_BASE_URL! ||
+        process.env.BASE_URL! ||
         `${req.protocol}://${req.headers.host}`;
       const backendCallbackUri = `${baseUrl.replace(/\/$/, '')}/auth/callback/${authStateDto.provider}`;
 
