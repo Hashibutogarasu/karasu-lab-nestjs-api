@@ -2,6 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UtilityService } from './utility.service';
 import { DataBaseService } from '../data-base.service';
 import { mock } from 'jest-mock-extended';
+import { AppConfigService } from '../../app-config/app-config.service';
+import { APP_CONFIG } from '../../app-config/app-config.constants';
 
 describe('UtilityService', () => {
   let service: UtilityService;
@@ -13,6 +15,11 @@ describe('UtilityService', () => {
       providers: [
         UtilityService,
         { provide: DataBaseService, useValue: mockDataBaseService },
+        AppConfigService,
+        {
+          provide: APP_CONFIG,
+          useValue: {},
+        },
       ],
     }).compile();
 

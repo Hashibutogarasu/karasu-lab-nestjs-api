@@ -11,6 +11,7 @@ import { PrismaClient } from '@prisma/client';
 import { AppErrorCodes } from '../../types/error-codes';
 import { UserService } from '../query/user/user.service';
 import { BaseService } from '../../impl/base-service';
+import { AppConfigService } from '../../app-config/app-config.service';
 
 @Injectable()
 export class UtilityService extends BaseService {
@@ -20,8 +21,9 @@ export class UtilityService extends BaseService {
     @Inject(forwardRef(() => DataBaseService))
     private readonly databaseService: DataBaseService,
     private readonly moduleRef: ModuleRef,
+    appConfig: AppConfigService
   ) {
-    super();
+    super(appConfig);
     this.prisma = this.databaseService.prisma();
   }
 

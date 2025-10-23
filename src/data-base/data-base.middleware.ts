@@ -12,17 +12,16 @@ import { BaseService } from '../impl/base-service';
 @Injectable()
 export class DataBaseMiddleware
   extends BaseService
-  implements NestMiddleware, OnModuleInit
-{
+  implements NestMiddleware, OnModuleInit {
   constructor(
-    private readonly appConfig: AppConfigService,
     private readonly dbService: DataBaseService,
+    appConfig: AppConfigService,
   ) {
-    super();
+    super(appConfig);
   }
 
   async onModuleInit() {
-    const databaseUrl = this.appConfig.get('databaseUrl');
+    const databaseUrl = this.config.get('databaseUrl');
 
     if (!databaseUrl) {
       throw AppErrorCodes.INVALID_DATABASE_URL;

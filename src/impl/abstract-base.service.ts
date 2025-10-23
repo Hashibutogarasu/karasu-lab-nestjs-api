@@ -3,14 +3,12 @@ import { IBaseService } from '../interfaces/base.service.interface';
 import { AppConfigService } from '../app-config/app-config.service';
 
 export abstract class AbstractBaseService
-  implements IBaseService, OnModuleInit
-{
+  implements IBaseService, OnModuleInit {
   private _logger: Logger;
 
   constructor(private readonly configService: AppConfigService) {
     const name =
-      (this && this.constructor && this.constructor.name) ||
-      AbstractBaseService.name;
+      this.constructor.name;
     this._logger = new Logger(name);
   }
 
