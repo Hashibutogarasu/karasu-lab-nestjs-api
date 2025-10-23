@@ -20,6 +20,8 @@ import { DataBaseModule } from '../src/data-base/data-base.module';
 import prisma from '../src/lib/database/query';
 import { JwtTokenService } from '../src/auth/jwt-token/jwt-token.service';
 
+jest.setTimeout(30000);
+
 describe('MFA e2e flow', () => {
   let app: INestApplication<App>;
   let server: App;

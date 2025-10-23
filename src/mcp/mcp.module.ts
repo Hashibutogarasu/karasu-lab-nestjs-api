@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { McpService } from './mcp.service';
 import { McpModule } from '@nestjs-mcp/server';
-import { DiscordAppService } from '../discord-app/discord-app.service';
 
 @Module({
   imports: [
@@ -13,6 +12,6 @@ import { DiscordAppService } from '../discord-app/discord-app.service';
       transports: { sse: { enabled: false } },
     }),
   ],
-  providers: [McpService, DiscordAppService],
+  providers: [McpService],
 })
 export class McpServerModule {}

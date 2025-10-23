@@ -13,12 +13,10 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
-import { RegisterDto, LoginDto } from './dto/create-auth.dto';
 import {
   safeParseRegisterInput,
   safeParseLoginInput,
 } from '../lib/validation/auth.validation';
-import type { AuthStateDto, VerifyTokenDto } from './dto/auth.dto';
 import type { AuthState } from '@prisma/client';
 import { OAuthProviderFactory } from '../lib/auth/oauth-provider.factory';
 import {
@@ -35,6 +33,7 @@ import { AuthCoreService } from './sns/auth-core/auth-core.service';
 import { MfaService } from '../data-base/query/mfa/mfa.service';
 import { ExternalProviderAccessTokenService } from '../data-base/query/external-provider-access-token/external-provider-access-token.service';
 import { JwtTokenService } from './jwt-token/jwt-token.service';
+import { AuthStateDto, LoginDto, RegisterDto, VerifyTokenDto } from './auth.dto';
 
 @NoInterceptor()
 @Controller('auth')
