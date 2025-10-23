@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { UpdateAuthDto } from './dto/update-auth.dto';
 import { AuthResponse } from '../lib/auth/authentication';
 import { WorkflowService } from './sns/workflow/workflow.service';
 import { ManagerService } from './session/manager/manager.service';
@@ -14,6 +13,7 @@ import type {
 } from '../lib/validation/auth.validation';
 import { JwtPayload } from './jwt.strategy';
 import { AppErrorCodes } from '../types/error-codes';
+import { UpdateAuthDto } from './auth.dto';
 
 interface SessionResponse {
   sessionId: string;
