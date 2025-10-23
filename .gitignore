@@ -64,3 +64,4 @@ design/
 
 private_key.pem
 public_key.pem
+pnpm-lock.yaml
