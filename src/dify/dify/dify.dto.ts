@@ -14,9 +14,9 @@ export const fileSchema = z.object({
   transfer_method: z.enum(['remote_url', 'local_file']),
   url: z.string().optional(),
   upload_file_id: z.string().optional(),
-})
+});
 
-export class FileDto extends createZodDto(fileSchema) { }
+export class FileDto extends createZodDto(fileSchema) {}
 
 export const chatMessageRequestSchema = z.object({
   query: z.string().min(1, 'Query must not be empty'),
@@ -29,18 +29,22 @@ export const chatMessageRequestSchema = z.object({
   trace_id: z.string().optional(),
 });
 
-export class ChatMessageRequestDto extends createZodDto(chatMessageRequestSchema) { }
+export class ChatMessageRequestDto extends createZodDto(
+  chatMessageRequestSchema,
+) {}
 
 export const difyStreamResponseSchema = z.object({
   event: z.string(),
   data: z.any(),
 });
 
-export class DifyStreamResponse extends createZodDto(difyStreamResponseSchema) { }
+export class DifyStreamResponse extends createZodDto(
+  difyStreamResponseSchema,
+) {}
 
 export const difyApiConfigSchema = z.object({
   baseUrl: z.string().url(),
   apiKey: z.string(),
 });
 
-export class DifyApiConfig extends createZodDto(difyApiConfigSchema) { }
+export class DifyApiConfig extends createZodDto(difyApiConfigSchema) {}

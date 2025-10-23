@@ -1,4 +1,4 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { MiddlewareConsumer, Module, forwardRef } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
 import { UtilityService } from './utility/utility.service';
 import { PasswordService } from './utility/password/password.service';
@@ -13,6 +13,7 @@ import { UserService } from './query/user/user.service';
 import { ExtraProfileService } from './query/extra-profile/extra-profile.service';
 import { TotpService } from '../totp/totp.service';
 import { PermissionBitcalcModule } from '../permission-bitcalc/permission-bitcalc.module';
+import { DataBaseMiddleware } from './data-base.middleware';
 
 @Module({
   imports: [
@@ -47,4 +48,10 @@ import { PermissionBitcalcModule } from '../permission-bitcalc/permission-bitcal
     ExtraProfileService,
   ],
 })
-export class DataBaseModule {}
+export class DataBaseModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(DataBaseMiddleware)
+      .forRoutes('*');
+  }
+}

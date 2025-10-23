@@ -1,30 +1,35 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DiscordTokenService } from './discord-token.service';
-import { getGlobalModule } from '../../utils/test/global-modules';
 import { mock } from 'jest-mock-extended';
 import { DataBaseService } from '../../data-base/data-base.service';
 import { UtilityService } from '../../data-base/utility/utility.service';
 import { RoleService } from '../../data-base/query/role/role.service';
+import { AppConfigService } from '../../app-config/app-config.service';
 
 describe('DiscordTokenService', () => {
   let service: DiscordTokenService;
-
-  const OLD_ENV = process.env;
-
   beforeEach(async () => {
     jest.resetModules();
-    process.env = { ...OLD_ENV };
-    process.env.DISCORD_CLIENT_ID = 'discord-client-id';
-    process.env.DISCORD_CLIENT_SECRET = 'discord-client-secret';
-    process.env.DISCORD_CALLBACK_URL = 'http://localhost:3000/auth/callback';
 
     const mockDatabaseService = mock<DataBaseService>();
     const mockUtilityService = mock<UtilityService>();
     const mockRoleService = mock<RoleService>();
 
-    const module: TestingModule = await getGlobalModule({
+    const mockAppConfigService = mock<AppConfigService>({
+      get: jest.fn().mockResolvedValue({
+        discordClientId: 'discord-client-id',
+        discordClientSecret: 'discord-client-secret',
+        discordRedirectUri: 'http://localhost:3000/auth/callback',
+      })
+    });
+
+    const module: TestingModule = await Test.createTestingModule({
       providers: [
         DiscordTokenService,
+        {
+          provide: AppConfigService,
+          useValue: mockAppConfigService,
+        },
         {
           provide: DataBaseService,
           useValue: mockDatabaseService,
@@ -44,7 +49,6 @@ describe('DiscordTokenService', () => {
   });
 
   afterEach(() => {
-    process.env = OLD_ENV;
     jest.restoreAllMocks();
   });
 
