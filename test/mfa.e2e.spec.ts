@@ -305,14 +305,6 @@ describe('MFA e2e flow', () => {
     expect(fulfilled.length).toBeGreaterThanOrEqual(1);
 
     const successRes = (fulfilled[0] as PromiseFulfilledResult<any>).value;
-    if (successRes.status !== 409) {
-      // eslint-disable-next-line no-console
-      console.log(
-        'DEBUG: concurrent setup successRes',
-        successRes.status,
-        successRes.body,
-      );
-    }
     expect(successRes.status).toBe(409);
     expect(successRes.body).toHaveProperty('message');
   }, 20000);
