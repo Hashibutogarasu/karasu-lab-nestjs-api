@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import * as necord from 'necord';
-import { createCommandGroupDecorator, Subcommand } from 'necord';
 import { CoinService } from '../gmo/coin/coin.service';
 
 @Injectable()

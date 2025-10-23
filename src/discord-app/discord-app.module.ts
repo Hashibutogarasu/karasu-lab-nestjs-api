@@ -10,9 +10,11 @@ import { DiscordAppCronService } from './discord-app-cron.service';
 
 @Module({
   imports: [
-    NecordModule.forRoot({
-      token: process.env.DISCORD_BOT_TOKEN!,
-      intents: [IntentsBitField.Flags.Guilds],
+    NecordModule.forRootAsync({
+      useFactory: () => ({
+        token: process.env.DISCORD_BOT_TOKEN!,
+        intents: [IntentsBitField.Flags.Guilds],
+      }),
     }),
   ],
   controllers: [DiscordAppController],

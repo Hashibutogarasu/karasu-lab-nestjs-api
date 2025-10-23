@@ -3,6 +3,7 @@ import z from 'zod';
 import { AuthResponse, LoginRequest, RegisterRequest } from '../../../lib';
 import { UserService } from '../../../data-base/query/user/user.service';
 import { AppErrorCodes } from '../../../types/error-codes';
+import { usernameSchema } from '../../auth.dto';
 
 @Injectable()
 export class WorkflowService {
@@ -64,12 +65,7 @@ export class WorkflowService {
 
       return {
         success: true,
-        user: {
-          id: newUser.id,
-          username: newUser.username,
-          email: newUser.email,
-          roles: newUser.roles,
-        },
+        user: newUser,
       };
     } catch (error) {
       return {
@@ -106,12 +102,7 @@ export class WorkflowService {
 
       return {
         success: true,
-        user: {
-          id: verifiedUser.id,
-          username: verifiedUser.username,
-          email: verifiedUser.email,
-          roles: verifiedUser.roles,
-        },
+        user: verifiedUser,
       };
     } catch (error) {
       return {
@@ -169,15 +160,6 @@ export class WorkflowService {
     isValid: boolean;
     errors: string[];
   } {
-    const usernameSchema = z
-      .string()
-      .min(3, { message: 'Username must be at least 3 characters long' })
-      .max(50, { message: 'Username must be no more than 50 characters long' })
-      .regex(/^[a-zA-Z0-9_-]+$/, {
-        message:
-          'Username can only contain letters, numbers, underscores, and hyphens',
-      });
-
     const result = usernameSchema.safeParse(username);
     if (result.success) {
       return { isValid: true, errors: [] };

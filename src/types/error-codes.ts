@@ -79,6 +79,11 @@ export const AppErrorCodes = {
   INVALID_USER_NAME: new AppErrorCode(400, 'Invalid username format'),
   REVOKED_TOKEN: new AppErrorCode(401, 'Token has been revoked'),
   EXPIRED_TOKEN: new AppErrorCode(401, 'Token has expired'),
+  USERNAME_ALREADY_EXISTS: new AppErrorCode(409, 'Username already exists'),
+  USER_CREATE_DATABASE_ERROR: new AppErrorCode(
+    500,
+    'Failed to create user in database',
+  ),
 
   // OAuth Errors
   UNSUPPORTED_PROVIDER: new AppErrorCode(

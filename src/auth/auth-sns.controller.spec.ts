@@ -16,6 +16,7 @@ import { RoleService } from '../data-base/query/role/role.service';
 import { AuthCoreService } from './sns/auth-core/auth-core.service';
 import { UserService } from '../data-base/query/user/user.service';
 import { WorkflowService } from './sns/workflow/workflow.service';
+import { MfaService } from '../data-base/query/mfa/mfa.service';
 
 // Mock implementations
 jest.mock('../lib/auth/sns-auth');
@@ -98,6 +99,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
     mockSnsAuthCallback = mock<snsAuth.SnsAuthCallback>();
     mockUserService = mock<UserService>();
     mockSnsWorkflowService = mock<WorkflowService>();
+    const mockMfaService = mock<MfaService>();
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
@@ -145,6 +147,10 @@ describe('AuthController - SNS OAuth Authentication', () => {
         {
           provide: WorkflowService,
           useValue: mockSnsWorkflowService,
+        },
+        {
+          provide: MfaService,
+          useValue: mockMfaService,
         },
       ],
     }).compile();

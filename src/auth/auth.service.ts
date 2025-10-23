@@ -6,14 +6,14 @@ import { ManagerService } from './session/manager/manager.service';
 import { UserService } from '../data-base/query/user/user.service';
 import { AuthStateService } from '../data-base/query/auth-state/auth-state.service';
 import { JwtstateService } from '../data-base/query/jwtstate/jwtstate.service';
-import type {
-  RegisterInput,
-  LoginInput,
-  UserResponse,
-} from '../lib/validation/auth.validation';
 import { JwtPayload } from './jwt.strategy';
 import { AppErrorCodes } from '../types/error-codes';
-import { UpdateAuthDto } from './auth.dto';
+import {
+  LoginDto,
+  RegisterDto,
+  UpdateAuthDto,
+  UserResponseDto,
+} from './auth.dto';
 
 interface SessionResponse {
   sessionId: string;
@@ -35,98 +35,49 @@ export class AuthService {
     private readonly workflowService: WorkflowService,
     private readonly managerService: ManagerService,
   ) {}
+
   /**
    * ユーザー登録処理
    */
-  async register(registerInput: RegisterInput): Promise<AuthResponse> {
+  async register(registerDto: RegisterDto): Promise<AuthResponse> {
     try {
-      // 詳細なバリデーション
-      const usernameValidation = this.workflowService.validateUsernameFormat(
-        registerInput.username,
-      );
-      if (!usernameValidation.isValid) {
-        return {
-          success: false,
-          error: 'invalid_request',
-          errorDescription: usernameValidation.errors.join(', '),
-        };
-      }
-
-      if (!this.workflowService.validateEmailFormat(registerInput.email)) {
-        return {
-          success: false,
-          error: 'invalid_request',
-          errorDescription: 'Invalid email format',
-        };
-      }
-
-      const passwordValidation = this.workflowService.validatePasswordStrength(
-        registerInput.password,
-      );
-      if (!passwordValidation.isValid) {
-        return {
-          success: false,
-          error: 'weak_password',
-          errorDescription: passwordValidation.errors.join(', '),
-        };
-      }
-
-      // ユーザー登録実行
-      // 重複チェック
       const existingByUsername = await this.userService.findUserByUsername(
-        registerInput.username,
+        registerDto.username,
       );
       if (existingByUsername) {
-        return {
-          success: false,
-          error: 'user_exists',
-          errorDescription: 'Username is already taken.',
-        };
+        throw AppErrorCodes.USERNAME_ALREADY_EXISTS;
       }
 
       const existingByEmail = await this.userService.findUserByEmail(
-        registerInput.email,
+        registerDto.email,
       );
       if (existingByEmail) {
-        return {
-          success: false,
-          error: 'user_exists',
-          errorDescription: 'Email is already registered.',
-        };
+        throw AppErrorCodes.USER_EXISTS;
       }
 
       const newUser = await this.userService.createUser({
-        username: registerInput.username,
-        email: registerInput.email,
-        password: registerInput.password,
+        username: registerDto.username,
+        email: registerDto.email,
+        password: registerDto.password,
       });
 
       return {
         success: true,
-        user: {
-          id: newUser.id,
-          username: newUser.username,
-          email: newUser.email,
-          roles: newUser.roles ?? [],
-        },
+        user: newUser,
       };
     } catch (error) {
-      return {
-        success: false,
-        error: 'server_error',
-        errorDescription: 'An unexpected error occurred during registration',
-      };
+      throw AppErrorCodes.USER_CREATE_DATABASE_ERROR;
     }
   }
 
   /**
    * ユーザーログイン処理
    */
-  async login(loginInput: LoginInput): Promise<AuthResponse> {
+  async login(loginDto: LoginDto): Promise<AuthResponse> {
     try {
       const verified = await this.userService.verifyUserPassword(
-        loginInput.usernameOrEmail,
-        loginInput.password,
+        loginDto.usernameOrEmail,
+        loginDto.password,
       );
 
       if (!verified) {
@@ -139,12 +90,7 @@ export class AuthService {
 
       return {
         success: true,
-        user: {
-          id: verified.id,
-          username: verified.username,
-          email: verified.email,
-          roles: verified.roles ?? [],
-        },
+        user: verified,
       };
     } catch (error) {
       return {
@@ -171,7 +117,7 @@ export class AuthService {
   /**
    * ユーザープロフィール取得
    */
-  async getProfile(userId: string): Promise<UserResponse | null> {
+  async getProfile(userId: string): Promise<UserResponseDto | null> {
     try {
       const user = await this.userService.findById(userId);
       if (!user) {
@@ -250,7 +196,7 @@ export class AuthService {
   /**
    * JWTトークン生成
    */
-  async generateJwtToken(user: UserResponse): Promise<TokenResponse> {
+  async generateJwtToken(user: UserResponseDto): Promise<TokenResponse> {
     const payload = { sub: user.id, username: user.username };
     const access_token = this.jwtService.sign(payload);
     return {
@@ -262,7 +208,7 @@ export class AuthService {
   /**
    * 全てのユーザーを取得（管理者向け）
    */
-  async findAll(): Promise<UserResponse[]> {
+  async findAll(): Promise<UserResponseDto[]> {
     try {
       const users = await this.userService.findAllUsers();
       return users.map((user) => ({
@@ -280,7 +226,7 @@ export class AuthService {
   /**
    * 特定のユーザーを取得
    */
-  async findOne(id: string): Promise<UserResponse | null> {
+  async findOne(id: string): Promise<UserResponseDto | null> {
     try {
       const user = await this.userService.findById(id);
       if (!user) {
@@ -305,10 +251,9 @@ export class AuthService {
   async update(
     id: string,
     updateAuthDto: UpdateAuthDto,
-  ): Promise<UserResponse | null> {
+  ): Promise<UserResponseDto | null> {
     try {
-      // 入力バリデーション
-      const updateData: any = {};
+      const updateData: Partial<UpdateAuthDto> = {};
 
       if (updateAuthDto.username) {
         const usernameValidation = this.workflowService.validateUsernameFormat(
@@ -392,7 +337,7 @@ export class AuthService {
   /**
    * ユーザーIDでプロフィールを取得
    */
-  async getUserProfileById(userId: string): Promise<UserResponse | null> {
+  async getUserProfileById(userId: string): Promise<UserResponseDto | null> {
     try {
       const user = await this.userService.findById(userId);
       if (!user) {

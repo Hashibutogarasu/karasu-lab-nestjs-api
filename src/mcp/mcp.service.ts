@@ -3,7 +3,6 @@ import { Resolver, Tool } from '@nestjs-mcp/server';
 
 @Resolver()
 export class McpService {
-
   @Tool({ name: 'server_health_check' })
   healthCheck(): CallToolResult {
     return {

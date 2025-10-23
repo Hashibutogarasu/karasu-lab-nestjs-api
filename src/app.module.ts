@@ -1,5 +1,5 @@
 import { MiddlewareConsumer, Module } from '@nestjs/common';
-import { APP_INTERCEPTOR, ModuleRef } from '@nestjs/core';
+import { APP_INTERCEPTOR, APP_PIPE, ModuleRef } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -39,16 +39,21 @@ import { setAuthUserModuleRef } from './auth/decorators/auth-user.decorator';
 import { setAuthGoogleProfileModuleRef } from './auth/decorators/auth-google-user.decorator';
 import { setAuthDiscordProfileModuleRef } from './auth/decorators/auth-discord-user.decorator';
 import { JwtModule } from '@nestjs/jwt';
+import { ZodValidationPipe } from './zod-validation-type';
 
 @Module({
   imports: [
     ScheduleModule.forRoot(),
     OauthModule,
     AccountModule,
-    ...(process.env.DISCORD_BOT_TOKEN ? [{
-      global: true,
-      module: DiscordAppModule,
-    }] : []),
+    ...(process.env.DISCORD_BOT_TOKEN
+      ? [
+          {
+            global: true,
+            module: DiscordAppModule,
+          },
+        ]
+      : []),
     MarkdownModule,
     McpServerModule,
     DifyModule,
@@ -65,16 +70,16 @@ import { JwtModule } from '@nestjs/jwt';
     MfaModule,
     process.env.REDIS_HOST
       ? CacheModule.register({
-        store: async () =>
-          await redisStore({
-            socket: {
-              host: process.env.REDIS_HOST!,
-              port: process.env.REDIS_PORT!,
-            },
-            ttl: 10,
-          }),
-        isGlobal: true,
-      })
+          store: async () =>
+            await redisStore({
+              socket: {
+                host: process.env.REDIS_HOST!,
+                port: process.env.REDIS_PORT!,
+              },
+              ttl: 10,
+            }),
+          isGlobal: true,
+        })
       : CacheModule.register({ isGlobal: true, ttl: 10 }),
     {
       global: true,
@@ -104,6 +109,10 @@ import { JwtModule } from '@nestjs/jwt';
     {
       provide: APP_INTERCEPTOR,
       useClass: ConcurrentRequestInterceptor,
+    },
+    {
+      provide: APP_PIPE,
+      useValue: ZodValidationPipe,
     },
     MfaService,
     UserService,

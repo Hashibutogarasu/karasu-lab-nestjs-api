@@ -7,6 +7,8 @@ import { Prisma, Role, User } from '@prisma/client';
 import { ModuleRef } from '@nestjs/core';
 import { AppErrorCodes } from '../../types/error-codes';
 import { UserService } from '../../data-base/query/user/user.service';
+import { RemoveNullProperties } from '../../types/remove-null-properties';
+import { OmitFunctions } from '../../types/omit-functions';
 
 /**
  * JWT認証されたユーザー情報を取得するデコレーター
@@ -22,10 +24,12 @@ import { UserService } from '../../data-base/query/user/user.service';
  */
 
 export type UserWithRelations = Prisma.UserGetPayload<{
-  include: { roles: true; extraProfiles: true };
+  include: { roles: true; extraProfiles: true; providers: string[] };
 }> & { roles: Role[] };
 
-export type PublicUser = Omit<UserWithRelations, 'passwordHash'>;
+export type PublicUser = RemoveNullProperties<
+  OmitFunctions<Omit<UserWithRelations, 'passwordHash'>>
+>;
 
 export const AuthUser = createParamDecorator(
   async (data: unknown, ctx: ExecutionContext): Promise<PublicUser | null> => {

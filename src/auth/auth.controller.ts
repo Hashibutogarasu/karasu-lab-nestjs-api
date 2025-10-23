@@ -10,13 +10,10 @@ import {
   Param,
   UseGuards,
   Optional,
+  UsePipes,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
-import {
-  safeParseRegisterInput,
-  safeParseLoginInput,
-} from '../lib/validation/auth.validation';
 import type { AuthState } from '@prisma/client';
 import { OAuthProviderFactory } from '../lib/auth/oauth-provider.factory';
 import {
@@ -33,12 +30,34 @@ import { AuthCoreService } from './sns/auth-core/auth-core.service';
 import { MfaService } from '../data-base/query/mfa/mfa.service';
 import { ExternalProviderAccessTokenService } from '../data-base/query/external-provider-access-token/external-provider-access-token.service';
 import { JwtTokenService } from './jwt-token/jwt-token.service';
-import { AuthStateDto, LoginDto, RegisterDto, VerifyTokenDto } from './auth.dto';
+import {
+  AuthStateDto,
+  authStateSchema,
+  LoginDto,
+  loginSchema,
+  RefreshTokenDto,
+  refreshTokenSchema,
+  RegisterDto,
+  registerSchema,
+  VerifyTokenDto,
+  verifyTokenSchema,
+} from './auth.dto';
+import { ZodValidationPipe } from '../zod-validation-type';
 
 @NoInterceptor()
 @Controller('auth')
 export class AuthController {
   private readonly DEFAULT_CALLBACK_URL = process.env.FRONTEND_CALLBACK_URL!;
+
+  constructor(
+    private readonly authService: AuthService,
+    private readonly externalProviderAccessTokenService: ExternalProviderAccessTokenService,
+    private readonly oauthProviderFactory: OAuthProviderFactory,
+    private readonly authState: AuthStateService,
+    private readonly snsAuthCoreService: AuthCoreService,
+    private readonly jwtTokenService: JwtTokenService,
+    private readonly mfaService: MfaService,
+  ) {}
 
   // Helper to fetch codeChallenge from AuthState if available
   private async getCodeChallengeFromState(stateCode?: string) {
@@ -51,16 +70,6 @@ export class AuthController {
       return undefined;
     }
   }
-
-  constructor(
-    private readonly authService: AuthService,
-    private readonly externalProviderAccessTokenService: ExternalProviderAccessTokenService,
-    private readonly oauthProviderFactory: OAuthProviderFactory,
-    private readonly authState: AuthStateService,
-    private readonly snsAuthCoreService: AuthCoreService,
-    private readonly jwtTokenService: JwtTokenService,
-    @Optional() private readonly mfaService?: MfaService,
-  ) {}
 
   /**
    * 利用可能な外部プロバイダーリストを返すエンドポイント
@@ -97,41 +106,22 @@ export class AuthController {
    * ユーザー登録エンドポイント
    * POST /auth/register
    */
+  @UsePipes(new ZodValidationPipe(registerSchema))
   @Post('register')
   async register(
     @Body() registerDto: RegisterDto,
     @Res() res: Response,
   ): Promise<void> {
     try {
-      // 入力データのバリデーション
-      const validationResult = safeParseRegisterInput(registerDto);
-      if (!validationResult.success) {
-        throw AppErrorCodes.VALIDATION_FAILED;
-      }
-
-      // ユーザー登録処理
-      const result = await this.authService.register(validationResult.data);
-
-      if (!result.success) {
-        // エラーレスポンスの処理
-        if (result.error === 'user_exists') {
-          throw AppErrorCodes.USER_EXISTS;
-        } else if (result.error === 'weak_password') {
-          throw AppErrorCodes.WEAK_PASSWORD;
-        } else {
-          throw AppErrorCodes.INTERNAL_SERVER_ERROR;
-        }
-      }
+      const { user } = await this.authService.register(registerDto);
+      const { passwordHash, ...publicUser } = (user as any) || {};
 
       res.status(HttpStatus.CREATED).json({
         message: 'User registered successfully',
-        user: result.user,
+        user: publicUser,
       });
     } catch (error) {
-      if (error instanceof AppErrorCode) {
-        throw error;
-      }
-      throw AppErrorCodes.INTERNAL_SERVER_ERROR;
+      return Promise.reject(error);
     }
   }
 
@@ -213,6 +203,7 @@ export class AuthController {
    * ユーザーログインエンドポイント
    * POST /auth/login
    */
+  @UsePipes(new ZodValidationPipe(loginSchema))
   @Post('login')
   async login(
     @Body() loginDto: LoginDto,
@@ -220,14 +211,7 @@ export class AuthController {
     @Req() req: Request,
   ): Promise<any> {
     try {
-      // 入力データのバリデーション
-      const validationResult = safeParseLoginInput(loginDto);
-      if (!validationResult.success) {
-        throw AppErrorCodes.VALIDATION_FAILED;
-      }
-
-      // ログイン処理
-      const result = await this.authService.login(validationResult.data);
+      const result = await this.authService.login(loginDto);
 
       if (!result.success) {
         if (result.error === 'invalid_credentials') {
@@ -280,9 +264,10 @@ export class AuthController {
    * リフレッシュトークンでアクセストークンを再発行
    * POST /auth/refresh
    */
+  @UsePipes(new ZodValidationPipe(refreshTokenSchema))
   @Post('refresh')
   async refresh(
-    @Body() body: { refresh_token?: string },
+    @Body() body: RefreshTokenDto,
     @Res() res: Response,
   ): Promise<void> {
     try {
@@ -350,8 +335,7 @@ export class AuthController {
         message: 'Profile retrieved successfully',
         user: {
           ...userProfile,
-          providers: user.providers,
-          roles: user.roles,
+          ...user,
         },
       };
 
@@ -390,6 +374,7 @@ export class AuthController {
    * SNS認証ステート作成エンドポイント
    * POST /auth/state
    */
+  @UsePipes(new ZodValidationPipe(authStateSchema))
   @Post('state')
   async createAuthState(
     @Body() authStateDto: AuthStateDto,
@@ -581,6 +566,7 @@ export class AuthController {
    * SNS認証トークン検証エンドポイント
    * POST /auth/verify
    */
+  @UsePipes(new ZodValidationPipe(verifyTokenSchema))
   @Post('verify')
   async verifyToken(
     @Body() verifyTokenDto: VerifyTokenDto,

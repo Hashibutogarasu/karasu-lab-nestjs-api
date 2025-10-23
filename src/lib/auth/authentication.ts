@@ -1,8 +1,8 @@
-import { Role } from '@prisma/client';
-
 /**
  * 認証関連のワークフロー処理
  */
+
+import { PublicUser } from '../../auth/decorators/auth-user.decorator';
 
 export interface RegisterRequest {
   username: string;
@@ -17,12 +17,7 @@ export interface LoginRequest {
 
 export interface AuthResponse {
   success: boolean;
-  user?: {
-    id: string;
-    username: string;
-    email: string;
-    roles: Role[];
-  };
+  user?: PublicUser;
   error?: string;
   errorDescription?: string;
 }
