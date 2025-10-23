@@ -1,0 +1,36 @@
+name: Semantic Release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write      # リポジトリへのコミット、タグ作成、リリース作成のため
+  issues: write        # リリース情報からIssueをリンク・コメントするため
+  pull-requests: write # リリース情報からPull Requestをリンク・コメントするため
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # semantic-releaseが全コミット履歴を分析できるようにするため
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run semantic-release
+        uses: cycjimmy/semantic-release-action@v4
+        env:
+          # GitHubへのリリース作成やコミットに必要なトークン
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
