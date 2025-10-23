@@ -54,7 +54,7 @@ $ pnpm run test:cov
 
 Check out a few resources that may come in handy when working with NestJS:
 
-- ~~Visit the [Karasu LAB API Documentation](https://karsu256.com/docs) to learn more about this API usuage. ~~(API Documentation is writing)
+- <s>Visit the <a href="https://karsu256.com/docs">Karasu LAB API Documentation</a> to learn more about this API usage.</s> (API Documentation is writing)
 - For questions and support, please visit our [Discord channel](https://discord.gg/T3GPnmxXt6).
 
 ## Front end web application
