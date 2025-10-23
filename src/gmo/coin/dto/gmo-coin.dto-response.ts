@@ -1,50 +1,66 @@
+import z from 'zod';
 import {
   GmoCoinStatus,
   GmoCoinTicker,
   GmoCoinKline,
   GmoCoinRules,
 } from '../../../types/gmo-coin';
+import { createZodDto } from 'nestjs-zod';
 
-export class GmoCoinStatusResponseDto implements GmoCoinStatus {
-  status: number;
-  data: {
-    status: 'OPEN' | 'CLOSE' | 'MAINTENANCE';
-  };
-  responsetime: string;
-}
+export const gmoCoinStatusSchema = z.object({
+  status: z.number(),
+  data: z.object({
+    status: z.enum(['OPEN', 'CLOSE', 'MAINTENANCE']),
+  }),
+  responsetime: z.string(),
+});
 
-export class GmoCoinTickerResponseDto implements GmoCoinTicker {
-  status: number;
-  data: Array<{
-    symbol: string;
-    ask: string;
-    bid: string;
-    timestamp: string;
-    status: 'OPEN' | 'CLOSE' | 'MAINTENANCE';
-  }>;
-  responsetime: string;
-}
+export class GmoCoinStatusResponseDto extends createZodDto(gmoCoinStatusSchema) implements GmoCoinStatus { }
 
-export class GmoCoinKlineResponseDto implements GmoCoinKline {
-  status: number;
-  data: Array<{
-    openTime: string;
-    open: string;
-    high: string;
-    low: string;
-    close: string;
-  }>;
-  responsetime: string;
-}
+export const gmoCoinTickerSchema = z.object({
+  status: z.number(),
+  data: z.array(
+    z.object({
+      symbol: z.string(),
+      ask: z.string(),
+      bid: z.string(),
+      timestamp: z.string(),
+      status: z.enum(['OPEN', 'CLOSE', 'MAINTENANCE']),
+    }),
+  ),
+  responsetime: z.string(),
+});
 
-export class GmoCoinRulesResponseDto implements GmoCoinRules {
-  status: number;
-  data: Array<{
-    symbol: string;
-    tickSize: string;
-    minOpenOrderSize: string;
-    maxOrderSize: string;
-    sizeStep: string;
-  }>;
-  responsetime: string;
-}
+export class GmoCoinTickerResponseDto extends createZodDto(gmoCoinTickerSchema) implements GmoCoinTicker { }
+
+export const gmoCoinKlineSchema = z.object({
+  status: z.number(),
+  data: z.array(
+    z.object({
+      openTime: z.string(),
+      open: z.string(),
+      high: z.string(),
+      low: z.string(),
+      close: z.string(),
+    }),
+  ),
+  responsetime: z.string(),
+});
+
+export class GmoCoinKlineResponseDto extends createZodDto(gmoCoinKlineSchema) implements GmoCoinKline { }
+
+export const gmoCoinRulesSchema = z.object({
+  status: z.number(),
+  data: z.array(
+    z.object({
+      symbol: z.string(),
+      tickSize: z.string(),
+      minOpenOrderSize: z.string(),
+      maxOrderSize: z.string(),
+      sizeStep: z.string(),
+    }),
+  ),
+  responsetime: z.string(),
+});
+
+export class GmoCoinRulesResponseDto extends createZodDto(gmoCoinRulesSchema) implements GmoCoinRules { }

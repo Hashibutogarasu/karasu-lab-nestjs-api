@@ -1,24 +1,11 @@
-import { IntegerOption, StringOption } from 'necord';
+import { createZodDto } from 'nestjs-zod';
+import z from 'zod';
 
-export class FxConvertCommandDto {
-  @StringOption({
-    name: 'from',
-    description: 'Currency to convert from (e.g., USD, JPY)',
-    required: true,
-  })
-  from: string;
 
-  @StringOption({
-    name: 'to',
-    description: 'Currency to convert to (e.g., USD, JPY)',
-    required: true,
-  })
-  to: string;
+export const fxConvertCommandSchema = z.object({
+  from: z.string().min(1, 'From currency must not be empty'),
+  to: z.string().min(1, 'To currency must not be empty'),
+  amount: z.number().int().positive().optional(),
+});
 
-  @IntegerOption({
-    name: 'amount',
-    description: 'Amount to convert (default: 1 for non-JPY, 1000 for JPY)',
-    required: false,
-  })
-  amount?: number;
-}
+export class FxConvertCommandDto extends createZodDto(fxConvertCommandSchema) { }

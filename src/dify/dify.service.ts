@@ -140,13 +140,11 @@ export class DifyService {
         if (trimmedLine.startsWith('data: ')) {
           const data = trimmedLine.slice(6).trim();
 
-          // [DONE]の場合は終了
           if (data === '[DONE]') {
             parsedStream.push(null);
             return;
           }
 
-          // 空データは無視
           if (!data) {
             continue;
           }
@@ -154,7 +152,6 @@ export class DifyService {
           try {
             const parsed = JSON.parse(data);
 
-            // 有効なイベントタイプのみを処理
             if (parsed.event && typeof parsed.event === 'string') {
               parsedStream.push(parsed);
             }
@@ -166,20 +163,16 @@ export class DifyService {
             });
           }
         } else if (trimmedLine.startsWith('event: ')) {
-          // イベントタイプの行（次のdataラインで使用される可能性）
           continue;
         } else if (trimmedLine === '') {
-          // 空行は無視
           continue;
         } else if (trimmedLine.startsWith(':')) {
-          // コメント行は無視
           continue;
         }
       }
     });
 
     stream.on('end', () => {
-      // 最後のバッファーにデータが残っている場合の処理
       if (buffer.trim()) {
         console.log('Stream ended with remaining buffer:', buffer.trim());
       }

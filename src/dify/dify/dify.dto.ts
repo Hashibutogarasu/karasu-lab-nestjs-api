@@ -6,65 +6,41 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import z from 'zod';
+import { createZodDto } from 'nestjs-zod';
 
-export class FileDto {
-  @IsString()
-  @IsNotEmpty()
-  type: 'image' | 'document' | 'audio' | 'video' | 'custom';
+export const fileSchema = z.object({
+  type: z.enum(['image', 'document', 'audio', 'video', 'custom']),
+  transfer_method: z.enum(['remote_url', 'local_file']),
+  url: z.string().optional(),
+  upload_file_id: z.string().optional(),
+})
 
-  @IsString()
-  @IsNotEmpty()
-  transfer_method: 'remote_url' | 'local_file';
+export class FileDto extends createZodDto(fileSchema) { }
 
-  @IsString()
-  @IsOptional()
-  url?: string;
+export const chatMessageRequestSchema = z.object({
+  query: z.string().min(1, 'Query must not be empty'),
+  inputs: z.record(z.any()).optional().default({}),
+  user: z.string().min(1, 'User must not be empty'),
+  conversation_id: z.string().optional(),
+  files: z.array(fileSchema).optional(),
+  auto_generate_name: z.boolean().optional().default(true),
+  workflow_id: z.string().optional(),
+  trace_id: z.string().optional(),
+});
 
-  @IsString()
-  @IsOptional()
-  upload_file_id?: string;
-}
+export class ChatMessageRequestDto extends createZodDto(chatMessageRequestSchema) { }
 
-export class ChatMessageRequestDto {
-  @IsString()
-  @IsNotEmpty()
-  query: string;
+export const difyStreamResponseSchema = z.object({
+  event: z.string(),
+  data: z.any(),
+});
 
-  @IsOptional()
-  inputs?: Record<string, any> = {};
+export class DifyStreamResponse extends createZodDto(difyStreamResponseSchema) { }
 
-  @IsString()
-  @IsNotEmpty()
-  user: string;
+export const difyApiConfigSchema = z.object({
+  baseUrl: z.string().url(),
+  apiKey: z.string(),
+});
 
-  @IsString()
-  @IsOptional()
-  conversation_id?: string;
-
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => FileDto)
-  @IsOptional()
-  files?: FileDto[];
-
-  @IsOptional()
-  auto_generate_name?: boolean = true;
-
-  @IsString()
-  @IsOptional()
-  workflow_id?: string;
-
-  @IsString()
-  @IsOptional()
-  trace_id?: string;
-}
-
-export interface DifyStreamResponse {
-  event: string;
-  data: any;
-}
-
-export interface DifyApiConfig {
-  baseUrl: string;
-  apiKey: string;
-}
+export class DifyApiConfig extends createZodDto(difyApiConfigSchema) { }

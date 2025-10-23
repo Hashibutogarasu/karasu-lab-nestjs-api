@@ -14,6 +14,7 @@ export class AppErrorCode extends Error {
     this.code = code;
     this.isHttpError = isHttpError;
     this.name = this.constructor.name;
+    this.customMessage = message;
   }
 
   setCustomMesage(message: string) {
