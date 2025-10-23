@@ -12,7 +12,8 @@ import { BaseService } from '../impl/base-service';
 @Injectable()
 export class DataBaseMiddleware
   extends BaseService
-  implements NestMiddleware, OnModuleInit {
+  implements NestMiddleware, OnModuleInit
+{
   constructor(
     private readonly dbService: DataBaseService,
     appConfig: AppConfigService,

@@ -41,6 +41,7 @@ import { setAuthDiscordProfileModuleRef } from './auth/decorators/auth-discord-u
 import { JwtModule } from '@nestjs/jwt';
 import { ZodValidationPipe } from './zod-validation-type';
 import { AppConfigModule } from './app-config/app-config.module';
+import { GitHubModule } from './git-hub/git-hub.module';
 
 @Module({
   imports: [
@@ -99,6 +100,7 @@ import { AppConfigModule } from './app-config/app-config.module';
       module: UsersModule,
     },
     AppConfigModule.forRoot(),
+    GitHubModule,
   ],
   controllers: [AppController],
   providers: [

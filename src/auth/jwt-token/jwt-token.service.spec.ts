@@ -37,7 +37,10 @@ describe('JwtTokenService', () => {
           useValue: mockConfigService,
         },
       ],
-    }).overrideProvider(AppConfigService).useValue(mockConfigService).compile();
+    })
+      .overrideProvider(AppConfigService)
+      .useValue(mockConfigService)
+      .compile();
 
     service = module.get<JwtTokenService>(JwtTokenService);
   });
