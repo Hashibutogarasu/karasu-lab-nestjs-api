@@ -22,6 +22,8 @@
 
 ```bash
 $ pnpm install
+
+$ pnpm primsa migrate dev
 ```
 
 ## Compile and run the project
