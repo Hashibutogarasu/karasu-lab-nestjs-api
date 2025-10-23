@@ -11,8 +11,7 @@ import {
   DiscordTokenResponse,
   DiscordRevokeResponse,
 } from '../../types/discord-token';
-import { DISCORD_TOKEN_OPTIONS } from './discord-token.constants';
-import type { DiscordTokenModuleOptions } from './discord-token.module';
+import { AppConfigService } from '../../app-config/app-config.service';
 
 @Injectable()
 export class DiscordTokenService {
@@ -23,16 +22,10 @@ export class DiscordTokenService {
   private clientSecret: string;
   private redirectUri: string;
 
-  constructor(
-    @Optional()
-    @Inject(DISCORD_TOKEN_OPTIONS)
-    options?: DiscordTokenModuleOptions,
-  ) {
-    this.clientId = options?.clientId ?? process.env.DISCORD_CLIENT_ID!;
-    this.clientSecret =
-      options?.clientSecret ?? process.env.DISCORD_CLIENT_SECRET!;
-    this.redirectUri =
-      options?.redirectUri ?? process.env.DISCORD_CALLBACK_URL!;
+  constructor(readonly configService: AppConfigService) {
+    this.clientId = configService.get('discordClientId')!;
+    this.clientSecret = configService.get('discordClientSecret')!;
+    this.redirectUri = configService.get('discordRedirectUri')!;
 
     if (!this.clientId || !this.clientSecret) {
       throw new Error('Discord client credentials are not configured');

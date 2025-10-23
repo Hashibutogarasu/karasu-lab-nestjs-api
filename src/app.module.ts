@@ -40,6 +40,7 @@ import { setAuthGoogleProfileModuleRef } from './auth/decorators/auth-google-use
 import { setAuthDiscordProfileModuleRef } from './auth/decorators/auth-discord-user.decorator';
 import { JwtModule } from '@nestjs/jwt';
 import { ZodValidationPipe } from './zod-validation-type';
+import { AppConfigModule } from './app-config/app-config.module';
 
 @Module({
   imports: [
@@ -97,6 +98,7 @@ import { ZodValidationPipe } from './zod-validation-type';
       global: true,
       module: UsersModule,
     },
+    AppConfigModule.forRoot(),
   ],
   controllers: [AppController],
   providers: [

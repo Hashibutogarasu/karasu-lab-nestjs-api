@@ -17,8 +17,7 @@ export const googleProfileSchema = z.object({
   locale: z.string().optional(),
 });
 
-export class GoogleProfile extends createZodDto(googleProfileSchema) { }
-
+export class GoogleProfile extends createZodDto(googleProfileSchema) {}
 
 export const googleTokenResponseSchema = z.object({
   access_token: z.string(),
@@ -29,7 +28,9 @@ export const googleTokenResponseSchema = z.object({
   id_token: z.string().optional(),
 });
 
-export class GoogleTokenResponse extends createZodDto(googleTokenResponseSchema) { }
+export class GoogleTokenResponse extends createZodDto(
+  googleTokenResponseSchema,
+) {}
 
 /**
  * Googleの認可コードをアクセストークンに交換

@@ -15,7 +15,9 @@ export const gmoCoinStatusSchema = z.object({
   responsetime: z.string(),
 });
 
-export class GmoCoinStatusResponseDto extends createZodDto(gmoCoinStatusSchema) implements GmoCoinStatus { }
+export class GmoCoinStatusResponseDto
+  extends createZodDto(gmoCoinStatusSchema)
+  implements GmoCoinStatus {}
 
 export const gmoCoinTickerSchema = z.object({
   status: z.number(),
@@ -31,7 +33,9 @@ export const gmoCoinTickerSchema = z.object({
   responsetime: z.string(),
 });
 
-export class GmoCoinTickerResponseDto extends createZodDto(gmoCoinTickerSchema) implements GmoCoinTicker { }
+export class GmoCoinTickerResponseDto
+  extends createZodDto(gmoCoinTickerSchema)
+  implements GmoCoinTicker {}
 
 export const gmoCoinKlineSchema = z.object({
   status: z.number(),
@@ -47,7 +51,9 @@ export const gmoCoinKlineSchema = z.object({
   responsetime: z.string(),
 });
 
-export class GmoCoinKlineResponseDto extends createZodDto(gmoCoinKlineSchema) implements GmoCoinKline { }
+export class GmoCoinKlineResponseDto
+  extends createZodDto(gmoCoinKlineSchema)
+  implements GmoCoinKline {}
 
 export const gmoCoinRulesSchema = z.object({
   status: z.number(),
@@ -63,4 +69,6 @@ export const gmoCoinRulesSchema = z.object({
   responsetime: z.string(),
 });
 
-export class GmoCoinRulesResponseDto extends createZodDto(gmoCoinRulesSchema) implements GmoCoinRules { }
+export class GmoCoinRulesResponseDto
+  extends createZodDto(gmoCoinRulesSchema)
+  implements GmoCoinRules {}
