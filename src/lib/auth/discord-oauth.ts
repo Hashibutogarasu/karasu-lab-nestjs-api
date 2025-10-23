@@ -2,29 +2,35 @@
  * Discord OAuth認証の実装
  */
 
+import z from 'zod';
 import { SnsProfile } from './sns-auth';
+import { createZodDto } from 'nestjs-zod';
 
-export interface DiscordProfile {
-  id: string;
-  username: string;
-  discriminator: string;
-  global_name?: string;
-  avatar?: string;
-  email?: string;
-  verified?: boolean;
-  locale?: string;
-  mfa_enabled?: boolean;
-  premium_type?: number;
-  public_flags?: number;
-}
+export const discordProfileSchema = z.object({
+  id: z.string(),
+  username: z.string(),
+  discriminator: z.string(),
+  global_name: z.string().optional(),
+  avatar: z.string().optional(),
+  email: z.string().optional(),
+  verified: z.boolean().optional(),
+  locale: z.string().optional(),
+  mfa_enabled: z.boolean().optional(),
+  premium_type: z.number().optional(),
+  public_flags: z.number().optional(),
+});
 
-export interface DiscordTokenResponse {
-  access_token: string;
-  token_type: string;
-  expires_in: number;
-  refresh_token: string;
-  scope: string;
-}
+export class DiscordProfile extends createZodDto(discordProfileSchema) { }
+
+export const discordTokenResponseSchema = z.object({
+  access_token: z.string(),
+  token_type: z.string(),
+  expires_in: z.number(),
+  refresh_token: z.string(),
+  scope: z.string(),
+});
+
+export class DiscordTokenResponse extends createZodDto(discordTokenResponseSchema) { }
 
 /**
  * Discordの認可コードをアクセストークンに交換
@@ -105,28 +111,5 @@ export function convertDiscordProfileToSnsProfile(
     email: discordProfile.email,
     avatarUrl,
     rawProfile: discordProfile,
-  };
-}
-
-/**
- * Discord OAuth認証の完全なフロー
- */
-export async function processDiscordOAuth(
-  code: string,
-  redirectUri: string,
-): Promise<{
-  snsProfile: SnsProfile;
-  accessToken: string;
-}> {
-  // 1. 認可コードをアクセストークンに交換
-  const tokenResponse = await exchangeDiscordCode(code, redirectUri);
-
-  // 2. アクセストークンでプロファイル情報を取得
-  const discordProfile = await getDiscordProfile(tokenResponse.access_token);
-
-  // 3. 共通のSnsProfile形式に変換
-  return {
-    snsProfile: convertDiscordProfileToSnsProfile(discordProfile),
-    accessToken: tokenResponse.access_token,
   };
 }

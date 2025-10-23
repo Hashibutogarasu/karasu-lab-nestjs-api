@@ -2,27 +2,34 @@
  * Google OAuth認証の実装
  */
 
+import z from 'zod';
 import { SnsProfile } from './sns-auth';
+import { createZodDto } from 'nestjs-zod';
 
-export interface GoogleProfile {
-  id: string;
-  name: string;
-  given_name?: string;
-  family_name?: string;
-  picture?: string;
-  email?: string;
-  email_verified?: boolean;
-  locale?: string;
-}
+export const googleProfileSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  given_name: z.string().optional(),
+  family_name: z.string().optional(),
+  picture: z.string().url().optional(),
+  email: z.string().email().optional(),
+  email_verified: z.boolean().optional(),
+  locale: z.string().optional(),
+});
 
-export interface GoogleTokenResponse {
-  access_token: string;
-  token_type: string;
-  expires_in: number;
-  refresh_token?: string;
-  scope: string;
-  id_token?: string;
-}
+export class GoogleProfile extends createZodDto(googleProfileSchema) { }
+
+
+export const googleTokenResponseSchema = z.object({
+  access_token: z.string(),
+  token_type: z.string(),
+  expires_in: z.number(),
+  refresh_token: z.string().optional(),
+  scope: z.string(),
+  id_token: z.string().optional(),
+});
+
+export class GoogleTokenResponse extends createZodDto(googleTokenResponseSchema) { }
 
 /**
  * Googleの認可コードをアクセストークンに交換
@@ -98,28 +105,5 @@ export function convertGoogleProfileToSnsProfile(
     email: googleProfile.email,
     avatarUrl: googleProfile.picture,
     rawProfile: googleProfile,
-  };
-}
-
-/**
- * Google OAuth認証の完全なフロー
- */
-export async function processGoogleOAuth(
-  code: string,
-  redirectUri: string,
-): Promise<{
-  snsProfile: SnsProfile;
-  accessToken: string;
-}> {
-  // 1. 認可コードをアクセストークンに交換
-  const tokenResponse = await exchangeGoogleCode(code, redirectUri);
-
-  // 2. アクセストークンでプロファイル情報を取得
-  const googleProfile = await getGoogleProfile(tokenResponse.access_token);
-
-  // 3. 共通のSnsProfile形式に変換
-  return {
-    snsProfile: convertGoogleProfileToSnsProfile(googleProfile),
-    accessToken: tokenResponse.access_token,
   };
 }
