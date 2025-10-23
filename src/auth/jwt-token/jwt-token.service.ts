@@ -8,14 +8,19 @@ import {
 import { decode, JwtPayload, sign, verify } from 'jsonwebtoken';
 import { UserService } from '../../data-base/query/user/user.service';
 import { JwtstateService } from '../../data-base/query/jwtstate/jwtstate.service';
+import { BaseService } from '../../impl/base-service';
+import { AppConfigService } from '../../app-config/app-config.service';
 
 @Injectable()
-export class JwtTokenService {
+export class JwtTokenService extends BaseService {
   constructor(
     private readonly userService: UserService,
     @Inject(forwardRef(() => JwtstateService))
     private readonly jwtStateService: JwtstateService,
-  ) {}
+    configService: AppConfigService,
+  ) {
+    super(configService);
+  }
 
   /**
    * JWTトークンを生成
@@ -24,7 +29,7 @@ export class JwtTokenService {
     request: CreateTokenRequest,
   ): Promise<CreateTokenResponse> {
     try {
-      const jwtSecret = process.env.JWT_SECRET;
+      const jwtSecret = this.config.get('jwtSecret');
       if (!jwtSecret) {
         return {
           success: false,

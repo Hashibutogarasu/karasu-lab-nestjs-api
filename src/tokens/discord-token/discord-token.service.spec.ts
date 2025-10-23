@@ -20,7 +20,7 @@ describe('DiscordTokenService', () => {
         discordClientId: 'discord-client-id',
         discordClientSecret: 'discord-client-secret',
         discordRedirectUri: 'http://localhost:3000/auth/callback',
-      })
+      }),
     });
 
     const module: TestingModule = await Test.createTestingModule({

@@ -30,6 +30,7 @@ export const configSchema = z.object({
   DATABASE_HOST: z.string().optional().default('localhost'),
   DATABASE_PORT: transformStringToNumber(5432),
   DIFY_API_KEY: z.string().optional(),
+  TOTP_ISSUER: z.string().optional().default('karasu-lab'),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   DISCORD_CLIENT_ID: z.string().optional(),
@@ -39,6 +40,10 @@ export const configSchema = z.object({
   X_CLIENT_SECRET: z.string().optional(),
   ENCRYPTION_PRIVATE_KEY: z.string(),
   ENCRYPTION_PUBLIC_KEY: z.string(),
+  RESEND_API_KEY: z.string().optional(),
+  RESEND_FROM_EMAIL: z.string().email().optional(),
+  PRIVATE_DOMAIN: z.string().optional(),
+  ADMIN_DOMAIN: z.string().optional(),
 });
 
 export class Configuration extends createZodDto(configSchema) {}
@@ -53,6 +58,7 @@ export default (env: Configuration) => ({
   databaseUrl: env.DATABASE_URL,
   directUrl: env.DIRECT_URL,
   difyApiKey: env.DIFY_API_KEY,
+  totpIssuer: env.TOTP_ISSUER,
   googleClientId: env.GOOGLE_CLIENT_ID,
   googleClientSecret: env.GOOGLE_CLIENT_SECRET,
   discordClientId: env.DISCORD_CLIENT_ID,
@@ -62,4 +68,8 @@ export default (env: Configuration) => ({
   xClientSecret: env.X_CLIENT_SECRET,
   encryptionPrivateKey: env.ENCRYPTION_PRIVATE_KEY,
   encryptionPublicKey: env.ENCRYPTION_PUBLIC_KEY,
+  resendApiKey: env.RESEND_API_KEY,
+  resendFromEmail: env.RESEND_FROM_EMAIL,
+  adminDomain: env.ADMIN_DOMAIN,
+  privateDomain: env.PRIVATE_DOMAIN,
 });

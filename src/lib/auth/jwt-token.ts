@@ -1,44 +1,62 @@
-import { Role } from '@prisma/client';
+import { createZodDto } from 'nestjs-zod';
+import z from 'zod';
+import { RoleSchema } from '../../generated/zod';
 
-export interface JWTPayload {
-  id: string; // JWT State ID
-  sub: string; // User ID
-  // Keep payload minimal for security
-  provider?: string;
-  iat?: number;
-  exp?: number;
-}
+export const jwtPayloadSchema = z.object({
+  id: z.string().uuid(),
+  sub: z.string().uuid(),
+  provider: z.string().optional(),
+  iat: z.number().optional(),
+  exp: z.number().optional(),
+});
 
-export interface CreateTokenRequest {
-  userId: string;
-  provider?: string;
-  expirationHours?: number;
-  // If provided, reuse existing JWTState instead of creating a new one
-  jwtStateId?: string;
-}
+export class JWTPayload extends createZodDto(jwtPayloadSchema) {}
 
-export interface CreateTokenResponse {
-  success: boolean;
-  jwtId?: string;
-  token?: string;
-  profile?: {
-    sub: string;
-    name: string;
-    email: string;
-    provider?: string;
-    providers: string[];
-  };
-  user?: {
-    roles: Role[];
-  };
-  expiresAt?: Date;
-  error?: string;
-  errorDescription?: string;
-}
+export const createTokenRequestSchema = z.object({
+  userId: z.string().uuid(),
+  provider: z.string().optional(),
+  expirationHours: z.number().optional(),
+  jwtStateId: z.string().uuid().optional(),
+});
 
-export interface VerifyTokenResponse {
-  success: boolean;
-  payload?: JWTPayload;
-  error?: string;
-  errorDescription?: string;
-}
+export class CreateTokenRequest extends createZodDto(
+  createTokenRequestSchema,
+) {}
+
+export const createTokenResponseSchema = z.object({
+  success: z.boolean(),
+  jwtId: z.string().uuid().optional(),
+  token: z.string().optional(),
+  profile: z
+    .object({
+      sub: z.string().uuid(),
+      name: z.string(),
+      email: z.string().email(),
+      provider: z.string().optional(),
+      providers: z.array(z.string()),
+    })
+    .optional(),
+  user: z
+    .object({
+      roles: z.array(RoleSchema),
+    })
+    .optional(),
+  expiresAt: z.date().optional(),
+  error: z.string().optional(),
+  errorDescription: z.string().optional(),
+});
+
+export class CreateTokenResponse extends createZodDto(
+  createTokenResponseSchema,
+) {}
+
+export const verifyTokenResponseSchema = z.object({
+  success: z.boolean(),
+  payload: jwtPayloadSchema.optional(),
+  error: z.string().optional(),
+  errorDescription: z.string().optional(),
+});
+
+export class VerifyTokenResponse extends createZodDto(
+  verifyTokenResponseSchema,
+) {}

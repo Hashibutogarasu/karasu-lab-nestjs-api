@@ -17,6 +17,9 @@ import { DataBaseService } from '../src/data-base/data-base.service';
 import { UtilityService } from '../src/data-base/utility/utility.service';
 import { RoleService } from '../src/data-base/query/role/role.service';
 import { PermissionBitcalcService } from '../src/permission-bitcalc/permission-bitcalc.service';
+import { AppConfigService } from '../src/app-config/app-config.service';
+import { mock } from 'jest-mock-extended';
+import { AppConfigModule } from '../src/app-config/app-config.module';
 
 jest.setTimeout(30000);
 
@@ -24,7 +27,17 @@ describe('Global Response Formatter & NoInterceptor (e2e)', () => {
   let app: INestApplication<App>;
 
   beforeAll(async () => {
+    const mockConfigService = mock<AppConfigService>({
+      get: jest.fn().mockResolvedValue({}),
+    });
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [
+        {
+          module: AppConfigModule,
+          global: true,
+        },
+      ],
       controllers: [AppController],
       providers: [
         AppService,
@@ -44,7 +57,10 @@ describe('Global Response Formatter & NoInterceptor (e2e)', () => {
           useClass: ResponseFormatterInterceptor,
         },
       ],
-    }).compile();
+    })
+      .overrideProvider(AppConfigService)
+      .useValue(mockConfigService)
+      .compile();
 
     app = moduleFixture.createNestApplication();
     await app.init();

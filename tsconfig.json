@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    
     "allowJs": true,
     "module": "nodenext",
     "moduleResolution": "nodenext",
@@ -22,12 +21,7 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
-    "types": ["@types/jest"]
   },
-  "include": [
-    "src/**/*",
-    "test/**/*",
-    "jest.config.js",
-  ],
+  "include": ["src/**/*", "test/**/*", "jest.config.js"],
   "exclude": ["dist"]
 }

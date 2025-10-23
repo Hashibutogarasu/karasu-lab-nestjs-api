@@ -50,8 +50,6 @@ import { DataBaseMiddleware } from './data-base.middleware';
 })
 export class DataBaseModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(DataBaseMiddleware)
-      .forRoutes('*');
+    consumer.apply(DataBaseMiddleware).forRoutes('*');
   }
 }

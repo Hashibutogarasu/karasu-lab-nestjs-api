@@ -1,11 +1,13 @@
 import { Logger, OnModuleInit } from '@nestjs/common';
 import { IBaseService } from '../interfaces/base.service.interface';
+import { AppConfigService } from '../app-config/app-config.service';
 
 export abstract class AbstractBaseService
-  implements IBaseService, OnModuleInit {
+  implements IBaseService, OnModuleInit
+{
   private _logger: Logger;
 
-  constructor() {
+  constructor(private readonly configService: AppConfigService) {
     const name =
       (this && this.constructor && this.constructor.name) ||
       AbstractBaseService.name;
@@ -14,6 +16,10 @@ export abstract class AbstractBaseService
 
   get logger(): Logger {
     return this._logger;
+  }
+
+  get config(): AppConfigService {
+    return this.configService;
   }
 
   onModuleInit() {

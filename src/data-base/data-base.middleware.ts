@@ -1,11 +1,19 @@
-import { Injectable, NestMiddleware, OnModuleInit, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NestMiddleware,
+  OnModuleInit,
+  Logger,
+} from '@nestjs/common';
 import { AppConfigService } from '../app-config/app-config.service';
 import { DataBaseService } from './data-base.service';
 import { AppErrorCodes } from '../types/error-codes';
 import { BaseService } from '../impl/base-service';
 
 @Injectable()
-export class DataBaseMiddleware extends BaseService implements NestMiddleware, OnModuleInit {
+export class DataBaseMiddleware
+  extends BaseService
+  implements NestMiddleware, OnModuleInit
+{
   constructor(
     private readonly appConfig: AppConfigService,
     private readonly dbService: DataBaseService,

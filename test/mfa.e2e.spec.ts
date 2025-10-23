@@ -61,7 +61,7 @@ describe('MFA e2e flow', () => {
       setupTotpForUser: jest
         .fn()
         .mockResolvedValueOnce({ backupCodes: ['BC1', 'BC2', 'BC3'] })
-        .mockRejectedValueOnce(AppErrorCodes.CONFLICT)
+        .mockRejectedValueOnce(AppErrorCodes.CONFLICT),
     });
 
     const mockEncryptionService = mock<EncryptionService>();
@@ -131,11 +131,18 @@ describe('MFA e2e flow', () => {
     });
 
     const moduleBuilder = Test.createTestingModule({
-      imports: [AuthModule, DataBaseModule, MfaModule, {
-        module: AppConfigModule,
-        global: true,
-      }],
-    }).overrideProvider(AppConfigService).useValue(mockConfigService);
+      imports: [
+        AuthModule,
+        DataBaseModule,
+        MfaModule,
+        {
+          module: AppConfigModule,
+          global: true,
+        },
+      ],
+    })
+      .overrideProvider(AppConfigService)
+      .useValue(mockConfigService);
 
     moduleBuilder.overrideGuard(JwtAuthGuard).useValue({
       canActivate: (context: any) => {
