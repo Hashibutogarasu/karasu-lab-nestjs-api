@@ -4,7 +4,6 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { JwtAuthGuard } from '../src/auth/jwt-auth.guard';
 import { JwtService } from '@nestjs/jwt';
-import { AppModule } from '../src/app.module';
 import { TotpService } from '../src/totp/totp.service';
 import { AppErrorCodes } from '../src/types/error-codes';
 import { MfaModule } from '../src/mfa/mfa.module';
@@ -19,6 +18,8 @@ import { AuthModule } from '../src/auth/auth.module';
 import { DataBaseModule } from '../src/data-base/data-base.module';
 import prisma from '../src/lib/database/query';
 import { JwtTokenService } from '../src/auth/jwt-token/jwt-token.service';
+import { AppConfigService } from '../src/app-config/app-config.service';
+import { AppConfigModule } from '../src/app-config/app-config.module';
 
 jest.setTimeout(30000);
 
@@ -57,12 +58,12 @@ describe('MFA e2e flow', () => {
         .fn()
         .mockResolvedValue({ backupCodes: ['BC1', 'BC2'] }),
       disableMfaForUser: jest.fn().mockResolvedValue({ success: true }),
+      setupTotpForUser: jest
+        .fn()
+        .mockResolvedValueOnce({ backupCodes: ['BC1', 'BC2', 'BC3'] })
+        .mockRejectedValueOnce(AppErrorCodes.CONFLICT)
     });
-    // make setupTotpForUser succeed once and then fail with CONFLICT to simulate simultaneous setup race
-    (mockMfaService as any).setupTotpForUser = jest
-      .fn()
-      .mockResolvedValueOnce({ backupCodes: ['BC1', 'BC2', 'BC3'] })
-      .mockRejectedValueOnce(AppErrorCodes.CONFLICT);
+
     const mockEncryptionService = mock<EncryptionService>();
     const mockAuthService = mock<AuthService>({
       register: jest.fn().mockResolvedValue({
@@ -125,9 +126,16 @@ describe('MFA e2e flow', () => {
         .mockResolvedValue({ success: true, payload: { sub: 'user_test' } }),
     });
 
-    const moduleBuilder = Test.createTestingModule({
-      imports: [AuthModule, DataBaseModule, MfaModule],
+    const mockConfigService = mock<AppConfigService>({
+      get: jest.fn().mockResolvedValue({}),
     });
+
+    const moduleBuilder = Test.createTestingModule({
+      imports: [AuthModule, DataBaseModule, MfaModule, {
+        module: AppConfigModule,
+        global: true,
+      }],
+    }).overrideProvider(AppConfigService).useValue(mockConfigService);
 
     moduleBuilder.overrideGuard(JwtAuthGuard).useValue({
       canActivate: (context: any) => {

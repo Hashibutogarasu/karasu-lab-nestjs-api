@@ -15,6 +15,10 @@ export class AppErrorCodeFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
 
     if (exception instanceof AppErrorCode) {
+      if (exception === AppErrorCodes.DATABASE_CONNECTION_ERROR) {
+        process.exit(1);
+      }
+
       const status = exception.isHttpError
         ? (exception.code as number)
         : HttpStatus.INTERNAL_SERVER_ERROR;
@@ -33,8 +37,9 @@ export class AppErrorCodeFilter implements ExceptionFilter {
     if (
       exception &&
       typeof exception === 'object' &&
-      'code' in (exception as any) &&
-      'message' in (exception as any)
+      exception !== null &&
+      'code' in exception &&
+      'message' in exception
     ) {
       const ex = exception as any;
       const status = ex.isHttpError

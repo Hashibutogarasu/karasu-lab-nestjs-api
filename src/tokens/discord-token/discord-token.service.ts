@@ -2,8 +2,6 @@ import {
   Injectable,
   InternalServerErrorException,
   BadRequestException,
-  Inject,
-  Optional,
 } from '@nestjs/common';
 import {
   DiscordTokenResponseSchema,

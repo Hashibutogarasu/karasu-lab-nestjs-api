@@ -24,6 +24,16 @@ export class AppErrorCode extends Error {
 }
 
 export const AppErrorCodes = {
+  // DataBase Errors
+  INVALID_DATABASE_URL: new AppErrorCode(
+    500,
+    'The provided database URL is invalid',
+  ),
+  DATABASE_CONNECTION_ERROR: new AppErrorCode(
+    500,
+    'Failed to connect to the database',
+  ),
+
   // Http Errors
   NOT_FOUND: new AppErrorCode(404, 'Resource not found'),
   UNAUTHORIZED: new AppErrorCode(401, 'Unauthorized'),
