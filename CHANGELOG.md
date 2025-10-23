@@ -40,6 +40,15 @@
 ### Features
 
 * add database middleware and improve error handling ([756f29e](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/756f29e15989b3f7bda045da5123b3286d1b8245))
+* migrate config and DTOs to zod, enhance test setup ([bb93ab7](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/bb93ab7db5134c5b3ffbba5bcc4c7f71dc7a5d1c))
+* refactors Discord token module to use AppConfigService and improves DTO formatting ([e9d3336](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/e9d3336f155a52b76a117a721810a1142c28d9d9))
+
+# [1.1.0](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.0.0...v1.1.0) (2025-10-23)
+
+
+### Features
+
+* add database middleware and improve error handling ([756f29e](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/756f29e15989b3f7bda045da5123b3286d1b8245))
 * refactors Discord token module to use AppConfigService and improves DTO formatting ([e9d3336](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/e9d3336f155a52b76a117a721810a1142c28d9d9))
 
 # 1.0.0 (2025-10-23)
