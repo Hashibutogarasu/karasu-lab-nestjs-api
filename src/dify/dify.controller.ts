@@ -7,6 +7,7 @@ import { NoInterceptor } from '../interceptors/no-interceptor.decorator';
 import { AuthUser } from '../auth/decorators/auth-user.decorator';
 import type { PublicUser } from '../auth/decorators/auth-user.decorator';
 import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+
 @NoInterceptor()
 @ApiBearerAuth()
 @Controller('dify')
