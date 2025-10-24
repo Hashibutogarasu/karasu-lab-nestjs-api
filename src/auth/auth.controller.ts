@@ -43,6 +43,7 @@ import {
   verifyTokenSchema,
 } from './auth.dto';
 import { ZodValidationPipe } from '../zod-validation-type';
+import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 
 @NoInterceptor()
 @Controller('auth')
@@ -57,16 +58,14 @@ export class AuthController {
     private readonly snsAuthCoreService: AuthCoreService,
     private readonly jwtTokenService: JwtTokenService,
     private readonly mfaService: MfaService,
-  ) {}
+  ) { }
 
-  // Helper to fetch codeChallenge from AuthState if available
   private async getCodeChallengeFromState(stateCode?: string) {
     if (!stateCode) return undefined;
     try {
       const authState = await this.authState.findAuthState(stateCode);
       return authState?.codeChallenge || undefined;
     } catch (err) {
-      // swallow errors and return undefined to keep caller logic simple
       return undefined;
     }
   }
@@ -106,6 +105,7 @@ export class AuthController {
    * ユーザー登録エンドポイント
    * POST /auth/register
    */
+  @ApiBody({ type: RegisterDto })
   @UsePipes(new ZodValidationPipe(registerSchema))
   @Post('register')
   async register(
@@ -137,24 +137,17 @@ export class AuthController {
     @Req() req: Request,
   ): Promise<void> {
     try {
-      // プロバイダーを取得
       const oauthProvider = this.oauthProviderFactory.getProvider(provider);
-
-      // プロバイダーが利用可能かチェック
       if (!oauthProvider.isAvailable()) {
         throw AppErrorCodes.PROVIDER_UNAVAILABLE;
       }
 
-      // コールバックURLが指定されていない場合はデフォルトを使用
       const finalCallbackUrl = callbackUrl || this.DEFAULT_CALLBACK_URL;
 
-      // APIのベースURLを取得してバックエンドのコールバックURIを構築
-      // Use explicit BASE_URL if set, otherwise fall back to the current request host.
       const baseUrl =
         process.env.BASE_URL || `${req.protocol}://${req.headers.host}`;
       const backendRedirectUri = `${baseUrl.replace(/\/$/, '')}/auth/callback/${provider}`;
 
-      // 認証ステートを作成（フロントエンドのコールバックURLを保存）
       const result = await this.snsAuthCoreService.createAuthenticationState(
         {
           provider,
@@ -170,20 +163,17 @@ export class AuthController {
       let codeChallenge: string | undefined;
 
       if (result.stateCode) {
-        // AuthStateからcode_challengeを取得(X用)
         codeChallenge = await this.getCodeChallengeFromState(result.stateCode);
       } else {
         throw AppErrorCodes.INVALID_STATE_CODE;
       }
 
-      // プロバイダーの認証URLを生成(バックエンドのコールバックURIを使用)
       const authUrl = oauthProvider.getAuthorizationUrl(
         backendRedirectUri,
         result.stateCode,
         codeChallenge,
       );
 
-      // 認証URLにリダイレクト
       res.redirect(authUrl);
     } catch (error) {
       if (error instanceof ProviderNotImplementedError) {
@@ -203,6 +193,7 @@ export class AuthController {
    * ユーザーログインエンドポイント
    * POST /auth/login
    */
+  @ApiBody({ type: LoginDto })
   @UsePipes(new ZodValidationPipe(loginSchema))
   @Post('login')
   async login(
@@ -233,7 +224,6 @@ export class AuthController {
 
       await this.checkForMfa(res, { userId: result.user?.id });
 
-      // 重複してトークンが生成されないようにする(既にアクセストークン作成時にJWTStateを作成しているので)
       const refreshTokenResult =
         await this.jwtTokenService.generateRefreshToken(result.user!.id, {
           jwtStateId: tokenResult.jwtId,
@@ -247,9 +237,9 @@ export class AuthController {
         jwtId: tokenResult.jwtId,
         access_token: tokenResult.token,
         token_type: 'Bearer',
-        expires_in: 60 * 60, // 1時間（秒）
+        expires_in: 60 * 60,
         refresh_token: refreshTokenResult.token,
-        refresh_expires_in: 60 * 60 * 24 * 30, // 30日（秒）
+        refresh_expires_in: 60 * 60 * 24 * 30,
         session_id: sessionData.sessionId,
       });
     } catch (error) {
@@ -264,6 +254,7 @@ export class AuthController {
    * リフレッシュトークンでアクセストークンを再発行
    * POST /auth/refresh
    */
+  @ApiBody({ type: RefreshTokenDto })
   @UsePipes(new ZodValidationPipe(refreshTokenSchema))
   @Post('refresh')
   async refresh(
@@ -276,13 +267,11 @@ export class AuthController {
         throw AppErrorCodes.INVALID_REQUEST;
       }
 
-      // リフレッシュトークン検証
       const verify = await this.jwtTokenService.verifyJWTToken(refreshToken);
       if (!verify.success || !verify.payload) {
         throw AppErrorCodes.INVALID_TOKEN;
       }
 
-      // 新しいアクセストークンを発行
       const tokenResult = await this.jwtTokenService.generateJWTToken({
         userId: verify.payload.sub,
         expirationHours: 1,
@@ -297,7 +286,7 @@ export class AuthController {
         jwtId: tokenResult.jwtId,
         access_token: tokenResult.token,
         token_type: 'Bearer',
-        expires_in: 60 * 60, // 1時間（秒）
+        expires_in: 60 * 60,
       });
     } catch (error) {
       if (error instanceof AppErrorCode) {
@@ -311,6 +300,7 @@ export class AuthController {
    * ユーザー情報取得エンドポイント
    * GET /auth/profile
    */
+  @ApiBearerAuth()
   @Get('profile')
   @UseGuards(JwtAuthGuard)
   async getProfile(
@@ -319,12 +309,10 @@ export class AuthController {
     @AuthUser() user: PublicUser,
   ): Promise<void> {
     try {
-      // Ensure authenticated user is present
       if (!user || !user.id) {
         throw AppErrorCodes.MISSING_SESSION;
       }
 
-      // セッション検証とユーザー情報取得
       const userProfile = await this.authService.getProfile(user.id);
 
       if (!userProfile) {
@@ -374,6 +362,7 @@ export class AuthController {
    * SNS認証ステート作成エンドポイント
    * POST /auth/state
    */
+  @ApiBody({ type: AuthStateDto })
   @UsePipes(new ZodValidationPipe(authStateSchema))
   @Post('state')
   async createAuthState(
@@ -447,12 +436,10 @@ export class AuthController {
   ): Promise<void> {
     let authState: AuthState | null = null;
     try {
-      // 認証ステートを取得してプロバイダーを確認
       authState = await this.authService.getAuthState(state);
       const defaultCallbackUrl =
         authState?.callbackUrl || this.DEFAULT_CALLBACK_URL;
 
-      // エラーレスポンスの処理
       if (error) {
         const finalCallbackUrl = queryCallbackUrl || defaultCallbackUrl;
         const errorRedirect = this.snsAuthCoreService.buildErrorRedirect(
@@ -462,7 +449,6 @@ export class AuthController {
         return res.redirect(errorRedirect);
       }
 
-      // パラメータ検証
       if (!code || !state) {
         const finalCallbackUrl = queryCallbackUrl || defaultCallbackUrl;
         const errorRedirect = this.snsAuthCoreService.buildErrorRedirect(
@@ -481,7 +467,6 @@ export class AuthController {
         return res.redirect(errorRedirect);
       }
 
-      // プロバイダーが一致するかチェック
       if (authState.provider !== provider) {
         const finalCallbackUrl = queryCallbackUrl || authState.callbackUrl;
         const errorRedirect = this.snsAuthCoreService.buildErrorRedirect(
@@ -491,31 +476,23 @@ export class AuthController {
         return res.redirect(errorRedirect);
       }
 
-      // プロバイダーを取得
       const oauthProvider = this.oauthProviderFactory.getProvider(provider);
-
-      // APIのベースURLを取得してリダイレクトURIを構築
       const baseUrl = process.env.BASE_URL!;
       const redirectUri = `${baseUrl.replace(/\/$/, '')}/auth/callback/${provider}`;
 
-      // code_verifierを取得（X用）
       const codeVerifier = authState.codeVerifier || undefined;
-
-      // プロバイダー経由でOAuth処理を実行 (1行で処理)
       const { snsProfile, accessToken } = await oauthProvider.processOAuth(
         code,
         redirectUri,
         codeVerifier,
       );
 
-      // プロファイル処理
       const processResult = await this.snsAuthCoreService.processSnsProfile(
         snsProfile,
         state,
       );
 
       if (accessToken) {
-        // アクセストークンを暗号化してデータベースに保存または更新
         await this.externalProviderAccessTokenService.upsert(
           {
             userId: processResult.userId,
@@ -539,7 +516,6 @@ export class AuthController {
         return res.redirect(errorRedirect);
       }
 
-      // フロントエンドが指定したコールバックURLに最終的にリダイレクト
       const finalCallbackUrl = queryCallbackUrl || authState.callbackUrl;
       const callbackUrl = new URL(finalCallbackUrl);
       if (processResult.oneTimeToken) {
@@ -566,6 +542,7 @@ export class AuthController {
    * SNS認証トークン検証エンドポイント
    * POST /auth/verify
    */
+  @ApiBody({ type: VerifyTokenDto })
   @UsePipes(new ZodValidationPipe(verifyTokenSchema))
   @Post('verify')
   async verifyToken(
