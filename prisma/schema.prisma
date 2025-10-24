@@ -21,13 +21,15 @@ datasource db {
 }
 
 model User {
-  /// @zod.custom.use(z.string().cuid())
   id           String   @id @default(cuid())
   username     String   @unique
   email        String   @unique
   passwordHash String?  @map("password_hash") // Nullable for SNS users
   providers    String[] @default([])
+  
+  /// @zod.custom.use(z.string())
   createdAt    DateTime @default(now()) @map("created_at")
+  /// @zod.custom.use(z.string())
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   // Relations
@@ -48,7 +50,6 @@ model User {
 }
 
 model PendingEMailChangeProcess {
-  /// @zod.custom.use(z.string().cuid())
   id               String   @id @default(cuid())
   userId           String   @map("user_id")
   newEmail         String   @map("new_email")
@@ -64,7 +65,6 @@ model PendingEMailChangeProcess {
 }
 
 model Role {
-  /// @zod.custom.use(z.string().cuid())
   id          String   @id @default(cuid())
   name        String   @unique
   description String?
@@ -127,7 +127,6 @@ model RefreshToken {
 
 // SNS認証用のプロフィール情報
 model ExtraProfile {
-  /// @zod.custom.use(z.string().cuid())
   id          String   @id @default(cuid())
   userId      String   @map("user_id")
   provider    String // "google", "x", etc.
@@ -149,7 +148,6 @@ model ExtraProfile {
 
 // SNS認証用のステート管理
 model AuthState {
-  /// @zod.custom.use(z.string().cuid())
   id                  String   @id @default(cuid())
   stateCode           String   @unique @map("state_code")
   oneTimeToken        String   @unique @map("one_time_token")
@@ -174,7 +172,6 @@ model AuthState {
 
 // パスワードリセット用のテーブル
 model PasswordReset {
-  /// @zod.custom.use(z.string().cuid())
   id        String   @id @default(cuid())
   userId    String   @map("user_id")
   resetCode String   @unique @map("reset_code") //  ハッシュ化された6桁の確認コード
@@ -191,7 +188,6 @@ model PasswordReset {
 }
 
 model JWTState {
-  /// @zod.custom.use(z.string().cuid())
   id        String  @id @default(cuid())
   userId    String  @map("user_id")
   revoked   Boolean @default(false)
@@ -205,7 +201,6 @@ model JWTState {
 
 // Manage external provider access tokens (e.g., for SNS providers)
 model ExternalProviderAccessToken {
-  /// @zod.custom.use(z.string().cuid())
   id String @id @default(cuid())
 
   userId         String @map("user_id")
@@ -223,7 +218,6 @@ model ExternalProviderAccessToken {
 // GMO Coin (FX) related models
 // These models capture external API responses from gmo-coin for ticker, kline, rules and status.
 model GmoCoinStatus {
-  /// @zod.custom.use(z.string().cuid())
   id           String   @id @default(cuid())
   statusCode   Int      @map("status")
   data         Json
@@ -235,7 +229,6 @@ model GmoCoinStatus {
 }
 
 model GmoCoinTickerItem {
-  /// @zod.custom.use(z.string().cuid())
   id        String   @id @default(cuid())
   symbol    String
   ask       String
@@ -254,7 +247,6 @@ model GmoCoinTickerItem {
 }
 
 model GmoCoinTicker {
-  /// @zod.custom.use(z.string().cuid())
   id           String              @id @default(cuid())
   statusCode   Int                 @map("status")
   responsetime DateTime            @map("responsetime")
@@ -266,7 +258,6 @@ model GmoCoinTicker {
 }
 
 model GmoCoinKlineItem {
-  /// @zod.custom.use(z.string().cuid())
   id       String   @id @default(cuid())
   openTime DateTime
   open     String
@@ -285,7 +276,6 @@ model GmoCoinKlineItem {
 }
 
 model GmoCoinKline {
-  /// @zod.custom.use(z.string().cuid())
   id           String             @id @default(cuid())
   statusCode   Int                @map("status")
   responsetime DateTime           @map("responsetime")
@@ -297,7 +287,6 @@ model GmoCoinKline {
 }
 
 model GmoCoinSymbolRule {
-  /// @zod.custom.use(z.string().cuid())
   id               String @id @default(cuid())
   symbol           String
   tickSize         String
@@ -316,7 +305,6 @@ model GmoCoinSymbolRule {
 }
 
 model GmoCoinRules {
-  /// @zod.custom.use(z.string().cuid())
   id           String              @id @default(cuid())
   statusCode   Int                 @map("status")
   responsetime DateTime            @map("responsetime")
@@ -332,7 +320,6 @@ model GmoCoinRules {
 // TOTP / OTP related models
 // `secret` is expected to be encrypted using AES-256-GCM and stored as base64 string.
 model UserOTP {
-  /// @zod.custom.use(z.string().cuid())
   id                  String    @id @default(cuid())
   secret              String    @map("secret_encrypted") // AES-256-GCM, base64
   issuedAt            DateTime  @default(now()) @map("issued_at")
@@ -356,7 +343,6 @@ model UserOTP {
 }
 
 model OTPBackupCode {
-  /// @zod.custom.use(z.string().cuid())
   id         String   @id @default(cuid())
   hashedCode String   @map("hashed_code")
   createdAt  DateTime @default(now()) @map("created_at")

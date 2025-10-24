@@ -11,7 +11,7 @@ import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 @ApiBearerAuth()
 @Controller('dify')
 export class DifyController {
-  constructor(private readonly difyService: DifyService) { }
+  constructor(private readonly difyService: DifyService) {}
 
   @ApiBody({ type: ChatMessageRequestDto })
   @Post('chat/stream')

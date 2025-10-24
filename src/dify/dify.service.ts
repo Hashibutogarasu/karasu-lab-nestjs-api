@@ -70,7 +70,7 @@ export class DifyService {
           headers: Object.fromEntries(response.headers.entries()),
         });
 
-        throw AppErrorCodes.DIFY_API_ERROR.setCustomMesage(
+        throw AppErrorCodes.DIFY_API_ERROR.setCustomMessage(
           `Dify API error (${response.status}): ${errorData.message || errorData.code || response.statusText}`,
         );
       }
@@ -112,7 +112,7 @@ export class DifyService {
       ) {
         throw error;
       }
-      throw AppErrorCodes.CONNECTION_ERROR.setCustomMesage(
+      throw AppErrorCodes.CONNECTION_ERROR.setCustomMessage(
         `Failed to connect to Dify API: ${error.message}`,
       );
     }

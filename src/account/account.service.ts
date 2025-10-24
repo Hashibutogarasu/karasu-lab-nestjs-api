@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import {
   ForgotPasswordDto,
   ResetPasswordDto,
@@ -72,7 +67,6 @@ export class AccountService {
 
     const resetData = await this.passwordService.createPasswordReset(user.id);
 
-    // メールを送信
     try {
       await this.resendService.sendEmail({
         to: user.email,

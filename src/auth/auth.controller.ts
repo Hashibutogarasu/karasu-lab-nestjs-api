@@ -58,7 +58,7 @@ export class AuthController {
     private readonly snsAuthCoreService: AuthCoreService,
     private readonly jwtTokenService: JwtTokenService,
     private readonly mfaService: MfaService,
-  ) { }
+  ) {}
 
   private async getCodeChallengeFromState(stateCode?: string) {
     if (!stateCode) return undefined;
@@ -580,7 +580,7 @@ export class AuthController {
         );
 
       if (!refreshTokenResult.success) {
-        throw AppErrorCodes.TOKEN_GENERATION_FAILED.setCustomMesage(
+        throw AppErrorCodes.TOKEN_GENERATION_FAILED.setCustomMessage(
           refreshTokenResult.error?.toString() ?? 'Unknown error',
         );
       }

@@ -25,18 +25,25 @@ import type { Request as ExpressRequest } from 'express';
 import { UpdateUserNameDto } from './dto/update-user-name.dto';
 import { AuthUser } from '../auth/decorators/auth-user.decorator';
 import type { User } from '@prisma/client';
-import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
-import { EmailChangeRequestDto, EmailChangeVerifyDto } from './account.dto';
+import { ApiBadRequestResponse, ApiBearerAuth, ApiBody, ApiExtraModels, ApiNotFoundResponse, ApiOkResponse, ApiResponse } from '@nestjs/swagger';
+import { EmailChangeRequestDto, EmailChangeVerifyDto, ResetPasswordResponseDto } from './account.dto';
+import { AppErrorCodes } from '../types/error-codes';
 
 @Controller('account')
 export class AccountController {
   constructor(private readonly accountService: AccountService) { }
+
   /**
    * サインイン済みユーザーのパスワード変更
    * JWTガードで保護されており、認証されたユーザーのみアクセス可能
    */
   @ApiBody({ type: ResetPasswordDto })
   @ApiBearerAuth()
+  @ApiOkResponse({
+    type: ResetPasswordResponseDto
+  })
+  @ApiNotFoundResponse(AppErrorCodes.USER_NOT_FOUND.apiResponse)
+  @ApiBadRequestResponse(AppErrorCodes.NOW_PASSWORD_IS_NOT_INVALID.apiResponse)
   @Post('reset-password')
   @UseGuards(JwtAuthGuard)
   async resetPassword(@AuthUser() user: User, @Body() dto: ResetPasswordDto) {
