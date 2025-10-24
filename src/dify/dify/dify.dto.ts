@@ -20,7 +20,7 @@ export class FileDto extends createZodDto(fileSchema) {}
 
 export const chatMessageRequestSchema = z.object({
   query: z.string().min(1, 'Query must not be empty'),
-  inputs: z.record(z.any()).optional().default({}),
+  inputs: z.record(z.string(), z.any()).optional().default({}),
   user: z.string().min(1, 'User must not be empty'),
   conversation_id: z.string().optional(),
   files: z.array(fileSchema).optional(),

@@ -114,13 +114,13 @@ export const JsonNullValueFilterSchema = z.enum(['DbNull','JsonNull','AnyNull',]
 /////////////////////////////////////////
 
 export const UserSchema = z.object({
-  id: z.string().cuid(),
+  id: z.cuid(),
   username: z.string(),
   email: z.string(),
   passwordHash: z.string().nullable(),
   providers: z.string().array(),
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
 })
 
 export type User = z.infer<typeof UserSchema>
@@ -130,7 +130,7 @@ export type User = z.infer<typeof UserSchema>
 /////////////////////////////////////////
 
 export const PendingEMailChangeProcessSchema = z.object({
-  id: z.string().cuid(),
+  id: z.cuid(),
   userId: z.string(),
   newEmail: z.string(),
   verificationCode: z.string(),
@@ -146,7 +146,7 @@ export type PendingEMailChangeProcess = z.infer<typeof PendingEMailChangeProcess
 /////////////////////////////////////////
 
 export const RoleSchema = z.object({
-  id: z.string().cuid(),
+  id: z.cuid(),
   name: z.string(),
   description: z.string().nullable(),
   createdAt: z.coerce.date(),
@@ -210,7 +210,7 @@ export type RefreshToken = z.infer<typeof RefreshTokenSchema>
 /////////////////////////////////////////
 
 export const ExtraProfileSchema = z.object({
-  id: z.string().cuid(),
+  id: z.cuid(),
   userId: z.string(),
   provider: z.string(),
   providerId: z.string(),
@@ -229,7 +229,7 @@ export type ExtraProfile = z.infer<typeof ExtraProfileSchema>
 /////////////////////////////////////////
 
 export const AuthStateSchema = z.object({
-  id: z.string().cuid(),
+  id: z.cuid(),
   stateCode: z.string(),
   oneTimeToken: z.string(),
   provider: z.string(),
@@ -250,7 +250,7 @@ export type AuthState = z.infer<typeof AuthStateSchema>
 /////////////////////////////////////////
 
 export const PasswordResetSchema = z.object({
-  id: z.string().cuid(),
+  id: z.cuid(),
   userId: z.string(),
   resetCode: z.string(),
   expiresAt: z.coerce.date(),
@@ -265,7 +265,7 @@ export type PasswordReset = z.infer<typeof PasswordResetSchema>
 /////////////////////////////////////////
 
 export const JWTStateSchema = z.object({
-  id: z.string().cuid(),
+  id: z.cuid(),
   userId: z.string(),
   revoked: z.boolean(),
   tokenHint: z.string(),
@@ -280,7 +280,7 @@ export type JWTState = z.infer<typeof JWTStateSchema>
 /////////////////////////////////////////
 
 export const ExternalProviderAccessTokenSchema = z.object({
-  id: z.string().cuid(),
+  id: z.cuid(),
   userId: z.string(),
   encryptedToken: z.string(),
   provider: z.string(),
@@ -295,7 +295,7 @@ export type ExternalProviderAccessToken = z.infer<typeof ExternalProviderAccessT
 /////////////////////////////////////////
 
 export const GmoCoinStatusSchema = z.object({
-  id: z.string().cuid(),
+  id: z.cuid(),
   statusCode: z.number().int(),
   data: JsonValueSchema,
   responsetime: z.coerce.date(),
@@ -310,7 +310,7 @@ export type GmoCoinStatus = z.infer<typeof GmoCoinStatusSchema>
 /////////////////////////////////////////
 
 export const GmoCoinTickerItemSchema = z.object({
-  id: z.string().cuid(),
+  id: z.cuid(),
   symbol: z.string(),
   ask: z.string(),
   bid: z.string(),
@@ -328,7 +328,7 @@ export type GmoCoinTickerItem = z.infer<typeof GmoCoinTickerItemSchema>
 /////////////////////////////////////////
 
 export const GmoCoinTickerSchema = z.object({
-  id: z.string().cuid(),
+  id: z.cuid(),
   statusCode: z.number().int(),
   responsetime: z.coerce.date(),
   createdAt: z.coerce.date(),
@@ -342,7 +342,7 @@ export type GmoCoinTicker = z.infer<typeof GmoCoinTickerSchema>
 /////////////////////////////////////////
 
 export const GmoCoinKlineItemSchema = z.object({
-  id: z.string().cuid(),
+  id: z.cuid(),
   openTime: z.coerce.date(),
   open: z.string(),
   high: z.string(),
@@ -360,7 +360,7 @@ export type GmoCoinKlineItem = z.infer<typeof GmoCoinKlineItemSchema>
 /////////////////////////////////////////
 
 export const GmoCoinKlineSchema = z.object({
-  id: z.string().cuid(),
+  id: z.cuid(),
   statusCode: z.number().int(),
   responsetime: z.coerce.date(),
   createdAt: z.coerce.date(),
@@ -374,7 +374,7 @@ export type GmoCoinKline = z.infer<typeof GmoCoinKlineSchema>
 /////////////////////////////////////////
 
 export const GmoCoinSymbolRuleSchema = z.object({
-  id: z.string().cuid(),
+  id: z.cuid(),
   symbol: z.string(),
   tickSize: z.string(),
   minOpenOrderSize: z.string(),
@@ -392,7 +392,7 @@ export type GmoCoinSymbolRule = z.infer<typeof GmoCoinSymbolRuleSchema>
 /////////////////////////////////////////
 
 export const GmoCoinRulesSchema = z.object({
-  id: z.string().cuid(),
+  id: z.cuid(),
   statusCode: z.number().int(),
   responsetime: z.coerce.date(),
   createdAt: z.coerce.date(),
@@ -406,7 +406,7 @@ export type GmoCoinRules = z.infer<typeof GmoCoinRulesSchema>
 /////////////////////////////////////////
 
 export const UserOTPSchema = z.object({
-  id: z.string().cuid(),
+  id: z.cuid(),
   secret: z.string(),
   issuedAt: z.coerce.date(),
   lastAuthenticatedAt: z.coerce.date().nullable(),
@@ -424,7 +424,7 @@ export type UserOTP = z.infer<typeof UserOTPSchema>
 /////////////////////////////////////////
 
 export const OTPBackupCodeSchema = z.object({
-  id: z.string().cuid(),
+  id: z.cuid(),
   hashedCode: z.string(),
   createdAt: z.coerce.date(),
   userOtpId: z.string(),

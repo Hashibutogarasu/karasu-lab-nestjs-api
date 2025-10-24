@@ -57,7 +57,7 @@ export class AppErrorCodeFilter implements ExceptionFilter {
       return;
     }
 
-    throw AppErrorCodes.INTERNAL_SERVER_ERROR.setCustomMesage(
+    throw AppErrorCodes.INTERNAL_SERVER_ERROR.setCustomMessage(
       exception.message,
     );
   }

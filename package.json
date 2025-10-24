@@ -34,6 +34,7 @@
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/schedule": "^6.0.1",
+    "@nestjs/swagger": "^11.2.1",
     "@prisma/client": "6.17.1",
     "@quramy/jest-prisma-core": "^1.8.1",
     "@types/jsonwebtoken": "^9.0.10",
@@ -61,7 +62,7 @@
     "remark-rehype": "^11.1.2",
     "resend": "^6.1.2",
     "rxjs": "^7.8.1",
-    "zod": "^3",
+    "zod": "^4.1.12",
     "zod-prisma-types": "^3.3.5"
   },
   "devDependencies": {
@@ -110,6 +111,7 @@
       "@nestjs/core",
       "@prisma/client",
       "@prisma/engines",
+      "@scarf/scarf",
       "bcrypt",
       "prisma",
       "unrs-resolver"

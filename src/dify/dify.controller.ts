@@ -6,11 +6,14 @@ import { DomainProtected } from '../lib/domain';
 import { NoInterceptor } from '../interceptors/no-interceptor.decorator';
 import { AuthUser } from '../auth/decorators/auth-user.decorator';
 import type { PublicUser } from '../auth/decorators/auth-user.decorator';
+import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 @NoInterceptor()
+@ApiBearerAuth()
 @Controller('dify')
 export class DifyController {
   constructor(private readonly difyService: DifyService) {}
 
+  @ApiBody({ type: ChatMessageRequestDto })
   @Post('chat/stream')
   @DomainProtected()
   async streamChatMessage(

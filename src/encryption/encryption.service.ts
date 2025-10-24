@@ -35,7 +35,7 @@ export class EncryptionService {
 
       // Otherwise wrap as INVALID_RSA_KEY with additional message
       const message = String((err as Error).message || err);
-      throw AppErrorCodes.INVALID_RSA_KEY.setCustomMesage(
+      throw AppErrorCodes.INVALID_RSA_KEY.setCustomMessage(
         `Invalid RSA key configuration: ${message}`,
       );
     }
@@ -93,7 +93,7 @@ export class EncryptionService {
 
       return res;
     } catch (err) {
-      throw AppErrorCodes.ENCRYPTION_FAILED.setCustomMesage(
+      throw AppErrorCodes.ENCRYPTION_FAILED.setCustomMessage(
         String((err as Error).message || err),
       );
     }
@@ -154,7 +154,7 @@ export class EncryptionService {
       return decrypted.toString('utf8');
     } catch (err) {
       // Expose a categorized decryption error with message
-      throw AppErrorCodes.DECRYPTION_FAILED.setCustomMesage(
+      throw AppErrorCodes.DECRYPTION_FAILED.setCustomMessage(
         String((err as Error).message || err),
       );
     }

@@ -4,7 +4,7 @@ import z from 'zod';
 
 export const registerSchema = z.object({
   username: z.string(),
-  email: z.string().email(),
+  email: z.email(),
   password: z.string().min(6),
 });
 
@@ -25,7 +25,7 @@ export class RefreshTokenDto extends createZodDto(refreshTokenSchema) {}
 
 export const authStateSchema = z.object({
   provider: z.string(),
-  callbackUrl: z.string().url(),
+  callbackUrl: z.url(),
 });
 
 export class AuthStateDto extends createZodDto(authStateSchema) {}
@@ -85,7 +85,7 @@ export const usernameSchema = z
 export const UserResponseSchema = z.object({
   id: z.string(),
   username: z.string(),
-  email: z.string().email(),
+  email: z.email(),
   created_at: z.date().optional(),
   updated_at: z.date().optional(),
 });

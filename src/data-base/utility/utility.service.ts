@@ -21,7 +21,7 @@ export class UtilityService extends BaseService {
     @Inject(forwardRef(() => DataBaseService))
     private readonly databaseService: DataBaseService,
     private readonly moduleRef: ModuleRef,
-    appConfig: AppConfigService
+    appConfig: AppConfigService,
   ) {
     super(appConfig);
     this.prisma = this.databaseService.prisma();

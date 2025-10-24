@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import {
   ForgotPasswordDto,
   ResetPasswordDto,
@@ -25,6 +20,7 @@ export class AccountService {
     private readonly passwordService: PasswordService,
     private readonly pendingEmailChangeProcessService: PendingEmailChangeProcessService,
   ) {}
+
   /**
    * サインイン済みユーザーのパスワード変更（旧パスワード必要）
    */
@@ -36,7 +32,6 @@ export class AccountService {
       throw AppErrorCodes.USER_NOT_FOUND;
     }
 
-    // SNSユーザー（パスワードハッシュがnull）の場合は、旧パスワード検証をスキップ
     if (user.passwordHash) {
       const verifiedUser = await this.userService.verifyUserPassword(
         user.username,
@@ -51,6 +46,7 @@ export class AccountService {
       userId,
       dto.newPassword,
     );
+
     return {
       message: 'Password updated successfully',
       user: updatedUser,
@@ -63,7 +59,6 @@ export class AccountService {
   async forgotPassword(dto: ForgotPasswordDto) {
     const user = await this.userService.findUserByEmail(dto.email);
     if (!user) {
-      // セキュリティ上、ユーザーが存在しない場合でも成功レスポンスを返す
       return {
         message:
           'A password reset code has been sent to the specified email address',
@@ -72,7 +67,6 @@ export class AccountService {
 
     const resetData = await this.passwordService.createPasswordReset(user.id);
 
-    // メールを送信
     try {
       await this.resendService.sendEmail({
         to: user.email,
@@ -108,13 +102,11 @@ export class AccountService {
       throw AppErrorCodes.INVALID_RESET_CODE;
     }
 
-    // パスワードを更新
     const updatedUser = await this.passwordService.updateUserPassword(
       passwordReset.userId,
       dto.newPassword,
     );
 
-    // リセットコードを使用済みにマーク
     await this.passwordService.markPasswordResetAsUsed(passwordReset.id);
 
     return {
@@ -143,13 +135,11 @@ export class AccountService {
       throw AppErrorCodes.USER_NOT_FOUND;
     }
 
-    // 既に同じメールが他ユーザーに使われていないかチェック
     const existing = await this.userService.findUserByEmail(newEmail);
     if (existing && existing.id !== userId) {
       throw AppErrorCodes.EMAIL_ALREADY_IN_USE;
     }
 
-    // Create pending record and get verification code
     const pending =
       await this.pendingEmailChangeProcessService.createPendingEmailChangeProcess(
         {
@@ -158,7 +148,6 @@ export class AccountService {
         },
       );
 
-    // Send email with code
     try {
       const frontendUrl = `${process.env.FRONTEND_URL}/email/change/confirm`;
       await this.resendService.sendEmail({
@@ -199,15 +188,12 @@ export class AccountService {
       );
     if (!pending) throw AppErrorCodes.INVALID_REQUEST;
 
-    // Update user's email
     const updated = await this.userService.updateUser(userId, {
       email: pending.newEmail,
     });
 
-    // Mark pending as used
     await this.pendingEmailChangeProcessService.markPendingAsUsed(pending.id);
 
-    // Optionally delete the pending record
     try {
       await this.pendingEmailChangeProcessService.deletePendingById(pending.id);
     } catch (err) {
@@ -248,7 +234,6 @@ export class AccountService {
       throw AppErrorCodes.USER_NOT_FOUND;
     }
 
-    // 既にパスワードが設定されている場合はエラー
     if (user.passwordHash) {
       throw AppErrorCodes.PASSWORD_ALREADY_SET;
     }

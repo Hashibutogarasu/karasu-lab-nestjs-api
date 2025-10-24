@@ -109,6 +109,7 @@ export class PasswordService {
         username: true,
         email: true,
         updatedAt: true,
+        passwordHash: false,
       },
     });
   }
