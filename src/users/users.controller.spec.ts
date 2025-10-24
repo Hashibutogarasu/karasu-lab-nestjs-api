@@ -1,9 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersController } from './users.controller';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { createMock } from '@golevelup/ts-jest';
-import type { DiscordUser } from '../types/discord-user';
-import type { GoogleUser } from '../types/google-user';
+import { DiscordUser } from '../types/discord-user';
+import { GoogleUser } from '../types/google-user';
 import { getGlobalModule } from '../utils/test/global-modules';
 import { PermissionBitcalcService } from '../permission-bitcalc/permission-bitcalc.service';
 import { PermissionGuard } from '../auth/guards/permission.guard';

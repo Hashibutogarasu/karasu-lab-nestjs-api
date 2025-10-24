@@ -1,3 +1,4 @@
+import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
 // Google User スキーマ
@@ -11,4 +12,4 @@ export const GoogleUserSchema = z.object({
   verified_email: z.boolean(),
 });
 
-export type GoogleUser = z.infer<typeof GoogleUserSchema>;
+export class GoogleUser extends createZodDto(GoogleUserSchema) { }
