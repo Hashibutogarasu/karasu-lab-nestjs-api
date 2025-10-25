@@ -9,6 +9,9 @@ import { AppErrorCodes } from '../../types/error-codes';
 import { UserService } from '../../data-base/query/user/user.service';
 import { RemoveNullProperties } from '../../types/remove-null-properties';
 import { OmitFunctions } from '../../types/omit-functions';
+import { UserSchema } from '../../generated/zod';
+import z from 'zod';
+import { createZodDto } from 'nestjs-zod';
 
 /**
  * JWT認証されたユーザー情報を取得するデコレーター
@@ -27,9 +30,11 @@ export type UserWithRelations = Prisma.UserGetPayload<{
   include: { roles: true; extraProfiles: true; providers: string[] };
 }> & { roles: Role[] };
 
-export type PublicUser = RemoveNullProperties<
-  OmitFunctions<Omit<UserWithRelations, 'passwordHash'>>
->;
+export const publicUserSchema = UserSchema.omit({
+  passwordHash: true,
+});
+
+export class PublicUser extends createZodDto(publicUserSchema) { };
 
 export const AuthUser = createParamDecorator(
   async (data: unknown, ctx: ExecutionContext): Promise<PublicUser | null> => {
@@ -55,8 +60,8 @@ export const AuthUser = createParamDecorator(
       throw AppErrorCodes.NOT_FOUND;
     }
 
-    const { passwordHash, ...publicUser } = user as UserWithRelations;
-    return publicUser as PublicUser;
+    const publicUser = publicUserSchema.parse(user);
+    return publicUser;
   },
 );
 

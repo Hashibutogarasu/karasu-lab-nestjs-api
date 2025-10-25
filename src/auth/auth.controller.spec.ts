@@ -169,8 +169,6 @@ describe('AuthController', () => {
 
   describe('register (POST /auth/register)', () => {
     it('should register user successfully', async () => {
-      const { passwordHash, ...expectedUser } = mockUser;
-
       const mockAuthResponse = {
         success: true,
         user: mockUser,
@@ -184,7 +182,7 @@ describe('AuthController', () => {
       expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.CREATED);
       expect(mockJsonFn).toHaveBeenCalledWith({
         message: 'User registered successfully',
-        user: expectedUser,
+        user: mockUser,
       });
     });
 

@@ -1,5 +1,5 @@
 import { Injectable, Inject, forwardRef } from '@nestjs/common';
-import type { PublicUser } from '../../../auth/decorators/auth-user.decorator';
+import { publicUserSchema, type PublicUser } from '../../../auth/decorators/auth-user.decorator';
 import { PrismaClient, Role, User } from '@prisma/client';
 import { DataBaseService } from '../../data-base.service';
 import { UtilityService } from '../../utility/utility.service';
@@ -100,7 +100,7 @@ export class UserService {
     email: string;
     password: string;
   }): Promise<PublicUser> {
-    let created = await this.prisma.user.create({
+    return publicUserSchema.parse(await this.prisma.user.create({
       data: {
         username: data.username,
         email: data.email,
@@ -115,9 +115,9 @@ export class UserService {
         providers: true,
         extraProfiles: true,
         roles: true,
+        passwordHash: false,
       },
-    });
-    return created;
+    }));
   }
 
   /**
@@ -126,8 +126,7 @@ export class UserService {
   async verifyUserPassword(
     usernameOrEmail: string,
     password: string,
-  ): Promise<PublicUser | null> {
-    // ユーザー名またはメールアドレスでユーザーを検索
+  ): Promise<User | null> {
     const user = await this.prisma.user.findFirst({
       where: {
         OR: [{ username: usernameOrEmail }, { email: usernameOrEmail }],
@@ -154,8 +153,7 @@ export class UserService {
 
     if (!isValid) return null;
 
-    const { passwordHash, ...publicUser } = user;
-    return publicUser as PublicUser;
+    return user;
   }
 
   /**

@@ -114,13 +114,13 @@ export const JsonNullValueFilterSchema = z.enum(['DbNull','JsonNull','AnyNull',]
 /////////////////////////////////////////
 
 export const UserSchema = z.object({
-  id: z.cuid(),
+  id: z.string(),
   username: z.string(),
   email: z.string(),
-  passwordHash: z.string().nullable(),
+  passwordHash: z.string().optional().nullable().nullable(),
   providers: z.string().array(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
 })
 
 export type User = z.infer<typeof UserSchema>

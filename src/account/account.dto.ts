@@ -3,12 +3,12 @@ import z from 'zod';
 import { UserSchema } from '../generated/zod';
 
 const emailChangeRequestSchema = z.object({
-  newEmail: z.string().email(),
+  newEmail: z.email(),
 });
 
 export class EmailChangeRequestDto extends createZodDto(
   emailChangeRequestSchema,
-) { }
+) {}
 
 const emailChangeVerifySchema = z.object({
   verificationCode: z.string().length(6),
@@ -16,7 +16,7 @@ const emailChangeVerifySchema = z.object({
 
 export class EmailChangeVerifyDto extends createZodDto(
   emailChangeVerifySchema,
-) { }
+) {}
 
 export const resetPasswordResponseSchema = z.object({
   message: z.string().default('Password updated successfully'),
@@ -25,4 +25,4 @@ export const resetPasswordResponseSchema = z.object({
 
 export class ResetPasswordResponseDto extends createZodDto(
   resetPasswordResponseSchema,
-) { }
+) {}

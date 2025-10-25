@@ -24,14 +24,30 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import type { Request as ExpressRequest } from 'express';
 import { UpdateUserNameDto } from './dto/update-user-name.dto';
 import { AuthUser } from '../auth/decorators/auth-user.decorator';
+import type { PublicUser } from '../auth/decorators/auth-user.decorator';
 import type { User } from '@prisma/client';
-import { ApiBadRequestResponse, ApiBearerAuth, ApiBody, ApiExtraModels, ApiNotFoundResponse, ApiOkResponse, ApiResponse } from '@nestjs/swagger';
-import { EmailChangeRequestDto, EmailChangeVerifyDto, ResetPasswordResponseDto } from './account.dto';
+import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiBody,
+  ApiExtraModels,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiResponse,
+} from '@nestjs/swagger';
+import {
+  EmailChangeRequestDto,
+  EmailChangeVerifyDto,
+  ResetPasswordResponseDto,
+} from './account.dto';
 import { AppErrorCodes } from '../types/error-codes';
+import { createZodDto } from 'nestjs-zod';
+import z from 'zod';
+import { UserSchema } from '../generated/zod';
 
 @Controller('account')
 export class AccountController {
-  constructor(private readonly accountService: AccountService) { }
+  constructor(private readonly accountService: AccountService) {}
 
   /**
    * サインイン済みユーザーのパスワード変更
@@ -40,7 +56,7 @@ export class AccountController {
   @ApiBody({ type: ResetPasswordDto })
   @ApiBearerAuth()
   @ApiOkResponse({
-    type: ResetPasswordResponseDto
+    type: ResetPasswordResponseDto,
   })
   @ApiNotFoundResponse(AppErrorCodes.USER_NOT_FOUND.apiResponse)
   @ApiBadRequestResponse(AppErrorCodes.NOW_PASSWORD_IS_NOT_INVALID.apiResponse)
@@ -54,6 +70,13 @@ export class AccountController {
    * パスワードリセット用のコード送信（サインインしていない場合）
    * メールアドレスを指定してリセットコードを送信
    */
+  @ApiOkResponse({
+    type: createZodDto(
+      z.object({
+        message: z.string(),
+      }),
+    ),
+  })
   @ApiBody({ type: ForgotPasswordDto })
   @Post('forgot-password')
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
@@ -64,12 +87,28 @@ export class AccountController {
    * リセットコードを使用したパスワード変更
    * 6桁のコードと新しいパスワードを指定
    */
+  @ApiOkResponse({
+    type: createZodDto(
+      z.object({
+        message: z.string(),
+        user: UserSchema.partial(),
+      }),
+    ),
+  })
+  @ApiBadRequestResponse(AppErrorCodes.INVALID_RESET_CODE.apiResponse)
   @ApiBody({ type: ConfirmResetPasswordDto })
   @Post('confirm-reset')
   async confirmResetPassword(@Body() dto: ConfirmResetPasswordDto) {
     return await this.accountService.confirmResetPassword(dto);
   }
 
+  @ApiOkResponse({
+    type: createZodDto(
+      UserSchema.omit({
+        passwordHash: true,
+      }),
+    ),
+  })
   @ApiBearerAuth()
   @Get('profile')
   @UseGuards(JwtAuthGuard)
@@ -78,6 +117,8 @@ export class AccountController {
     return await this.accountService.getProfile(userId);
   }
 
+  @ApiBadRequestResponse(AppErrorCodes.ALREADY_TAKEN_USERNAME.apiResponse)
+  @ApiNotFoundResponse(AppErrorCodes.USER_NOT_FOUND.apiResponse)
   @ApiBearerAuth()
   @Put('profile')
   @UseGuards(JwtAuthGuard)
@@ -93,6 +134,8 @@ export class AccountController {
    * 外部プロバイダーユーザーの新規パスワード設定
    * JWTガードで保護されており、パスワードを持たないユーザーのみ設定可能
    */
+  @ApiBadRequestResponse(AppErrorCodes.PASSWORD_ALREADY_SET.apiResponse)
+  @ApiNotFoundResponse(AppErrorCodes.USER_NOT_FOUND.apiResponse)
   @ApiBearerAuth()
   @ApiBody({ type: SetPasswordDto })
   @Post('set-password')
@@ -105,33 +148,35 @@ export class AccountController {
     return await this.accountService.setPassword(userId, dto);
   }
 
+  @ApiBadRequestResponse(AppErrorCodes.EMAIL_ALREADY_IN_USE.apiResponse)
   @ApiBearerAuth()
   @ApiBody({ type: EmailChangeRequestDto })
   @Post('email/change')
   @UseGuards(JwtAuthGuard)
   async requestEmailChange(
-    @AuthUser() user: User,
+    @AuthUser() user: PublicUser,
     @Body() body: EmailChangeRequestDto,
     @Res() res: Response,
   ) {
     const result = await this.accountService.requestEmailChange(
-      user.id,
+      user,
       body.newEmail,
     );
     return res.status(200).json(result);
   }
 
+  @ApiBadRequestResponse(AppErrorCodes.INVALID_REQUEST.apiResponse)
   @ApiBearerAuth()
   @ApiBody({ type: EmailChangeVerifyDto })
   @Post('email/change/verify')
   @UseGuards(JwtAuthGuard)
   async verifyEmailChange(
-    @AuthUser() user: User,
+    @AuthUser() user: PublicUser,
     @Body() body: EmailChangeVerifyDto,
     @Res() res: Response,
   ) {
     const result = await this.accountService.verifyEmailChange(
-      user.id,
+      user,
       body.verificationCode,
     );
     return res.status(200).json(result);
@@ -141,9 +186,13 @@ export class AccountController {
    * パスワード設定可能性チェック
    * JWT認証したユーザーが外部プロバイダーでパスワードを持たないかどうかを判定
    */
+  @ApiBadRequestResponse(AppErrorCodes.USER_NOT_FOUND.apiResponse)
   @Get('can-set-password')
   @UseGuards(JwtAuthGuard)
-  async canSetPassword(@Request() req: ExpressRequest, @AuthUser() user: User) {
-    return await this.accountService.canSetPassword(user.id);
+  async canSetPassword(
+    @Request() req: ExpressRequest,
+    @AuthUser() user: PublicUser,
+  ) {
+    return await this.accountService.canSetPassword(user);
   }
 }

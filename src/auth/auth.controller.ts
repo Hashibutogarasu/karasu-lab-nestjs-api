@@ -23,8 +23,8 @@ import {
 import { AppErrorCode, AppErrorCodes } from '../types/error-codes';
 import { NoInterceptor } from '../interceptors/no-interceptor.decorator';
 import { JwtAuthGuard } from './jwt-auth.guard';
-import { AuthUser } from './decorators/auth-user.decorator';
-import type { PublicUser } from './decorators/auth-user.decorator';
+import { AuthUser, publicUserSchema } from './decorators/auth-user.decorator';
+import { PublicUser } from './decorators/auth-user.decorator';
 import { AuthStateService } from '../data-base/query/auth-state/auth-state.service';
 import { AuthCoreService } from './sns/auth-core/auth-core.service';
 import { MfaService } from '../data-base/query/mfa/mfa.service';
@@ -34,8 +34,10 @@ import {
   AuthStateDto,
   authStateSchema,
   LoginDto,
+  LoginResponseDto,
   loginSchema,
   RefreshTokenDto,
+  RefreshTokenResponseDto,
   refreshTokenSchema,
   RegisterDto,
   registerSchema,
@@ -43,7 +45,18 @@ import {
   verifyTokenSchema,
 } from './auth.dto';
 import { ZodValidationPipe } from '../zod-validation-type';
-import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiBody,
+  ApiCreatedResponse,
+  ApiInternalServerErrorResponse,
+  ApiOkResponse,
+  ApiServiceUnavailableResponse,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
+import { createZodDto } from 'nestjs-zod';
+import z from 'zod';
 
 @NoInterceptor()
 @Controller('auth')
@@ -58,7 +71,7 @@ export class AuthController {
     private readonly snsAuthCoreService: AuthCoreService,
     private readonly jwtTokenService: JwtTokenService,
     private readonly mfaService: MfaService,
-  ) {}
+  ) { }
 
   private async getCodeChallengeFromState(stateCode?: string) {
     if (!stateCode) return undefined;
@@ -74,6 +87,16 @@ export class AuthController {
    * 利用可能な外部プロバイダーリストを返すエンドポイント
    * GET /auth/providers
    */
+  @ApiOkResponse({
+    type: createZodDto(
+      z.object({
+        providers: z.array(z.string()),
+      }),
+    ),
+  })
+  @ApiInternalServerErrorResponse(
+    AppErrorCodes.INTERNAL_SERVER_ERROR.apiResponse,
+  )
   @Get('providers')
   async getProviders(@Res() res: Response): Promise<void> {
     try {
@@ -105,6 +128,14 @@ export class AuthController {
    * ユーザー登録エンドポイント
    * POST /auth/register
    */
+  @ApiCreatedResponse({
+    type: createZodDto(
+      z.object({
+        message: z.string(),
+        user: publicUserSchema,
+      }),
+    ),
+  })
   @ApiBody({ type: RegisterDto })
   @UsePipes(new ZodValidationPipe(registerSchema))
   @Post('register')
@@ -114,11 +145,10 @@ export class AuthController {
   ): Promise<void> {
     try {
       const { user } = await this.authService.register(registerDto);
-      const { passwordHash, ...publicUser } = (user as any) || {};
 
       res.status(HttpStatus.CREATED).json({
         message: 'User registered successfully',
-        user: publicUser,
+        user: user,
       });
     } catch (error) {
       return Promise.reject(error);
@@ -126,9 +156,16 @@ export class AuthController {
   }
 
   /**
-   * SNS OAuth認証開始エンドポイント (統合版)
+   * SNS OAuth認証開始エンドポイント
    * GET /auth/login/:provider
    */
+  @ApiBadRequestResponse(AppErrorCodes.UNSUPPORTED_PROVIDER.apiResponse)
+  @ApiBadRequestResponse(AppErrorCodes.PROVIDER_UNAVAILABLE.apiResponse)
+  @ApiBadRequestResponse(AppErrorCodes.INVALID_STATE_CODE.apiResponse)
+  @ApiServiceUnavailableResponse(AppErrorCodes.PROVIDER_UNAVAILABLE.apiResponse)
+  @ApiInternalServerErrorResponse(
+    AppErrorCodes.INTERNAL_SERVER_ERROR.apiResponse,
+  )
   @Get('login/:provider')
   async loginWithProvider(
     @Param('provider') provider: string,
@@ -193,6 +230,16 @@ export class AuthController {
    * ユーザーログインエンドポイント
    * POST /auth/login
    */
+  @ApiOkResponse({
+    type: LoginResponseDto
+  })
+  @ApiInternalServerErrorResponse(
+    AppErrorCodes.TOKEN_GENERATION_FAILED.apiResponse,
+  )
+  @ApiInternalServerErrorResponse(
+    AppErrorCodes.INTERNAL_SERVER_ERROR.apiResponse,
+  )
+  @ApiUnauthorizedResponse(AppErrorCodes.INVALID_CREDENTIALS.apiResponse)
   @ApiBody({ type: LoginDto })
   @UsePipes(new ZodValidationPipe(loginSchema))
   @Post('login')
@@ -254,6 +301,12 @@ export class AuthController {
    * リフレッシュトークンでアクセストークンを再発行
    * POST /auth/refresh
    */
+  @ApiOkResponse({
+    type: RefreshTokenResponseDto
+  })
+  @ApiInternalServerErrorResponse(AppErrorCodes.TOKEN_GENERATION_FAILED.apiResponse)
+  @ApiBadRequestResponse(AppErrorCodes.INVALID_TOKEN.apiResponse)
+  @ApiBadRequestResponse(AppErrorCodes.INVALID_REQUEST.apiResponse)
   @ApiBody({ type: RefreshTokenDto })
   @UsePipes(new ZodValidationPipe(refreshTokenSchema))
   @Post('refresh')
@@ -300,6 +353,10 @@ export class AuthController {
    * ユーザー情報取得エンドポイント
    * GET /auth/profile
    */
+  @ApiOkResponse({
+    type: PublicUser
+  })
+  @ApiInternalServerErrorResponse(AppErrorCodes.INTERNAL_SERVER_ERROR.apiResponse)
   @ApiBearerAuth()
   @Get('profile')
   @UseGuards(JwtAuthGuard)
@@ -309,10 +366,6 @@ export class AuthController {
     @AuthUser() user: PublicUser,
   ): Promise<void> {
     try {
-      if (!user || !user.id) {
-        throw AppErrorCodes.MISSING_SESSION;
-      }
-
       const userProfile = await this.authService.getProfile(user.id);
 
       if (!userProfile) {

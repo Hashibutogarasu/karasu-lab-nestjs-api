@@ -7,7 +7,7 @@ import { UserService } from '../data-base/query/user/user.service';
 import { AuthStateService } from '../data-base/query/auth-state/auth-state.service';
 import { JwtstateService } from '../data-base/query/jwtstate/jwtstate.service';
 import { JwtPayload } from './jwt.strategy';
-import { AppErrorCodes } from '../types/error-codes';
+import { AppErrorCode, AppErrorCodes } from '../types/error-codes';
 import {
   LoginDto,
   RegisterDto,
@@ -34,7 +34,7 @@ export class AuthService {
     private readonly jwtstateService: JwtstateService,
     private readonly workflowService: WorkflowService,
     private readonly managerService: ManagerService,
-  ) {}
+  ) { }
 
   /**
    * ユーザー登録処理
@@ -81,23 +81,17 @@ export class AuthService {
       );
 
       if (!verified) {
-        return {
-          success: false,
-          error: 'invalid_credentials',
-          errorDescription: 'Invalid username/email or password',
-        };
+        throw AppErrorCodes.INVALID_CREDENTIALS;
       }
+
+      const { passwordHash, ...user } = verified;
 
       return {
         success: true,
-        user: verified,
+        user: user,
       };
     } catch (error) {
-      return {
-        success: false,
-        error: 'server_error',
-        errorDescription: 'An unexpected error occurred during login',
-      };
+      throw AppErrorCodes.INTERNAL_SERVER_ERROR;
     }
   }
 
@@ -300,13 +294,9 @@ export class AuthService {
    */
   async remove(id: string): Promise<{ success: boolean; message: string }> {
     try {
-      // ユーザーが存在するかチェック
       const existingUser = await this.userService.findById(id);
       if (!existingUser) {
-        return {
-          success: false,
-          message: 'User not found',
-        };
+        throw AppErrorCodes.USER_NOT_FOUND;
       }
 
       await this.userService.deleteUser(id);

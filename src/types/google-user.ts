@@ -12,4 +12,4 @@ export const GoogleUserSchema = z.object({
   verified_email: z.boolean(),
 });
 
-export class GoogleUser extends createZodDto(GoogleUserSchema) { }
+export class GoogleUser extends createZodDto(GoogleUserSchema) {}

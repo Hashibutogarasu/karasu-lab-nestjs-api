@@ -10,6 +10,7 @@ import { UserService } from '../data-base/query/user/user.service';
 import { PendingEmailChangeProcessService } from '../data-base/query/pending-email-change-process/pending-email-change-process.service';
 import { PasswordService } from '../data-base/utility/password/password.service';
 import { JwtTokenService } from '../auth/jwt-token/jwt-token.service';
+import { mockUser } from '../utils/test/mock-data';
 
 describe('Account Email Change Flow', () => {
   let service: AccountService;
@@ -72,7 +73,7 @@ describe('Account Email Change Flow', () => {
     );
 
     const reqRes = await service.requestEmailChange(
-      'user_1',
+      mockUser,
       'new@example.com',
     );
     expect(reqRes).toHaveProperty('message');
@@ -95,9 +96,9 @@ describe('Account Email Change Flow', () => {
       {} as any,
     );
 
-    const verifyRes = await service.verifyEmailChange('user_1', '123456');
+    const verifyRes = await service.verifyEmailChange(mockUser, '123456');
     expect(verifyRes).toHaveProperty('message');
-    expect(mockUserService.updateUser).toHaveBeenCalledWith('user_1', {
+    expect(mockUserService.updateUser).toHaveBeenCalledWith('user_123', {
       email: 'new@example.com',
     });
     expect(
@@ -117,7 +118,7 @@ describe('Account Email Change Flow', () => {
     } as any);
 
     await expect(
-      service.requestEmailChange('user_1', 'taken@example.com'),
+      service.requestEmailChange(mockUser, 'taken@example.com'),
     ).rejects.toBe(AppErrorCodes.EMAIL_ALREADY_IN_USE);
   });
 
@@ -127,7 +128,7 @@ describe('Account Email Change Flow', () => {
       null as any,
     );
 
-    await expect(service.verifyEmailChange('user_1', '000000')).rejects.toBe(
+    await expect(service.verifyEmailChange(mockUser, '000000')).rejects.toBe(
       AppErrorCodes.INVALID_REQUEST,
     );
   });
@@ -139,17 +140,17 @@ describe('Account Email Change Flow', () => {
       null as any,
     );
 
-    await expect(service.verifyEmailChange('user_1', '999999')).rejects.toBe(
+    await expect(service.verifyEmailChange(mockUser, '999999')).rejects.toBe(
       AppErrorCodes.INVALID_REQUEST,
     );
   });
 
   it('wrong length codes (5 or 7 digits) are rejected', async () => {
     mockUserService.findUserById.mockResolvedValue(fakeUser as any);
-    await expect(service.verifyEmailChange('user_1', '12345')).rejects.toBe(
+    await expect(service.verifyEmailChange(mockUser, '12345')).rejects.toBe(
       AppErrorCodes.INVALID_REQUEST,
     );
-    await expect(service.verifyEmailChange('user_1', '1234567')).rejects.toBe(
+    await expect(service.verifyEmailChange(mockUser, '1234567')).rejects.toBe(
       AppErrorCodes.INVALID_REQUEST,
     );
   });
@@ -160,7 +161,7 @@ describe('Account Email Change Flow', () => {
       null as any,
     );
     // service.findPendingByCode internally checks expiry; our mock returns null to indicate invalid
-    await expect(service.verifyEmailChange('user_1', '111111')).rejects.toBe(
+    await expect(service.verifyEmailChange(mockUser, '111111')).rejects.toBe(
       AppErrorCodes.INVALID_REQUEST,
     );
   });
@@ -173,14 +174,14 @@ describe('Account Email Change Flow', () => {
     );
 
     await expect(
-      service.requestEmailChange('user_1', 'another@example.com'),
+      service.requestEmailChange(mockUser, 'another@example.com'),
     ).rejects.toThrow();
   });
 
   it('unauthenticated user cannot verify (simulate missing user)', async () => {
     mockUserService.findUserById.mockResolvedValue(null as any);
-    await expect(service.verifyEmailChange('no_user', '123456')).rejects.toBe(
-      AppErrorCodes.USER_NOT_FOUND,
-    );
+    await expect(
+      service.verifyEmailChange({ id: 'no_user' } as any, '123456'),
+    ).rejects.toBe(AppErrorCodes.INVALID_REQUEST);
   });
 });

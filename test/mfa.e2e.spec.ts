@@ -96,6 +96,7 @@ describe('MFA e2e flow', () => {
         email: testUser.email,
         roles: [],
         passwordHash: null,
+        providers: [],
         createdAt: new Date(),
         updatedAt: new Date(),
       }),
@@ -225,16 +226,6 @@ describe('MFA e2e flow', () => {
       .post('/auth/mfa/setup')
       .set('Authorization', `Bearer ${accessToken}`)
       .send();
-
-    if (setupRes.status !== 201) {
-      // debug output to help identify cause of 500
-      // eslint-disable-next-line no-console
-      console.log(
-        'DEBUG: /auth/mfa/setup response',
-        setupRes.status,
-        setupRes.body,
-      );
-    }
 
     expect(setupRes.status).toBe(201);
     expect(setupRes.body).toHaveProperty('otpauth');

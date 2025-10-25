@@ -4,7 +4,7 @@ import { AppErrorCodes } from './types/error-codes';
 
 @Injectable()
 export class ZodValidationPipe implements PipeTransform {
-  constructor(private schema: ZodType<any>) { }
+  constructor(private schema: ZodType<any>) {}
 
   transform(value: unknown) {
     const result = this.schema.safeParse(value);

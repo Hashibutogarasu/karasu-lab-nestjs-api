@@ -21,15 +21,18 @@ datasource db {
 }
 
 model User {
+  /// @zod.custom.use(z.string())
   id           String   @id @default(cuid())
   username     String   @unique
   email        String   @unique
+  /// @zod.custom.use(z.string().optional().nullable())
   passwordHash String?  @map("password_hash") // Nullable for SNS users
+
   providers    String[] @default([])
   
-  /// @zod.custom.use(z.string())
+  /// @zod.custom.use(z.date())
   createdAt    DateTime @default(now()) @map("created_at")
-  /// @zod.custom.use(z.string())
+  /// @zod.custom.use(z.date())
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   // Relations

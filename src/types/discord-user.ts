@@ -49,7 +49,7 @@ export const DiscordUserSchema = z.object({
   avatar_decoration_data: DiscordAvatarDecorationDataSchema.nullable(),
 });
 
-export class DiscordUser extends createZodDto(DiscordUserSchema) { };
+export class DiscordUser extends createZodDto(DiscordUserSchema) {}
 export type DiscordClan = z.infer<typeof DiscordClanSchema>;
 export type DiscordPrimaryGuild = z.infer<typeof DiscordPrimaryGuildSchema>;
 export type DiscordAvatarDecorationData = z.infer<

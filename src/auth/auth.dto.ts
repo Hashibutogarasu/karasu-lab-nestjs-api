@@ -8,27 +8,27 @@ export const registerSchema = z.object({
   password: z.string().min(6),
 });
 
-export class RegisterDto extends createZodDto(registerSchema) {}
+export class RegisterDto extends createZodDto(registerSchema) { }
 
 export const verifyTokenSchema = z.object({
   stateCode: z.string(),
   oneTimeToken: z.string(),
 });
 
-export class VerifyTokenDto extends createZodDto(verifyTokenSchema) {}
+export class VerifyTokenDto extends createZodDto(verifyTokenSchema) { }
 
 export const refreshTokenSchema = z.object({
   refresh_token: z.string(),
 });
 
-export class RefreshTokenDto extends createZodDto(refreshTokenSchema) {}
+export class RefreshTokenDto extends createZodDto(refreshTokenSchema) { }
 
 export const authStateSchema = z.object({
   provider: z.string(),
   callbackUrl: z.url(),
 });
 
-export class AuthStateDto extends createZodDto(authStateSchema) {}
+export class AuthStateDto extends createZodDto(authStateSchema) { }
 
 export const createAuthSchema = z.object({
   username: z
@@ -56,7 +56,7 @@ export const createAuthSchema = z.object({
     .optional(),
 });
 
-export class CreateAuthDto extends createZodDto(createAuthSchema) {}
+export class CreateAuthDto extends createZodDto(createAuthSchema) { }
 
 export const loginSchema = z.object({
   usernameOrEmail: z
@@ -69,8 +69,8 @@ export const loginSchema = z.object({
     .max(128, 'パスワードは128文字以内で入力してください'),
 });
 
-export class LoginDto extends createZodDto(loginSchema) {}
-export class UpdateAuthDto extends PartialType(CreateAuthDto) {}
+export class LoginDto extends createZodDto(loginSchema) { }
+export class UpdateAuthDto extends PartialType(CreateAuthDto) { }
 
 export const usernameSchema = z
   .string()
@@ -90,14 +90,27 @@ export const UserResponseSchema = z.object({
   updated_at: z.date().optional(),
 });
 
-export class UserResponseDto extends createZodDto(UserResponseSchema) {}
+export class UserResponseDto extends createZodDto(UserResponseSchema) { }
 
-// ログイン成功レスポンス用
 export const LoginResponseSchema = z.object({
-  user: UserResponseSchema,
-  access_token: z.string().optional(),
-  refresh_token: z.string().optional(),
-  expires_in: z.number().optional(),
+  message: 'Login successful',
+  jwtId: z.string(),
+  access_token: z.string(),
+  token_type: z.literal('Bearer'),
+  expires_in: z.number(),
+  refresh_token: z.string(),
+  refresh_expires_in: z.number(),
+  session_id: z.string(),
 });
 
-export class LoginResponseDto extends createZodDto(LoginResponseSchema) {}
+export class LoginResponseDto extends createZodDto(LoginResponseSchema) { }
+
+export const refreshTokenResponseSchema = z.object({
+  message: z.string().default('Token refreshed successfully'),
+  jwtId: z.string(),
+  access_token: z.string(),
+  token_type: z.string().default('Bearer'),
+  expires_in: z.number(),
+});
+
+export class RefreshTokenResponseDto extends createZodDto(refreshTokenResponseSchema) { }

@@ -11,6 +11,7 @@ import { AppErrorCodes } from '../types/error-codes';
 import { UserService } from '../data-base/query/user/user.service';
 import { PasswordService } from '../data-base/utility/password/password.service';
 import { PendingEmailChangeProcessService } from '../data-base/query/pending-email-change-process/pending-email-change-process.service';
+import { PublicUser } from '../auth/decorators/auth-user.decorator';
 
 @Injectable()
 export class AccountService {
@@ -87,7 +88,7 @@ export class AccountService {
 
     return {
       message:
-        '指定されたメールアドレスにパスワードリセット用のコードを送信しました',
+        'A password reset code has been sent to the specified email address',
     };
   }
 
@@ -98,6 +99,7 @@ export class AccountService {
     const passwordReset = await this.passwordService.findValidPasswordReset(
       dto.resetCode,
     );
+
     if (!passwordReset) {
       throw AppErrorCodes.INVALID_RESET_CODE;
     }
@@ -129,21 +131,16 @@ export class AccountService {
   /**
    * メールアドレス変更リクエストを作成し、確認コードを送信する
    */
-  async requestEmailChange(userId: string, newEmail: string) {
-    const user = await this.userService.findUserById(userId);
-    if (!user) {
-      throw AppErrorCodes.USER_NOT_FOUND;
-    }
-
+  async requestEmailChange(user: PublicUser, newEmail: string) {
     const existing = await this.userService.findUserByEmail(newEmail);
-    if (existing && existing.id !== userId) {
+    if (existing && existing.id !== user.id) {
       throw AppErrorCodes.EMAIL_ALREADY_IN_USE;
     }
 
     const pending =
       await this.pendingEmailChangeProcessService.createPendingEmailChangeProcess(
         {
-          userId,
+          userId: user.id,
           newEmail,
         },
       );
@@ -177,18 +174,15 @@ export class AccountService {
   /**
    * 確認コードを検証してユーザーのメールアドレスを更新する
    */
-  async verifyEmailChange(userId: string, code: string) {
-    const user = await this.userService.findUserById(userId);
-    if (!user) throw AppErrorCodes.USER_NOT_FOUND;
-
+  async verifyEmailChange(user: PublicUser, code: string) {
     const pending =
       await this.pendingEmailChangeProcessService.findPendingByCode(
-        userId,
+        user.id,
         code,
       );
     if (!pending) throw AppErrorCodes.INVALID_REQUEST;
 
-    const updated = await this.userService.updateUser(userId, {
+    const updated = await this.userService.updateUser(user.id, {
       email: pending.newEmail,
     });
 
@@ -252,21 +246,22 @@ export class AccountService {
    * パスワード設定可能性チェック
    * JWT認証したユーザーが外部プロバイダーでパスワードを持たないかどうかを判定
    */
-  async canSetPassword(userId: string) {
-    const user = await this.userService.findUserById(userId, {
+  async canSetPassword(user: PublicUser) {
+    const foundUser = await this.userService.findUserById(user.id, {
       passwordHash: false,
     });
-    if (!user) {
+    if (!foundUser) {
       throw AppErrorCodes.USER_NOT_FOUND;
     }
 
-    const canSetPassword = !user.passwordHash && user.providers.length > 0;
+    const canSetPassword =
+      !foundUser.passwordHash && foundUser.providers.length > 0;
 
     return {
       canSetPassword,
-      hasPassword: !!user.passwordHash,
-      hasExternalProviders: user.providers.length > 0,
-      providers: user.providers,
+      hasPassword: !!foundUser.passwordHash,
+      hasExternalProviders: foundUser.providers.length > 0,
+      providers: foundUser.providers,
     };
   }
 }

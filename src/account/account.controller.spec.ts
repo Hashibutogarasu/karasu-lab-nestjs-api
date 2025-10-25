@@ -506,9 +506,7 @@ describe('AccountController - Password Management', () => {
 
       await controller.canSetPassword(mockRequest, mockUser as any);
 
-      expect(mockAccountService.canSetPassword).toHaveBeenCalledWith(
-        'user_123',
-      );
+      expect(mockAccountService.canSetPassword).toHaveBeenCalledWith(mockUser);
     });
 
     it('should return false when user has password set', async () => {
@@ -525,9 +523,7 @@ describe('AccountController - Password Management', () => {
 
       await controller.canSetPassword(mockRequest, mockUser as any);
 
-      expect(mockAccountService.canSetPassword).toHaveBeenCalledWith(
-        'user_123',
-      );
+      expect(mockAccountService.canSetPassword).toHaveBeenCalledWith(mockUser);
     });
 
     it('should return false when user has no external providers', async () => {
@@ -544,9 +540,7 @@ describe('AccountController - Password Management', () => {
 
       await controller.canSetPassword(mockRequest, mockUser as any);
 
-      expect(mockAccountService.canSetPassword).toHaveBeenCalledWith(
-        'user_123',
-      );
+      expect(mockAccountService.canSetPassword).toHaveBeenCalledWith(mockUser);
     });
 
     it('should handle user not found error', async () => {
@@ -591,9 +585,7 @@ describe('AccountController - Password Management', () => {
 
       await controller.canSetPassword(customRequest, mockUser as any);
 
-      expect(mockAccountService.canSetPassword).toHaveBeenCalledWith(
-        'user_123',
-      );
+      expect(mockAccountService.canSetPassword).toHaveBeenCalledWith(mockUser);
     });
   });
 
