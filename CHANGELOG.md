@@ -1,3 +1,17 @@
+# [1.1.0](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.0.0...v1.1.0) (2025-10-25)
+
+
+### Features
+
+* add ApiBearerAuth to user and dify controllers ([d72f8e8](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/d72f8e83c1a29f2a0a37c767add1d87e5bd4b9ae))
+* add database middleware and improve error handling ([756f29e](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/756f29e15989b3f7bda045da5123b3286d1b8245))
+* add GitHub module and improve zod schema formatting ([7ee8373](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/7ee8373323c3bdb49639cf95f0e4741d761dfe80))
+* integrate Swagger API docs and upgrade zod to v4 ([746958e](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/746958e967df613bdf5370cef23accf1169c3747))
+* migrate config and DTOs to zod, enhance test setup ([bb93ab7](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/bb93ab7db5134c5b3ffbba5bcc4c7f71dc7a5d1c))
+* refactors Discord token module to use AppConfigService and improves DTO formatting ([e9d3336](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/e9d3336f155a52b76a117a721810a1142c28d9d9))
+* refactors error handling with zod schemas and improves validation ([ed481a8](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/ed481a85196d4fca654cc391e254b37a9cc7f84d))
+* unify user DTOs and schemas, improve API error handling ([d475049](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/d4750497fb1bd038cc4024f7a6af737d5936748d))
+
 # [1.1.0](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.0.0...v1.1.0) (2025-10-24)
 
 
