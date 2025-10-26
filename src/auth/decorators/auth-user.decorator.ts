@@ -33,8 +33,8 @@ export type UserWithRelations = Prisma.UserGetPayload<{
 export const publicUserSchema = UserSchema.omit({
   passwordHash: true,
 }).extend({
-  createdAt: z.union([z.string(), z.date()]),
-  updatedAt: z.union([z.string(), z.date()]),
+  createdAt: z.union([z.string(), z.any()]),
+  updatedAt: z.union([z.string(), z.any()]),
 });
 
 export class PublicUser extends createZodDto(publicUserSchema) {}
