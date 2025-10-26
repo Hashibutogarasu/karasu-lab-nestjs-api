@@ -42,7 +42,7 @@ export class MfaController {
     private readonly authService: AuthService,
     private readonly totp: TotpService,
     private readonly jwtTokenService: JwtTokenService,
-  ) {}
+  ) { }
 
   @ApiCreatedResponse({ type: MfaSetupResponseDto })
   @Post('setup')
@@ -51,24 +51,33 @@ export class MfaController {
 
     const issuerId = process.env.TOTP_ISSUER!;
 
-    const result = await this.mfaService.setupTotpForUser(
-      user.id,
-      issuerId,
-      rawSecret,
-    );
+    try {
+      const result = await this.mfaService.setupTotpForUser(
+        user.id,
+        issuerId,
+        rawSecret,
+      );
 
-    const otpauth = this.totp.generateTotpUrl(
-      user.email || user.username,
-      issuerId,
-      rawSecret,
-    );
+      const otpauth = this.totp.generateTotpUrl(
+        user.email || user.username,
+        issuerId,
+        rawSecret,
+      );
 
-    return res.status(HttpStatus.CREATED).json({
-      message: 'MFA setup created',
-      otpauth,
-      secret: rawSecret,
-      backup_codes: result.backupCodes,
-    });
+      return res.status(HttpStatus.CREATED).json({
+        message: 'MFA setup created',
+        otpauth,
+        secret: rawSecret,
+        backup_codes: result.backupCodes,
+      });
+    } catch (err: any) {
+      if (err === AppErrorCodes.CONFLICT || (err instanceof Error && err.message === AppErrorCodes.CONFLICT.message)) {
+        return res.status(HttpStatus.CONFLICT).json({
+          message: AppErrorCodes.CONFLICT.customMessage,
+        });
+      }
+      throw err;
+    }
   }
 
   @ApiOkResponse({ type: MfaGetBackupCodesResponseDto })

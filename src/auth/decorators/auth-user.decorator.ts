@@ -34,7 +34,7 @@ export const publicUserSchema = UserSchema.omit({
   passwordHash: true,
 });
 
-export class PublicUser extends createZodDto(publicUserSchema) { }
+export class PublicUser extends createZodDto(publicUserSchema) {}
 
 export const AuthUser = createParamDecorator(
   async (data: unknown, ctx: ExecutionContext): Promise<PublicUser | null> => {
@@ -60,7 +60,11 @@ export const AuthUser = createParamDecorator(
       throw AppErrorCodes.NOT_FOUND;
     }
 
-    const { success, error, data: publicUser } = publicUserSchema.safeParse(user);
+    const {
+      success,
+      error,
+      data: publicUser,
+    } = publicUserSchema.safeParse(user);
     if (!success) {
       throw AppErrorCodes.INTERNAL_SERVER_ERROR.setCustomMessage(
         JSON.stringify(error.issues),

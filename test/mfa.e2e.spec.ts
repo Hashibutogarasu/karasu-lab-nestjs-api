@@ -29,6 +29,7 @@ describe('MFA e2e flow', () => {
   let app: INestApplication<App>;
   let server: App;
   let totp: TotpService;
+  let _setupCallCount = 0;
 
   const testUser = {
     username: `mfa_user_${Date.now()}`,
@@ -53,6 +54,7 @@ describe('MFA e2e flow', () => {
         ),
     });
 
+
     const mockMfaService = mock<MfaService>({
       checkMfaRequired: jest.fn().mockResolvedValue({ mfaRequired: false }),
       verifyToken: jest.fn().mockResolvedValue(true),
@@ -60,10 +62,13 @@ describe('MFA e2e flow', () => {
         .fn()
         .mockResolvedValue({ backupCodes: ['BC1', 'BC2'] }),
       disableMfaForUser: jest.fn().mockResolvedValue({ success: true }),
-      setupTotpForUser: jest
-        .fn()
-        .mockResolvedValueOnce({ backupCodes: ['BC1', 'BC2', 'BC3'] })
-        .mockRejectedValueOnce(AppErrorCodes.CONFLICT),
+      setupTotpForUser: jest.fn().mockImplementation(async () => {
+        _setupCallCount += 1;
+        if (_setupCallCount === 1) {
+          return { backupCodes: ['BC1', 'BC2', 'BC3'] };
+        }
+        throw AppErrorCodes.CONFLICT;
+      }),
     });
 
     const mockEncryptionService = mock<EncryptionService>();
@@ -295,6 +300,8 @@ describe('MFA e2e flow', () => {
       loginRes.body?.mfa_token;
     expect(accessToken).toBeDefined();
 
+    _setupCallCount = 0;
+
     const reqA = request(server)
       .post('/auth/mfa/setup')
       .set('Authorization', `Bearer ${accessToken}`)
@@ -311,10 +318,16 @@ describe('MFA e2e flow', () => {
       | PromiseFulfilledResult<any>[]
       | any[];
 
-    expect(fulfilled.length).toBeGreaterThanOrEqual(1);
+    expect(fulfilled.length).toBe(2);
 
-    const successRes = (fulfilled[0] as PromiseFulfilledResult<any>).value;
-    expect(successRes.status).toBe(409);
-    expect(successRes.body).toHaveProperty('message');
+    const responses = fulfilled.map(
+      (f: PromiseFulfilledResult<any>) =>
+        (f as PromiseFulfilledResult<any>).value,
+    );
+    const statuses = responses.map((r: any) => r.status);
+    expect(statuses).toContain(201);
+    expect(statuses).toContain(409);
+
+    responses.forEach((r: any) => expect(r.body).toHaveProperty('message'));
   }, 20000);
 });
