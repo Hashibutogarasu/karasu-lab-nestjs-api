@@ -1,7 +1,6 @@
-import { ExecutionContext, Injectable, Optional } from '@nestjs/common';
+import { ExecutionContext, Injectable } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
-import { JwtService } from '@nestjs/jwt';
 import { AppErrorCodes } from '../types/error-codes';
 import { UserService } from '../data-base/query/user/user.service';
 import { JwtTokenService } from './jwt-token/jwt-token.service';

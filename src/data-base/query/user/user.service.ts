@@ -131,7 +131,8 @@ export class UserService {
   async verifyUserPassword(
     usernameOrEmail: string,
     password: string,
-  ): Promise<User | null> {
+  ): Promise<Omit<User, 'createdAt' | 'updatedAt'> & { createdAt: string; updatedAt: string }
+    | null> {
     const user = await this.prisma.user.findFirst({
       where: {
         OR: [{ username: usernameOrEmail }, { email: usernameOrEmail }],
@@ -158,7 +159,13 @@ export class UserService {
 
     if (!isValid) return null;
 
-    return user;
+    const { createdAt, updatedAt } = user;
+
+    return {
+      ...user,
+      createdAt: createdAt.toISOString(),
+      updatedAt: updatedAt.toISOString(),
+    };
   }
 
   /**

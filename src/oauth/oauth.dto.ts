@@ -4,7 +4,7 @@ import z from 'zod';
 export const oAuthAuthorizeQuerySchema = z.object({
   response_type: z.string(),
   client_id: z.string(),
-  redirect_uri: z.string().url(),
+  redirect_uri: z.url(),
   scope: z.string().optional(),
   state: z.string().optional(),
   code_challenge: z.string().optional(),

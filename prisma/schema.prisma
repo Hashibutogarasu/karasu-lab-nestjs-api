@@ -30,9 +30,9 @@ model User {
 
   providers    String[] @default([])
   
-  /// @zod.custom.use(z.preprocess((val) => typeof val === "string" ? new Date(val) : val,z.date()))
+  /// @zod.custom.use(z.string().refine(val => !isNaN(Date.parse(val)), { message: "Invalid date format" }))
   createdAt    DateTime @default(now()) @map("created_at")
-  /// @zod.custom.use(z.preprocess((val) => typeof val === "string" ? new Date(val) : val,z.date()))
+  /// @zod.custom.use(z.string().refine(val => !isNaN(Date.parse(val)), { message: "Invalid date format" }))
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   // Relations
@@ -336,10 +336,10 @@ model UserOTP {
   issuer      User            @relation("UserOTP_Issuer", fields: [issuerId], references: [id], onDelete: Cascade)
   backupCodes OTPBackupCode[] @relation("OTP_BackupCodes")
 
-  /// @zod.custom.use(z.iso.datetime().transform((value) => new Date(value)))
+  /// @zod.custom.use(z.preprocess((val) => typeof val === "string" ? new Date(val) : val,z.date()))
   createdAt DateTime @default(now()) @map("created_at")
 
-  /// @zod.custom.use(z.iso.datetime().transform((value) => new Date(value)))
+  /// @zod.custom.use(z.preprocess((val) => typeof val === "string" ? new Date(val) : val,z.date()))
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@unique([userId])
