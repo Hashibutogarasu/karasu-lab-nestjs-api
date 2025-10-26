@@ -23,19 +23,19 @@ export class CreateTokenRequest extends createZodDto(
   createTokenRequestSchema,
 ) {}
 
+export const jwtTokenProfileSchema = z.object({
+  sub: z.string().uuid(),
+  name: z.string(),
+  email: z.string().email(),
+  provider: z.string().optional(),
+  providers: z.array(z.string()),
+});
+
 export const createTokenResponseSchema = z.object({
   success: z.boolean(),
   jwtId: z.string().uuid().optional(),
   token: z.string().optional(),
-  profile: z
-    .object({
-      sub: z.string().uuid(),
-      name: z.string(),
-      email: z.string().email(),
-      provider: z.string().optional(),
-      providers: z.array(z.string()),
-    })
-    .optional(),
+  profile: jwtTokenProfileSchema.optional(),
   user: z
     .object({
       roles: z.array(RoleSchema),

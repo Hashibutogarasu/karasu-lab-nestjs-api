@@ -50,7 +50,7 @@ import { UserSchema } from '../generated/zod';
 
 @Controller('account')
 export class AccountController {
-  constructor(private readonly accountService: AccountService) { }
+  constructor(private readonly accountService: AccountService) {}
 
   /**
    * サインイン済みユーザーのパスワード変更

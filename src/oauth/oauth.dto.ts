@@ -13,7 +13,7 @@ export const oAuthAuthorizeQuerySchema = z.object({
 
 export class OAuthAuthorizeQuery extends createZodDto(
   oAuthAuthorizeQuerySchema,
-) { }
+) {}
 
 export const oAuthTokenBodySchema = z.object({
   grant_type: z.string(),
@@ -24,7 +24,7 @@ export const oAuthTokenBodySchema = z.object({
   code_verifier: z.string(),
 });
 
-export class OAuthTokenBodyDto extends createZodDto(oAuthTokenBodySchema) { }
+export class OAuthTokenBodyDto extends createZodDto(oAuthTokenBodySchema) {}
 
 export const oAuthTokenRevokeSchema = z.object({
   token: z.string(),
@@ -40,9 +40,11 @@ export const oAuthTokenResponseSchema = z.object({
   score: z.string(),
 });
 
-export class OAuthTokenResponseDto extends createZodDto(oAuthTokenResponseSchema) { }
+export class OAuthTokenResponseDto extends createZodDto(
+  oAuthTokenResponseSchema,
+) {}
 
-export class OAuthTokenRevokeDto extends createZodDto(oAuthTokenRevokeSchema) { }
+export class OAuthTokenRevokeDto extends createZodDto(oAuthTokenRevokeSchema) {}
 
 export const oAuthJWTSchema = z.object({
   iss: z.string(),
@@ -51,6 +53,6 @@ export const oAuthJWTSchema = z.object({
   exp: z.string(),
   jti: z.string(),
   iat: z.string(),
-})
+});
 
-export class OAuthJWT extends createZodDto(oAuthJWTSchema) { }
+export class OAuthJWT extends createZodDto(oAuthJWTSchema) {}

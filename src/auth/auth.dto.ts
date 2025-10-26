@@ -7,7 +7,7 @@ export const authProvidersSchema = z.object({
   providers: z.array(z.string()),
 });
 
-export class AuthProvidersDto extends createZodDto(authProvidersSchema) { }
+export class AuthProvidersDto extends createZodDto(authProvidersSchema) {}
 
 export const registerSchema = z.object({
   username: z.string(),
@@ -15,34 +15,34 @@ export const registerSchema = z.object({
   password: z.string().min(6),
 });
 
-export class RegisterDto extends createZodDto(registerSchema) { }
+export class RegisterDto extends createZodDto(registerSchema) {}
 
 export const registerResponseSchema = z.object({
   message: z.string(),
   user: publicUserSchema,
 });
 
-export class RegisterResponseDto extends createZodDto(registerResponseSchema) { }
+export class RegisterResponseDto extends createZodDto(registerResponseSchema) {}
 
 export const verifyTokenSchema = z.object({
   stateCode: z.string(),
   oneTimeToken: z.string(),
 });
 
-export class VerifyTokenDto extends createZodDto(verifyTokenSchema) { }
+export class VerifyTokenDto extends createZodDto(verifyTokenSchema) {}
 
 export const refreshTokenSchema = z.object({
   refresh_token: z.string(),
 });
 
-export class RefreshTokenDto extends createZodDto(refreshTokenSchema) { }
+export class RefreshTokenDto extends createZodDto(refreshTokenSchema) {}
 
 export const authStateSchema = z.object({
   provider: z.string(),
   callbackUrl: z.url(),
 });
 
-export class AuthStateDto extends createZodDto(authStateSchema) { }
+export class AuthStateDto extends createZodDto(authStateSchema) {}
 
 export const createAuthSchema = z.object({
   username: z
@@ -70,7 +70,7 @@ export const createAuthSchema = z.object({
     .optional(),
 });
 
-export class CreateAuthDto extends createZodDto(createAuthSchema) { }
+export class CreateAuthDto extends createZodDto(createAuthSchema) {}
 
 export const loginSchema = z.object({
   usernameOrEmail: z
@@ -83,8 +83,8 @@ export const loginSchema = z.object({
     .max(128, 'パスワードは128文字以内で入力してください'),
 });
 
-export class LoginDto extends createZodDto(loginSchema) { }
-export class UpdateAuthDto extends PartialType(CreateAuthDto) { }
+export class LoginDto extends createZodDto(loginSchema) {}
+export class UpdateAuthDto extends PartialType(CreateAuthDto) {}
 
 export const usernameSchema = z
   .string()
@@ -104,7 +104,7 @@ export const UserResponseSchema = z.object({
   updated_at: z.date().optional(),
 });
 
-export class UserResponseDto extends createZodDto(UserResponseSchema) { }
+export class UserResponseDto extends createZodDto(UserResponseSchema) {}
 
 export const LoginResponseSchema = z.object({
   message: z.string().default('Login successful'),
@@ -117,7 +117,7 @@ export const LoginResponseSchema = z.object({
   session_id: z.string(),
 });
 
-export class LoginResponseDto extends createZodDto(LoginResponseSchema) { }
+export class LoginResponseDto extends createZodDto(LoginResponseSchema) {}
 
 export const refreshTokenResponseSchema = z.object({
   message: z.string().default('Token refreshed successfully'),
@@ -129,4 +129,4 @@ export const refreshTokenResponseSchema = z.object({
 
 export class RefreshTokenResponseDto extends createZodDto(
   refreshTokenResponseSchema,
-) { }
+) {}

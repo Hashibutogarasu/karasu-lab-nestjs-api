@@ -227,6 +227,8 @@ describe('MFA e2e flow', () => {
       .set('Authorization', `Bearer ${accessToken}`)
       .send();
 
+    console.log('MFA Setup Response:', setupRes.body);
+
     expect(setupRes.status).toBe(201);
     expect(setupRes.body).toHaveProperty('otpauth');
     expect(setupRes.body).toHaveProperty('secret');

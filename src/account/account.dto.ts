@@ -9,7 +9,7 @@ const emailChangeRequestSchema = z.object({
 
 export class EmailChangeRequestDto extends createZodDto(
   emailChangeRequestSchema,
-) { }
+) {}
 
 const emailChangeVerifySchema = z.object({
   verificationCode: z.string().length(6),
@@ -17,7 +17,7 @@ const emailChangeVerifySchema = z.object({
 
 export class EmailChangeVerifyDto extends createZodDto(
   emailChangeVerifySchema,
-) { }
+) {}
 
 export const resetPasswordResponseSchema = z.object({
   message: z.string().default('Password updated successfully'),
@@ -26,7 +26,7 @@ export const resetPasswordResponseSchema = z.object({
 
 export class ResetPasswordResponseDto extends createZodDto(
   resetPasswordResponseSchema,
-) { }
+) {}
 
 export const forgotPasswordResponseSchema = z.object({
   message: z.string(),
@@ -34,7 +34,7 @@ export const forgotPasswordResponseSchema = z.object({
 
 export class ForgotPasswordResponseDto extends createZodDto(
   forgotPasswordResponseSchema,
-) { }
+) {}
 
 export const confirmResetPasswordResponseSchema = z.object({
   message: z.string(),
@@ -43,7 +43,5 @@ export const confirmResetPasswordResponseSchema = z.object({
 
 export class ConfirmResetPasswordResponseDto extends createZodDto(
   confirmResetPasswordResponseSchema,
-) { }
-export class ProfileResponseDto extends createZodDto(
-  publicUserSchema,
-) { }
+) {}
+export class ProfileResponseDto extends createZodDto(publicUserSchema) {}

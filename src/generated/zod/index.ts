@@ -119,8 +119,8 @@ export const UserSchema = z.object({
   email: z.string(),
   passwordHash: z.string().optional().nullable().nullable(),
   providers: z.string().array(),
-  createdAt: z.string().transform((val) => new Date(val)),
-  updatedAt: z.string().transform((val) => new Date(val)),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
 })
 
 export type User = z.infer<typeof UserSchema>

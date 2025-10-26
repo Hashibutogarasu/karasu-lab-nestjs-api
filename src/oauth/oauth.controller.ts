@@ -13,7 +13,7 @@ import { ZodValidationPipe } from 'nestjs-zod';
 @Controller('oauth')
 @UsePipes(ZodValidationPipe)
 export class OauthController {
-  constructor(private readonly oauthService: OauthService) { }
+  constructor(private readonly oauthService: OauthService) {}
 
   @ApiQuery({
     type: OAuthAuthorizeQuery,

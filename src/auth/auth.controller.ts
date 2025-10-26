@@ -74,7 +74,7 @@ export class AuthController {
     private readonly snsAuthCoreService: AuthCoreService,
     private readonly jwtTokenService: JwtTokenService,
     private readonly mfaService: MfaService,
-  ) { }
+  ) {}
 
   private async getCodeChallengeFromState(stateCode?: string) {
     if (!stateCode) return undefined;
@@ -110,7 +110,9 @@ export class AuthController {
       }
     }
 
-    res.status(HttpStatus.OK).json({ providers: available.map((p) => p.getProvider()) });
+    res
+      .status(HttpStatus.OK)
+      .json({ providers: available.map((p) => p.getProvider()) });
   }
 
   /**
