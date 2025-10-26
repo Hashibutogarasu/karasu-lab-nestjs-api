@@ -13,14 +13,14 @@ import { ZodValidationPipe } from 'nestjs-zod';
 @Controller('oauth')
 @UsePipes(ZodValidationPipe)
 export class OauthController {
-  constructor(private readonly oauthService: OauthService) {}
+  constructor(private readonly oauthService: OauthService) { }
 
   @ApiQuery({
     type: OAuthAuthorizeQuery,
   })
   @Get('authorize')
   async authorize(@Query() params: OAuthAuthorizeQuery) {
-    throw AppErrorCodes.NOT_IMPLEMENTED;
+    return this.oauthService.authorize(params);
   }
 
   @ApiBody({
@@ -28,7 +28,7 @@ export class OauthController {
   })
   @Post('token')
   async token(@Body() body: OAuthTokenBodyDto): Promise<OAuthTokenResponseDto> {
-    throw AppErrorCodes.NOT_IMPLEMENTED;
+    return this.oauthService.token(body);
   }
 
   @ApiBody({
@@ -36,6 +36,6 @@ export class OauthController {
   })
   @Post('token/revoke')
   async revoke(@Body() body: OAuthTokenRevokeDto): Promise<void> {
-    throw AppErrorCodes.NOT_IMPLEMENTED;
+    return this.oauthService.revoke(body);
   }
 }
