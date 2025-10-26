@@ -342,6 +342,78 @@ export const AppErrorCodes = {
     }),
   ),
 
+  // NestJS Third party OAuth Errors
+  INVALID_PARAMETERS: new AppErrorCode(
+    z.object({
+      name: z.string().default('InvalidParameters'),
+      code: z.number().default(400),
+      customMessage: z.string().default('Invalid parameters provided'),
+    }),
+  ),
+  UNAUTHORIZED_CLIENT: new AppErrorCode(
+    z.object({
+      name: z.string().default('UnauthorizedClient'),
+      code: z.number().default(401),
+      customMessage: z.string().default('Client is not authorized'),
+    }),
+  ),
+  ACCESS_DENIED: new AppErrorCode(
+    z.object({
+      name: z.string().default('AccessDenied'),
+      code: z.number().default(403),
+      customMessage: z.string().default('Access denied'),
+    }),
+  ),
+  UNSUPPORTED_RESPONSE_TYPE: new AppErrorCode(
+    z.object({
+      name: z.string().default('UnsupportedResponseType'),
+      code: z.number().default(400),
+      customMessage: z.string().default('Unsupported response type'),
+    }),
+  ),
+  INVALID_SCOPE: new AppErrorCode(
+    z.object({
+      name: z.string().default('InvalidScope'),
+      code: z.number().default(400),
+      customMessage: z.string().default('Invalid scope requested'),
+    }),
+  ),
+  INVALID_REDIRECT_URI: new AppErrorCode(
+    z.object({
+      name: z.string().default('InvalidRedirectUri'),
+      code: z.number().default(400),
+      customMessage: z.string().default('Invalid redirect URI'),
+    }),
+  ),
+  INVALID_CLIENT: new AppErrorCode(
+    z.object({
+      name: z.string().default('InvalidClient'),
+      code: z.number().default(400),
+      customMessage: z.string().default('Invalid client credentials'),
+    }),
+  ),
+  INVALID_GRANT: new AppErrorCode(
+    z.object({
+      name: z.string().default('InvalidGrant'),
+      code: z.number().default(400),
+      customMessage: z.string().default('Invalid grant provided'),
+    }),
+  ),
+  INVALID_GRANT_TYPE: new AppErrorCode(
+    z.object({
+      name: z.string().default('InvalidGrantType'),
+      code: z.number().default(400),
+      customMessage: z.string().default('Invalid grant type'),
+    }),
+  ),
+  UNSUPPORTED_TOKEN_TYPE: new AppErrorCode(
+    z.object({
+      name: z.string().default('UnsupportedTokenType'),
+      code: z.number().default(400),
+      customMessage: z.string().default('Unsupported token type'),
+    }),
+  ),
+
   // Account Errors
   NOW_PASSWORD_IS_NOT_INVALID: new AppErrorCode(
     z.object({

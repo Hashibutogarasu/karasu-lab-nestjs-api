@@ -6,7 +6,7 @@ import {
   OAuthTokenResponseDto,
   OAuthTokenRevokeDto,
 } from './oauth.dto';
-import { ApiBearerAuth, ApiBody, ApiQuery } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiBearerAuth, ApiBody, ApiInternalServerErrorResponse, ApiOkResponse, ApiPermanentRedirectResponse, ApiQuery } from '@nestjs/swagger';
 import { OauthService } from './oauth.service';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -17,6 +17,13 @@ import { AuthUser, PublicUser } from '../auth/decorators/auth-user.decorator';
 export class OauthController {
   constructor(private readonly oauthService: OauthService) { }
 
+  @ApiBadRequestResponse(AppErrorCodes.INVALID_REDIRECT_URI.apiResponse)
+  @ApiInternalServerErrorResponse(AppErrorCodes.INTERNAL_SERVER_ERROR.apiResponse)
+  @ApiPermanentRedirectResponse(AppErrorCodes.INVALID_SCOPE.apiResponse)
+  @ApiPermanentRedirectResponse(AppErrorCodes.UNSUPPORTED_RESPONSE_TYPE.apiResponse)
+  @ApiPermanentRedirectResponse(AppErrorCodes.ACCESS_DENIED.apiResponse)
+  @ApiPermanentRedirectResponse(AppErrorCodes.UNAUTHORIZED.apiResponse)
+  @ApiPermanentRedirectResponse(AppErrorCodes.INVALID_PARAMETERS.apiResponse)
   @ApiQuery({
     type: OAuthAuthorizeQuery,
   })
@@ -25,6 +32,14 @@ export class OauthController {
     return this.oauthService.authorize(params);
   }
 
+  @ApiOkResponse({ type: OAuthTokenResponseDto })
+  @ApiBadRequestResponse(AppErrorCodes.INVALID_CLIENT.apiResponse)
+  @ApiBadRequestResponse(AppErrorCodes.INVALID_GRANT.apiResponse)
+  @ApiBadRequestResponse(AppErrorCodes.INVALID_GRANT_TYPE.apiResponse)
+  @ApiBadRequestResponse(AppErrorCodes.UNAUTHORIZED_CLIENT.apiResponse)
+  @ApiBadRequestResponse(AppErrorCodes.UNAUTHORIZED.apiResponse)
+  @ApiBadRequestResponse(AppErrorCodes.INVALID_SCOPE.apiResponse)
+  @ApiBadRequestResponse(AppErrorCodes.INVALID_REQUEST.apiResponse)
   @ApiBody({
     type: OAuthTokenBodyDto,
   })
@@ -35,6 +50,9 @@ export class OauthController {
     return this.oauthService.token(body, user);
   }
 
+  @ApiBadRequestResponse(AppErrorCodes.INVALID_REQUEST.apiResponse)
+  @ApiBadRequestResponse(AppErrorCodes.INVALID_CLIENT.apiResponse)
+  @ApiBadRequestResponse(AppErrorCodes.UNSUPPORTED_TOKEN_TYPE.apiResponse)
   @ApiBody({
     type: OAuthTokenRevokeDto,
   })
