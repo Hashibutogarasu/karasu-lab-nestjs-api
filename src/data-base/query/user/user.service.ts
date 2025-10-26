@@ -131,10 +131,7 @@ export class UserService {
   async verifyUserPassword(
     usernameOrEmail: string,
     password: string,
-  ): Promise<
-    | User
-    | null
-  > {
+  ): Promise<User | null> {
     const user = await this.prisma.user.findFirst({
       where: {
         OR: [{ username: usernameOrEmail }, { email: usernameOrEmail }],

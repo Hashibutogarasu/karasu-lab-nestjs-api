@@ -63,4 +63,4 @@ import { DateTimeService } from '../date-time/date-time.service';
     SnsAuthCallback,
   ],
 })
-export class AuthModule { }
+export class AuthModule {}

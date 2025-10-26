@@ -147,7 +147,7 @@ describe('MFA e2e flow', () => {
           module: AppConfigModule,
           global: true,
         },
-        DateTimeModule
+        DateTimeModule,
       ],
     })
       .overrideProvider(AppConfigService)

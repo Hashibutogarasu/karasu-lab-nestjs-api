@@ -36,7 +36,7 @@ export class AuthService {
     private readonly workflowService: WorkflowService,
     private readonly managerService: ManagerService,
     private readonly dateTimeService: DateTimeService,
-  ) { }
+  ) {}
 
   /**
    * ユーザー登録処理

@@ -53,11 +53,11 @@ import { DateTimeService } from './date-time/date-time.service';
     AccountModule,
     ...(process.env.DISCORD_BOT_TOKEN
       ? [
-        {
-          global: true,
-          module: DiscordAppModule,
-        },
-      ]
+          {
+            global: true,
+            module: DiscordAppModule,
+          },
+        ]
       : []),
     MarkdownModule,
     McpServerModule,
@@ -75,16 +75,16 @@ import { DateTimeService } from './date-time/date-time.service';
     MfaModule,
     process.env.REDIS_HOST
       ? CacheModule.register({
-        store: async () =>
-          await redisStore({
-            socket: {
-              host: process.env.REDIS_HOST!,
-              port: process.env.REDIS_PORT!,
-            },
-            ttl: 10,
-          }),
-        isGlobal: true,
-      })
+          store: async () =>
+            await redisStore({
+              socket: {
+                host: process.env.REDIS_HOST!,
+                port: process.env.REDIS_PORT!,
+              },
+              ttl: 10,
+            }),
+          isGlobal: true,
+        })
       : CacheModule.register({ isGlobal: true, ttl: 10 }),
     {
       global: true,
@@ -134,7 +134,7 @@ import { DateTimeService } from './date-time/date-time.service';
     AuthStateService,
     ExtraProfileService,
     PendingEmailChangeProcessService,
-    DateTimeService
+    DateTimeService,
   ],
   exports: [AppService],
 })

@@ -15,10 +15,7 @@ export class AppErrorCodeFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
 
     const isAppErrorLike = (ex: any): ex is AppErrorCode => {
-      return (
-        ex &&
-        (ex instanceof AppErrorCode)
-      );
+      return ex && ex instanceof AppErrorCode;
     };
 
     if (isAppErrorLike(exception)) {

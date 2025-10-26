@@ -37,7 +37,7 @@ export const publicUserSchema = UserSchema.omit({
   updatedAt: z.union([z.string(), z.date()]),
 });
 
-export class PublicUser extends createZodDto(publicUserSchema) { }
+export class PublicUser extends createZodDto(publicUserSchema) {}
 
 export const AuthUser = createParamDecorator(
   async (data: unknown, ctx: ExecutionContext): Promise<PublicUser | null> => {

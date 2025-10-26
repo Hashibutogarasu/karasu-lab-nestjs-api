@@ -8,7 +8,10 @@ import { DateTimeService } from '../../../date-time/date-time.service';
 
 @Injectable()
 export class WorkflowService {
-  constructor(private readonly userService: UserService, private readonly dateTimeService: DateTimeService) { }
+  constructor(
+    private readonly userService: UserService,
+    private readonly dateTimeService: DateTimeService,
+  ) {}
 
   /**
    * ユーザー登録処理
