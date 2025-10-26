@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import { AppErrorCodes } from '../../../types/error-codes';
 import { PublicUser } from '../../../auth/decorators/auth-user.decorator';
 import { RoleDefinitions, Roles } from '../../../types/roles';
+import { PermissionType, PermissionScopes } from '../../../types/permission';
 import { PermissionBitcalcService } from '../../../permission-bitcalc/permission-bitcalc.service';
 
 @Injectable()

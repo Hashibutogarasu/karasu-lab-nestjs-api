@@ -14,20 +14,27 @@ export class AppErrorCodeFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    if (exception instanceof AppErrorCode) {
+    const isAppErrorLike = (ex: any): ex is AppErrorCode => {
+      return (
+        ex &&
+        (ex instanceof AppErrorCode)
+      );
+    };
+
+    if (isAppErrorLike(exception)) {
+      const appError = exception as AppErrorCode;
       if (exception === AppErrorCodes.DATABASE_CONNECTION_ERROR) {
         process.exit(1);
       }
-
-      const status = exception.isHttpError
-        ? (exception.code as number)
+      const status = appError.isHttpError
+        ? (appError.code as number)
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
       response.status(status).json({
-        message: exception.message,
-        customMessage: exception.customMessage,
+        message: appError.message,
+        customMessage: appError.customMessage,
         status: status,
-        code: exception.key,
+        code: appError.key,
         timestamp: new Date().toISOString(),
         path: request.url,
       });

@@ -20,6 +20,7 @@ import { ManagerService } from './session/manager/manager.service';
 import { JwtTokenService } from './jwt-token/jwt-token.service';
 import { AuthCoreService } from './sns/auth-core/auth-core.service';
 import { SnsAuthCallback } from '../lib/auth/sns-auth';
+import { DateTimeService } from '../date-time/date-time.service';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { SnsAuthCallback } from '../lib/auth/sns-auth';
     JwtTokenService,
     AuthCoreService,
     SnsAuthCallback,
+    DateTimeService,
   ],
   exports: [
     AuthService,
@@ -61,4 +63,4 @@ import { SnsAuthCallback } from '../lib/auth/sns-auth';
     SnsAuthCallback,
   ],
 })
-export class AuthModule {}
+export class AuthModule { }

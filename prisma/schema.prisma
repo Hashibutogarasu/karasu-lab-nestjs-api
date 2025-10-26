@@ -22,18 +22,18 @@ datasource db {
 
 model User {
   /// @zod.custom.use(z.string())
-  id           String   @id @default(cuid())
-  username     String   @unique
-  email        String   @unique
+  id           String  @id @default(cuid())
+  username     String  @unique
+  email        String  @unique
   /// @zod.custom.use(z.string().optional().nullable())
-  passwordHash String?  @map("password_hash") // Nullable for SNS users
+  passwordHash String? @map("password_hash") // Nullable for SNS users
 
-  providers    String[] @default([])
-  
-  /// @zod.custom.use(z.string().refine(val => !isNaN(Date.parse(val)), { message: "Invalid date format" }))
-  createdAt    DateTime @default(now()) @map("created_at")
-  /// @zod.custom.use(z.string().refine(val => !isNaN(Date.parse(val)), { message: "Invalid date format" }))
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  providers String[] @default([])
+
+  /// @zod.custom.use(z.string())
+  createdAt DateTime @default(now()) @map("created_at")
+  /// @zod.custom.use(z.string())
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
   authorizationCodes          AuthorizationCode[]
@@ -48,6 +48,7 @@ model User {
   PendingMailChangeProcess    PendingEMailChangeProcess[]
   userOtps                    UserOTP[]
   issuedOtps                  UserOTP[]                     @relation("UserOTP_Issuer")
+  oAuthGrantedToken           OAuthGrantedToken[]
 
   @@map("users")
 }
@@ -336,11 +337,8 @@ model UserOTP {
   issuer      User            @relation("UserOTP_Issuer", fields: [issuerId], references: [id], onDelete: Cascade)
   backupCodes OTPBackupCode[] @relation("OTP_BackupCodes")
 
-  /// @zod.custom.use(z.preprocess((val) => typeof val === "string" ? new Date(val) : val,z.date()))
-  createdAt DateTime @default(now()) @map("created_at")
-
-  /// @zod.custom.use(z.preprocess((val) => typeof val === "string" ? new Date(val) : val,z.date()))
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt BigInt @map("created_at")
+  updatedAt BigInt @map("updated_at")
 
   @@unique([userId])
   @@index([userId])
@@ -349,9 +347,9 @@ model UserOTP {
 }
 
 model OTPBackupCode {
-  id         String   @id @default(cuid())
-  hashedCode String   @map("hashed_code")
-  createdAt  DateTime @default(now()) @map("created_at")
+  id         String @id @default(cuid())
+  hashedCode String @map("hashed_code")
+  createdAt  BigInt @map("created_at")
 
   // Relation to parent UserOTP
   userOtpId String  @map("user_otp_id")
@@ -360,3 +358,36 @@ model OTPBackupCode {
   @@index([userOtpId])
   @@map("otp_backup_codes")
 }
+
+// End of TOTP / OTP related models
+
+// Start of OAuth 2.0 PKCE related models
+
+model OAuthClient {
+  id           String   @id @default(cuid())
+  name         String
+  secret       String   @map("client_secret")
+  redirectUris String[] @map("redirect_uris")
+
+  permissionBitMask BigInt @map("permission_bit_mask")
+
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+  OAuthGrantedToken OAuthGrantedToken[]
+}
+
+model OAuthGrantedToken {
+  jti String @id @unique
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  permissionBitMask BigInt @map("permission_bit_mask")
+
+  expiryAt DateTime @map("expiry_at")
+
+  clientId String      @map("client_id")
+  client   OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
+
+// End of OAuth 2.0 PKCE related models

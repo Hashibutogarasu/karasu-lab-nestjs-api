@@ -42,7 +42,7 @@ export class MfaController {
     private readonly authService: AuthService,
     private readonly totp: TotpService,
     private readonly jwtTokenService: JwtTokenService,
-  ) { }
+  ) {}
 
   @ApiCreatedResponse({ type: MfaSetupResponseDto })
   @Post('setup')
@@ -71,10 +71,8 @@ export class MfaController {
         backup_codes: result.backupCodes,
       });
     } catch (err: any) {
-      if (err === AppErrorCodes.CONFLICT || (err instanceof Error && err.message === AppErrorCodes.CONFLICT.message)) {
-        return res.status(HttpStatus.CONFLICT).json({
-          message: AppErrorCodes.CONFLICT.customMessage,
-        });
+      if (err === AppErrorCodes.CONFLICT) {
+        throw AppErrorCodes.CONFLICT;
       }
       throw err;
     }

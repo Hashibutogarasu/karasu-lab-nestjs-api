@@ -4,10 +4,11 @@ import { AuthResponse, LoginRequest, RegisterRequest } from '../../../lib';
 import { UserService } from '../../../data-base/query/user/user.service';
 import { AppErrorCodes } from '../../../types/error-codes';
 import { usernameSchema } from '../../auth.dto';
+import { DateTimeService } from '../../../date-time/date-time.service';
 
 @Injectable()
 export class WorkflowService {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService, private readonly dateTimeService: DateTimeService) { }
 
   /**
    * ユーザー登録処理
@@ -100,9 +101,15 @@ export class WorkflowService {
         throw AppErrorCodes.INVALID_CREDENTIALS;
       }
 
+      const { passwordHash, createdAt, updatedAt, ...user } = verifiedUser;
+
       return {
         success: true,
-        user: verifiedUser,
+        user: {
+          ...user,
+          createdAt: this.dateTimeService.toIsoDatetimeFromDate(createdAt),
+          updatedAt: this.dateTimeService.toIsoDatetimeFromDate(updatedAt),
+        },
       };
     } catch (error) {
       return {

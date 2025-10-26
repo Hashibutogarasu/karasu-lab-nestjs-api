@@ -26,7 +26,7 @@ const getErrorSchema = ({
     customMessage: z.string().default(customMessage ?? 'An error occurred'),
   });
 
-export class ErrorDto extends createZodDto(getErrorSchema()) {}
+export class ErrorDto extends createZodDto(getErrorSchema()) { }
 
 export class AppErrorCode extends Error {
   public readonly key: string;
@@ -38,10 +38,12 @@ export class AppErrorCode extends Error {
 
   constructor(zodSchema: z.ZodObject<any>) {
     super();
-    this.key = this.name;
-    const defaults = zodSchema.parse({}) as any;
-    this.code = defaults.code;
+    const baseDefaults = getErrorSchema().parse({}) as any;
+    const overrides = zodSchema.parse({}) as any;
+    const defaults = { ...baseDefaults, ...overrides } as any;
     this.name = defaults.name;
+    this.key = this.name;
+    this.code = defaults.code;
     this.isHttpError = defaults.isHttpError;
     this.customMessage = defaults.customMessage;
     this.message = this.customMessage;
@@ -55,10 +57,10 @@ export class AppErrorCode extends Error {
     });
 
     const className = `Error${this.name}Dto`;
-    const ZodDtoClass = class extends createZodDto(this.zodSchema) {};
+    const ZodDtoClass = class extends createZodDto(this.zodSchema) { };
     try {
       Object.defineProperty(ZodDtoClass, 'name', { value: className });
-    } catch (e) {}
+    } catch (e) { }
     this.zodDtoClass = ZodDtoClass;
   }
 

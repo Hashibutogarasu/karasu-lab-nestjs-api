@@ -42,6 +42,9 @@ import { JwtModule } from '@nestjs/jwt';
 import { ZodValidationPipe } from './zod-validation-type';
 import { AppConfigModule } from './app-config/app-config.module';
 import { GitHubModule } from './git-hub/git-hub.module';
+import { PermissionModule } from './permission/permission.module';
+import { DateTimeModule } from './date-time/date-time.module';
+import { DateTimeService } from './date-time/date-time.service';
 
 @Module({
   imports: [
@@ -50,11 +53,11 @@ import { GitHubModule } from './git-hub/git-hub.module';
     AccountModule,
     ...(process.env.DISCORD_BOT_TOKEN
       ? [
-          {
-            global: true,
-            module: DiscordAppModule,
-          },
-        ]
+        {
+          global: true,
+          module: DiscordAppModule,
+        },
+      ]
       : []),
     MarkdownModule,
     McpServerModule,
@@ -72,16 +75,16 @@ import { GitHubModule } from './git-hub/git-hub.module';
     MfaModule,
     process.env.REDIS_HOST
       ? CacheModule.register({
-          store: async () =>
-            await redisStore({
-              socket: {
-                host: process.env.REDIS_HOST!,
-                port: process.env.REDIS_PORT!,
-              },
-              ttl: 10,
-            }),
-          isGlobal: true,
-        })
+        store: async () =>
+          await redisStore({
+            socket: {
+              host: process.env.REDIS_HOST!,
+              port: process.env.REDIS_PORT!,
+            },
+            ttl: 10,
+          }),
+        isGlobal: true,
+      })
       : CacheModule.register({ isGlobal: true, ttl: 10 }),
     {
       global: true,
@@ -101,6 +104,11 @@ import { GitHubModule } from './git-hub/git-hub.module';
     },
     AppConfigModule.forRoot(),
     GitHubModule,
+    PermissionModule,
+    {
+      global: true,
+      module: DateTimeModule,
+    },
   ],
   controllers: [AppController],
   providers: [
@@ -126,6 +134,7 @@ import { GitHubModule } from './git-hub/git-hub.module';
     AuthStateService,
     ExtraProfileService,
     PendingEmailChangeProcessService,
+    DateTimeService
   ],
   exports: [AppService],
 })

@@ -21,7 +21,7 @@ import { JwtTokenService } from '../src/auth/jwt-token/jwt-token.service';
 import { AppConfigService } from '../src/app-config/app-config.service';
 import { AppConfigModule } from '../src/app-config/app-config.module';
 import { CacheModule } from '@nestjs/cache-manager';
-import { redisStore } from 'cache-manager-redis-store';
+import { DateTimeModule } from '../src/date-time/date-time.module';
 
 jest.setTimeout(30000);
 
@@ -53,7 +53,6 @@ describe('MFA e2e flow', () => {
           (token: string, secret: string) => token === '123456',
         ),
     });
-
 
     const mockMfaService = mock<MfaService>({
       checkMfaRequired: jest.fn().mockResolvedValue({ mfaRequired: false }),
@@ -148,6 +147,7 @@ describe('MFA e2e flow', () => {
           module: AppConfigModule,
           global: true,
         },
+        DateTimeModule
       ],
     })
       .overrideProvider(AppConfigService)

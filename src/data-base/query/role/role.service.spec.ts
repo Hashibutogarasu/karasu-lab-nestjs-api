@@ -3,6 +3,7 @@ import { RoleService } from './role.service';
 import { mock } from 'jest-mock-extended';
 import { DataBaseService } from '../../data-base.service';
 import { PermissionBitcalcService } from '../../../permission-bitcalc/permission-bitcalc.service';
+import { PermissionType } from '../../../types/permission';
 
 describe('RoleService', () => {
   let service: RoleService;

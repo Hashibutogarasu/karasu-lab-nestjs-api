@@ -14,6 +14,7 @@ import { ExtraProfileService } from './query/extra-profile/extra-profile.service
 import { TotpService } from '../totp/totp.service';
 import { PermissionBitcalcModule } from '../permission-bitcalc/permission-bitcalc.module';
 import { DataBaseMiddleware } from './data-base.middleware';
+import { DateTimeService } from '../date-time/date-time.service';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { DataBaseMiddleware } from './data-base.middleware';
     UserService,
     ExtraProfileService,
     TotpService,
+    DateTimeService,
   ],
   exports: [
     UtilityService,
