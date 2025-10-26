@@ -34,29 +34,6 @@ export class AppErrorCodeFilter implements ExceptionFilter {
       return;
     }
 
-    if (
-      exception &&
-      typeof exception === 'object' &&
-      exception !== null &&
-      'code' in exception &&
-      'message' in exception
-    ) {
-      const ex = exception as any;
-      const status = ex.isHttpError
-        ? (ex.code as number)
-        : HttpStatus.INTERNAL_SERVER_ERROR;
-      response.status(status).json({
-        message: ex.message,
-        customMessage: ex.customMessage,
-        status,
-        code: ex.key || ex.code || 'ERROR',
-        timestamp: new Date().toISOString(),
-        path: request.url,
-      });
-
-      return;
-    }
-
     throw AppErrorCodes.INTERNAL_SERVER_ERROR.setCustomMessage(
       exception.message,
     );

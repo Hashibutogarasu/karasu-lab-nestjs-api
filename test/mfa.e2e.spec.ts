@@ -20,6 +20,8 @@ import prisma from '../src/lib/database/query';
 import { JwtTokenService } from '../src/auth/jwt-token/jwt-token.service';
 import { AppConfigService } from '../src/app-config/app-config.service';
 import { AppConfigModule } from '../src/app-config/app-config.module';
+import { CacheModule } from '@nestjs/cache-manager';
+import { redisStore } from 'cache-manager-redis-store';
 
 jest.setTimeout(30000);
 
@@ -133,6 +135,7 @@ describe('MFA e2e flow', () => {
 
     const moduleBuilder = Test.createTestingModule({
       imports: [
+        CacheModule.register({ isGlobal: true, ttl: 10 }),
         AuthModule,
         DataBaseModule,
         MfaModule,
@@ -226,8 +229,6 @@ describe('MFA e2e flow', () => {
       .post('/auth/mfa/setup')
       .set('Authorization', `Bearer ${accessToken}`)
       .send();
-
-    console.log('MFA Setup Response:', setupRes.body);
 
     expect(setupRes.status).toBe(201);
     expect(setupRes.body).toHaveProperty('otpauth');

@@ -119,8 +119,8 @@ export const UserSchema = z.object({
   email: z.string(),
   passwordHash: z.string().optional().nullable().nullable(),
   providers: z.string().array(),
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date(),
+  createdAt: z.preprocess((val) => typeof val === "string" ? new Date(val) : val,z.date()),
+  updatedAt: z.preprocess((val) => typeof val === "string" ? new Date(val) : val,z.date()),
 })
 
 export type User = z.infer<typeof UserSchema>
@@ -413,8 +413,8 @@ export const UserOTPSchema = z.object({
   issuerId: z.string(),
   userId: z.string(),
   setupCompleted: z.boolean(),
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date(),
+  createdAt: z.iso.datetime().transform((value) => new Date(value)),
+  updatedAt: z.iso.datetime().transform((value) => new Date(value)),
 })
 
 export type UserOTP = z.infer<typeof UserOTPSchema>

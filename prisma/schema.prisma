@@ -30,9 +30,9 @@ model User {
 
   providers    String[] @default([])
   
-  /// @zod.custom.use(z.coerce.date())
+  /// @zod.custom.use(z.preprocess((val) => typeof val === "string" ? new Date(val) : val,z.date()))
   createdAt    DateTime @default(now()) @map("created_at")
-  /// @zod.custom.use(z.coerce.date())
+  /// @zod.custom.use(z.preprocess((val) => typeof val === "string" ? new Date(val) : val,z.date()))
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   // Relations
@@ -132,12 +132,12 @@ model RefreshToken {
 model ExtraProfile {
   id          String   @id @default(cuid())
   userId      String   @map("user_id")
-  provider    String // "google", "x", etc.
+  provider    String
   providerId  String   @map("provider_id")
   displayName String?  @map("display_name")
   email       String?
   avatarUrl   String?  @map("avatar_url")
-  rawProfile  Json     @map("raw_profile") // SNS固有のプロフィール情報をJSONで保存
+  rawProfile  Json     @map("raw_profile")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -156,7 +156,7 @@ model AuthState {
   oneTimeToken        String   @unique @map("one_time_token")
   provider            String
   callbackUrl         String   @map("callback_url")
-  userId              String?  @map("user_id") // 認証完了後にユーザーIDを保存
+  userId              String?  @map("user_id")
   codeVerifier        String?  @map("code_verifier") // PKCE code_verifier
   codeChallenge       String?  @map("code_challenge") // PKCE code_challenge
   codeChallengeMethod String?  @map("code_challenge_method") // PKCE method (S256 or plain)
@@ -336,10 +336,10 @@ model UserOTP {
   issuer      User            @relation("UserOTP_Issuer", fields: [issuerId], references: [id], onDelete: Cascade)
   backupCodes OTPBackupCode[] @relation("OTP_BackupCodes")
 
-  /// @zod.custom.use(z.coerce.date())
+  /// @zod.custom.use(z.iso.datetime().transform((value) => new Date(value)))
   createdAt DateTime @default(now()) @map("created_at")
 
-  /// @zod.custom.use(z.coerce.date())
+  /// @zod.custom.use(z.iso.datetime().transform((value) => new Date(value)))
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@unique([userId])
