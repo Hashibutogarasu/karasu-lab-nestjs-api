@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { OAuthAuthorizeQuery, OAuthTokenBodyDto, OAuthTokenResponseDto, OAuthTokenRevokeDto } from './oauth.dto';
 import { AppErrorCodes } from '../types/error-codes';
+import { PublicUser } from '../auth/decorators/auth-user.decorator';
 
 @Injectable()
 export class OauthService {
@@ -9,11 +10,11 @@ export class OauthService {
     throw AppErrorCodes.NOT_IMPLEMENTED;
   }
 
-  async token(body: OAuthTokenBodyDto): Promise<OAuthTokenResponseDto> {
+  async token(body: OAuthTokenBodyDto, user: PublicUser): Promise<OAuthTokenResponseDto> {
     throw AppErrorCodes.NOT_IMPLEMENTED;
   }
 
-  async revoke(body: OAuthTokenRevokeDto): Promise<void> {
+  async revoke(body: OAuthTokenRevokeDto, user: PublicUser): Promise<void> {
     throw AppErrorCodes.NOT_IMPLEMENTED;
   }
 }
