@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   Post,
   Query,
   UseGuards,
@@ -18,6 +19,8 @@ import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiBody,
+  ApiConsumes,
+  ApiFoundResponse,
   ApiInternalServerErrorResponse,
   ApiOkResponse,
   ApiPermanentRedirectResponse,
@@ -31,7 +34,7 @@ import { AuthUser, PublicUser } from '../auth/decorators/auth-user.decorator';
 @Controller('oauth')
 @UsePipes(ZodValidationPipe)
 export class OauthController {
-  constructor(private readonly oauthService: OauthService) {}
+  constructor(private readonly oauthService: OauthService) { }
 
   @ApiBadRequestResponse(AppErrorCodes.INVALID_REDIRECT_URI.apiResponse)
   @ApiInternalServerErrorResponse(
@@ -44,6 +47,7 @@ export class OauthController {
   @ApiPermanentRedirectResponse(AppErrorCodes.ACCESS_DENIED.apiResponse)
   @ApiPermanentRedirectResponse(AppErrorCodes.UNAUTHORIZED.apiResponse)
   @ApiPermanentRedirectResponse(AppErrorCodes.INVALID_PARAMETERS.apiResponse)
+  @ApiFoundResponse({ description: 'Redirect to the provided redirect_uri' })
   @ApiQuery({
     type: OAuthAuthorizeQuery,
   })
@@ -64,7 +68,8 @@ export class OauthController {
     type: OAuthTokenBodyDto,
   })
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @ApiConsumes('application/x-www-form-urlencoded')
+  // clientId:clientSecret base64 encoded in Authorization header
   @Post('token')
   async token(
     @Body() body: OAuthTokenBodyDto,
@@ -80,6 +85,7 @@ export class OauthController {
     type: OAuthTokenRevokeDto,
   })
   @ApiBearerAuth()
+  @ApiConsumes('application/x-www-form-urlencoded')
   @UseGuards(JwtAuthGuard)
   @Post('token/revoke')
   async revoke(

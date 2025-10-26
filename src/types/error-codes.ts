@@ -390,7 +390,7 @@ export const AppErrorCodes = {
   INVALID_CLIENT: new AppErrorCode(
     z.object({
       name: z.string().default('InvalidClient'),
-      code: z.number().default(400),
+      code: z.number().default(401),
       customMessage: z.string().default('Invalid client credentials'),
     }),
   ),
