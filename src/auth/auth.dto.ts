@@ -1,6 +1,13 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { createZodDto } from 'nestjs-zod';
 import z from 'zod';
+import { publicUserSchema } from './decorators/auth-user.decorator';
+
+export const authProvidersSchema = z.object({
+  providers: z.array(z.string()),
+});
+
+export class AuthProvidersDto extends createZodDto(authProvidersSchema) { }
 
 export const registerSchema = z.object({
   username: z.string(),
@@ -9,6 +16,13 @@ export const registerSchema = z.object({
 });
 
 export class RegisterDto extends createZodDto(registerSchema) { }
+
+export const registerResponseSchema = z.object({
+  message: z.string(),
+  user: publicUserSchema,
+});
+
+export class RegisterResponseDto extends createZodDto(registerResponseSchema) { }
 
 export const verifyTokenSchema = z.object({
   stateCode: z.string(),
@@ -93,7 +107,7 @@ export const UserResponseSchema = z.object({
 export class UserResponseDto extends createZodDto(UserResponseSchema) { }
 
 export const LoginResponseSchema = z.object({
-  message: 'Login successful',
+  message: z.string().default('Login successful'),
   jwtId: z.string(),
   access_token: z.string(),
   token_type: z.literal('Bearer'),
@@ -113,4 +127,6 @@ export const refreshTokenResponseSchema = z.object({
   expires_in: z.number(),
 });
 
-export class RefreshTokenResponseDto extends createZodDto(refreshTokenResponseSchema) { }
+export class RefreshTokenResponseDto extends createZodDto(
+  refreshTokenResponseSchema,
+) { }

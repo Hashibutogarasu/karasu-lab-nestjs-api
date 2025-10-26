@@ -30,9 +30,9 @@ model User {
 
   providers    String[] @default([])
   
-  /// @zod.custom.use(z.date())
+  /// @zod.custom.use(z.string().transform((val) => new Date(val)))
   createdAt    DateTime @default(now()) @map("created_at")
-  /// @zod.custom.use(z.date())
+  /// @zod.custom.use(z.string().transform((val) => new Date(val)))
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   // Relations

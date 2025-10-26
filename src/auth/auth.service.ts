@@ -34,7 +34,7 @@ export class AuthService {
     private readonly jwtstateService: JwtstateService,
     private readonly workflowService: WorkflowService,
     private readonly managerService: ManagerService,
-  ) { }
+  ) {}
 
   /**
    * ユーザー登録処理

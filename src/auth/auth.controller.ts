@@ -17,6 +17,7 @@ import { AuthService } from './auth.service';
 import type { AuthState } from '@prisma/client';
 import { OAuthProviderFactory } from '../lib/auth/oauth-provider.factory';
 import {
+  IOAuthProvider,
   ProviderNotImplementedError,
   ProviderUnavailableError,
 } from '../lib/auth/oauth-provider.interface';
@@ -31,6 +32,7 @@ import { MfaService } from '../data-base/query/mfa/mfa.service';
 import { ExternalProviderAccessTokenService } from '../data-base/query/external-provider-access-token/external-provider-access-token.service';
 import { JwtTokenService } from './jwt-token/jwt-token.service';
 import {
+  AuthProvidersDto,
   AuthStateDto,
   authStateSchema,
   LoginDto,
@@ -40,11 +42,11 @@ import {
   RefreshTokenResponseDto,
   refreshTokenSchema,
   RegisterDto,
+  RegisterResponseDto,
   registerSchema,
   VerifyTokenDto,
   verifyTokenSchema,
 } from './auth.dto';
-import { ZodValidationPipe } from '../zod-validation-type';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -55,10 +57,11 @@ import {
   ApiServiceUnavailableResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { createZodDto } from 'nestjs-zod';
+import { createZodDto, ZodValidationPipe } from 'nestjs-zod';
 import z from 'zod';
 
 @NoInterceptor()
+@UsePipes(ZodValidationPipe)
 @Controller('auth')
 export class AuthController {
   private readonly DEFAULT_CALLBACK_URL = process.env.FRONTEND_CALLBACK_URL!;
@@ -88,40 +91,26 @@ export class AuthController {
    * GET /auth/providers
    */
   @ApiOkResponse({
-    type: createZodDto(
-      z.object({
-        providers: z.array(z.string()),
-      }),
-    ),
+    type: AuthProvidersDto,
   })
   @ApiInternalServerErrorResponse(
     AppErrorCodes.INTERNAL_SERVER_ERROR.apiResponse,
   )
   @Get('providers')
   async getProviders(@Res() res: Response): Promise<void> {
-    try {
-      const all = ['google', 'discord', 'x'];
-      const available: string[] = [];
+    const available: IOAuthProvider[] = [];
 
-      for (const p of all) {
-        try {
-          const provider = this.oauthProviderFactory.getProvider(p);
-          if (provider && provider.isAvailable && provider.isAvailable()) {
-            available.push(p);
-          }
-        } catch (err) {
-          // If provider not implemented or other errors, skip it
-          continue;
+    for (const p of this.oauthProviderFactory.getAllProviders()) {
+      try {
+        if (p && p.isAvailable()) {
+          available.push(p);
         }
+      } catch (err) {
+        continue;
       }
-
-      res.status(HttpStatus.OK).json({ providers: available });
-    } catch (error) {
-      if (error instanceof AppErrorCode) {
-        throw error;
-      }
-      throw AppErrorCodes.INTERNAL_SERVER_ERROR;
     }
+
+    res.status(HttpStatus.OK).json({ providers: available.map((p) => p.getProvider()) });
   }
 
   /**
@@ -129,12 +118,7 @@ export class AuthController {
    * POST /auth/register
    */
   @ApiCreatedResponse({
-    type: createZodDto(
-      z.object({
-        message: z.string(),
-        user: publicUserSchema,
-      }),
-    ),
+    type: RegisterResponseDto,
   })
   @ApiBody({ type: RegisterDto })
   @UsePipes(new ZodValidationPipe(registerSchema))
@@ -231,7 +215,7 @@ export class AuthController {
    * POST /auth/login
    */
   @ApiOkResponse({
-    type: LoginResponseDto
+    type: LoginResponseDto,
   })
   @ApiInternalServerErrorResponse(
     AppErrorCodes.TOKEN_GENERATION_FAILED.apiResponse,
@@ -302,9 +286,11 @@ export class AuthController {
    * POST /auth/refresh
    */
   @ApiOkResponse({
-    type: RefreshTokenResponseDto
+    type: RefreshTokenResponseDto,
   })
-  @ApiInternalServerErrorResponse(AppErrorCodes.TOKEN_GENERATION_FAILED.apiResponse)
+  @ApiInternalServerErrorResponse(
+    AppErrorCodes.TOKEN_GENERATION_FAILED.apiResponse,
+  )
   @ApiBadRequestResponse(AppErrorCodes.INVALID_TOKEN.apiResponse)
   @ApiBadRequestResponse(AppErrorCodes.INVALID_REQUEST.apiResponse)
   @ApiBody({ type: RefreshTokenDto })
@@ -354,9 +340,11 @@ export class AuthController {
    * GET /auth/profile
    */
   @ApiOkResponse({
-    type: PublicUser
+    type: PublicUser,
   })
-  @ApiInternalServerErrorResponse(AppErrorCodes.INTERNAL_SERVER_ERROR.apiResponse)
+  @ApiInternalServerErrorResponse(
+    AppErrorCodes.INTERNAL_SERVER_ERROR.apiResponse,
+  )
   @ApiBearerAuth()
   @Get('profile')
   @UseGuards(JwtAuthGuard)

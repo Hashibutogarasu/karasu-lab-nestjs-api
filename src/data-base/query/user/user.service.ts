@@ -1,5 +1,8 @@
 import { Injectable, Inject, forwardRef } from '@nestjs/common';
-import { publicUserSchema, type PublicUser } from '../../../auth/decorators/auth-user.decorator';
+import {
+  publicUserSchema,
+  type PublicUser,
+} from '../../../auth/decorators/auth-user.decorator';
 import { PrismaClient, Role, User } from '@prisma/client';
 import { DataBaseService } from '../../data-base.service';
 import { UtilityService } from '../../utility/utility.service';
@@ -100,24 +103,26 @@ export class UserService {
     email: string;
     password: string;
   }): Promise<PublicUser> {
-    return publicUserSchema.parse(await this.prisma.user.create({
-      data: {
-        username: data.username,
-        email: data.email,
-        passwordHash: this.utilityService.hashString(data.password),
-      },
-      select: {
-        id: true,
-        username: true,
-        email: true,
-        createdAt: true,
-        updatedAt: true,
-        providers: true,
-        extraProfiles: true,
-        roles: true,
-        passwordHash: false,
-      },
-    }));
+    return publicUserSchema.parse(
+      await this.prisma.user.create({
+        data: {
+          username: data.username,
+          email: data.email,
+          passwordHash: this.utilityService.hashString(data.password),
+        },
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          createdAt: true,
+          updatedAt: true,
+          providers: true,
+          extraProfiles: true,
+          roles: true,
+          passwordHash: false,
+        },
+      }),
+    );
   }
 
   /**

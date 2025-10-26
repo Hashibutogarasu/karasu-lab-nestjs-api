@@ -10,6 +10,7 @@ export abstract class AbstractBaseService
   constructor(private readonly configService: AppConfigService) {
     const name = this.constructor.name;
     this._logger = new Logger(name);
+    this._logger.log(`${this.constructor.name} is initializing`)
   }
 
   get logger(): Logger {

@@ -36,8 +36,11 @@ import {
   ApiResponse,
 } from '@nestjs/swagger';
 import {
+  ConfirmResetPasswordResponseDto,
   EmailChangeRequestDto,
   EmailChangeVerifyDto,
+  ForgotPasswordResponseDto,
+  ProfileResponseDto,
   ResetPasswordResponseDto,
 } from './account.dto';
 import { AppErrorCodes } from '../types/error-codes';
@@ -47,7 +50,7 @@ import { UserSchema } from '../generated/zod';
 
 @Controller('account')
 export class AccountController {
-  constructor(private readonly accountService: AccountService) {}
+  constructor(private readonly accountService: AccountService) { }
 
   /**
    * サインイン済みユーザーのパスワード変更
@@ -71,11 +74,7 @@ export class AccountController {
    * メールアドレスを指定してリセットコードを送信
    */
   @ApiOkResponse({
-    type: createZodDto(
-      z.object({
-        message: z.string(),
-      }),
-    ),
+    type: ForgotPasswordResponseDto,
   })
   @ApiBody({ type: ForgotPasswordDto })
   @Post('forgot-password')
@@ -88,12 +87,7 @@ export class AccountController {
    * 6桁のコードと新しいパスワードを指定
    */
   @ApiOkResponse({
-    type: createZodDto(
-      z.object({
-        message: z.string(),
-        user: UserSchema.partial(),
-      }),
-    ),
+    type: ConfirmResetPasswordResponseDto,
   })
   @ApiBadRequestResponse(AppErrorCodes.INVALID_RESET_CODE.apiResponse)
   @ApiBody({ type: ConfirmResetPasswordDto })
@@ -103,11 +97,7 @@ export class AccountController {
   }
 
   @ApiOkResponse({
-    type: createZodDto(
-      UserSchema.omit({
-        passwordHash: true,
-      }),
-    ),
+    type: ProfileResponseDto,
   })
   @ApiBearerAuth()
   @Get('profile')
