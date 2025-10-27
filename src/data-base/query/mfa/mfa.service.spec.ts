@@ -6,6 +6,7 @@ import { DataBaseService } from '../../data-base.service';
 import { UtilityService } from '../../utility/utility.service';
 import { EncryptionService } from '../../../encryption/encryption.service';
 import { TotpService } from '../../../totp/totp.service';
+import { DateTimeService } from '../../../date-time/date-time.service';
 
 describe('MfaService', () => {
   let service: MfaService;
@@ -15,6 +16,7 @@ describe('MfaService', () => {
     const mockUtilityService = mock<UtilityService>();
     const mockEncryptionService = mock<EncryptionService>();
     const mockTotpService = mock<TotpService>();
+    const mockDateTimeService = mock<DateTimeService>();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -34,6 +36,10 @@ describe('MfaService', () => {
         {
           provide: TotpService,
           useValue: mockTotpService,
+        },
+        {
+          provide: DateTimeService,
+          useValue: mockDateTimeService,
         },
       ],
     }).compile();

@@ -96,6 +96,10 @@ export const UserOTPScalarFieldEnumSchema = z.enum(['id','secret','issuedAt','la
 
 export const OTPBackupCodeScalarFieldEnumSchema = z.enum(['id','hashedCode','createdAt','userOtpId']);
 
+export const OAuthClientScalarFieldEnumSchema = z.enum(['id','name','secret','redirectUris','permissionBitMask','createdAt','updatedAt']);
+
+export const OAuthGrantedTokenScalarFieldEnumSchema = z.enum(['jti','userId','permissionBitMask','expiryAt','clientId']);
+
 export const SortOrderSchema = z.enum(['asc','desc']);
 
 export const JsonNullValueInputSchema = z.enum(['JsonNull',]).transform((value) => (value === 'JsonNull' ? Prisma.JsonNull : value));
@@ -119,8 +123,8 @@ export const UserSchema = z.object({
   email: z.string(),
   passwordHash: z.string().optional().nullable().nullable(),
   providers: z.string().array(),
-  createdAt: z.string().transform((val) => new Date(val)),
-  updatedAt: z.string().transform((val) => new Date(val)),
+  createdAt: z.string(),
+  updatedAt: z.string(),
 })
 
 export type User = z.infer<typeof UserSchema>
@@ -413,8 +417,8 @@ export const UserOTPSchema = z.object({
   issuerId: z.string(),
   userId: z.string(),
   setupCompleted: z.boolean(),
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date(),
+  createdAt: z.bigint(),
+  updatedAt: z.bigint(),
 })
 
 export type UserOTP = z.infer<typeof UserOTPSchema>
@@ -426,8 +430,38 @@ export type UserOTP = z.infer<typeof UserOTPSchema>
 export const OTPBackupCodeSchema = z.object({
   id: z.cuid(),
   hashedCode: z.string(),
-  createdAt: z.coerce.date(),
+  createdAt: z.bigint(),
   userOtpId: z.string(),
 })
 
 export type OTPBackupCode = z.infer<typeof OTPBackupCodeSchema>
+
+/////////////////////////////////////////
+// O AUTH CLIENT SCHEMA
+/////////////////////////////////////////
+
+export const OAuthClientSchema = z.object({
+  id: z.cuid(),
+  name: z.string(),
+  secret: z.string(),
+  redirectUris: z.string().array(),
+  permissionBitMask: z.bigint(),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
+})
+
+export type OAuthClient = z.infer<typeof OAuthClientSchema>
+
+/////////////////////////////////////////
+// O AUTH GRANTED TOKEN SCHEMA
+/////////////////////////////////////////
+
+export const OAuthGrantedTokenSchema = z.object({
+  jti: z.string(),
+  userId: z.string(),
+  permissionBitMask: z.bigint(),
+  expiryAt: z.coerce.date(),
+  clientId: z.string(),
+})
+
+export type OAuthGrantedToken = z.infer<typeof OAuthGrantedTokenSchema>

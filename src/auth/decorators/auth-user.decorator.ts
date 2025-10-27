@@ -1,14 +1,11 @@
 import {
   createParamDecorator,
   ExecutionContext,
-  UnauthorizedException,
 } from '@nestjs/common';
-import { Prisma, Role, User } from '@prisma/client';
+import { Prisma, Role } from '@prisma/client';
 import { ModuleRef } from '@nestjs/core';
 import { AppErrorCodes } from '../../types/error-codes';
 import { UserService } from '../../data-base/query/user/user.service';
-import { RemoveNullProperties } from '../../types/remove-null-properties';
-import { OmitFunctions } from '../../types/omit-functions';
 import { UserSchema } from '../../generated/zod';
 import z from 'zod';
 import { createZodDto } from 'nestjs-zod';
@@ -32,6 +29,9 @@ export type UserWithRelations = Prisma.UserGetPayload<{
 
 export const publicUserSchema = UserSchema.omit({
   passwordHash: true,
+}).extend({
+  createdAt: z.union([z.string(), z.any()]),
+  updatedAt: z.union([z.string(), z.any()]),
 });
 
 export class PublicUser extends createZodDto(publicUserSchema) {}
@@ -60,7 +60,17 @@ export const AuthUser = createParamDecorator(
       throw AppErrorCodes.NOT_FOUND;
     }
 
-    const publicUser = publicUserSchema.parse(user);
+    const {
+      success,
+      error,
+      data: publicUser,
+    } = publicUserSchema.safeParse(user);
+    if (!success) {
+      throw AppErrorCodes.INTERNAL_SERVER_ERROR.setCustomMessage(
+        JSON.stringify(error.issues),
+      );
+    }
+
     return publicUser;
   },
 );

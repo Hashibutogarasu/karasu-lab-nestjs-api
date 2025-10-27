@@ -5,6 +5,7 @@ import { UtilityService } from '../../utility/utility.service';
 import { AppErrorCodes } from '../../../types/error-codes';
 import { EncryptionService } from '../../../encryption/encryption.service';
 import { TotpService } from '../../../totp/totp.service';
+import { DateTimeService } from '../../../date-time/date-time.service';
 
 @Injectable()
 export class MfaService {
@@ -15,6 +16,7 @@ export class MfaService {
     private readonly utilityService: UtilityService,
     private readonly encryptionService: EncryptionService,
     private readonly totpService: TotpService,
+    private readonly dateTimeService: DateTimeService,
   ) {
     this.prisma = this.databaseService.prisma();
   }
@@ -29,6 +31,8 @@ export class MfaService {
         userId: data.userId,
         issuerId: data.issuerId,
         secret: data.secretEncrypted,
+        createdAt: this.dateTimeService.now(),
+        updatedAt: this.dateTimeService.now(),
       },
     });
   }
@@ -55,11 +59,10 @@ export class MfaService {
   }
 
   async createBackupCodes(userOtpId: string, codes: string[]) {
-    const now = new Date();
     const createMany = codes.map((c) => ({
       userOtpId,
       hashedCode: this.utilityService.hashString(c),
-      createdAt: now,
+      createdAt: this.dateTimeService.now(),
     }));
     return this.prisma.oTPBackupCode.createMany({ data: createMany });
   }

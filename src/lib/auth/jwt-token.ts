@@ -3,9 +3,10 @@ import z from 'zod';
 import { RoleSchema } from '../../generated/zod';
 
 export const jwtPayloadSchema = z.object({
-  id: z.string().uuid(),
-  sub: z.string().uuid(),
+  jti: z.string(),
+  sub: z.string(),
   provider: z.string().optional(),
+  aud: z.string().optional(),
   iat: z.number().optional(),
   exp: z.number().optional(),
 });
@@ -23,19 +24,19 @@ export class CreateTokenRequest extends createZodDto(
   createTokenRequestSchema,
 ) {}
 
+export const jwtTokenProfileSchema = z.object({
+  sub: z.string().uuid(),
+  name: z.string(),
+  email: z.string().email(),
+  provider: z.string().optional(),
+  providers: z.array(z.string()),
+});
+
 export const createTokenResponseSchema = z.object({
   success: z.boolean(),
   jwtId: z.string().uuid().optional(),
   token: z.string().optional(),
-  profile: z
-    .object({
-      sub: z.string().uuid(),
-      name: z.string(),
-      email: z.string().email(),
-      provider: z.string().optional(),
-      providers: z.array(z.string()),
-    })
-    .optional(),
+  profile: jwtTokenProfileSchema.optional(),
   user: z
     .object({
       roles: z.array(RoleSchema),

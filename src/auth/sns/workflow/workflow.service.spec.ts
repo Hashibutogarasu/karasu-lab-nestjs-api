@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { WorkflowService } from './workflow.service';
 import { mock } from 'jest-mock-extended';
 import { UserService } from '../../../data-base/query/user/user.service';
+import { DateTimeService } from '../../../date-time/date-time.service';
 
 describe('WorkflowService', () => {
   let service: WorkflowService;
@@ -13,6 +14,7 @@ describe('WorkflowService', () => {
       providers: [
         WorkflowService,
         { provide: UserService, useValue: mockUserService },
+        DateTimeService,
       ],
     }).compile();
 

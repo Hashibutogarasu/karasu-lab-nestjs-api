@@ -3,6 +3,7 @@ import {
   Catch,
   ArgumentsHost,
   HttpStatus,
+  HttpException,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { AppErrorCode, AppErrorCodes } from '../types/error-codes';
@@ -14,51 +15,47 @@ export class AppErrorCodeFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    if (exception instanceof AppErrorCode) {
+    const isAppErrorLike = (ex: any): ex is AppErrorCode => {
+      return ex && ex instanceof AppErrorCode;
+    };
+
+    if (isAppErrorLike(exception)) {
+      const appError = exception as AppErrorCode;
       if (exception === AppErrorCodes.DATABASE_CONNECTION_ERROR) {
         process.exit(1);
       }
-
-      const status = exception.isHttpError
-        ? (exception.code as number)
+      const status = appError.isHttpError
+        ? (appError.code as number)
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
       response.status(status).json({
-        message: exception.message,
-        customMessage: exception.customMessage,
+        message: appError.message,
+        customMessage: appError.customMessage,
         status: status,
-        code: exception.key,
+        code: appError.key,
         timestamp: new Date().toISOString(),
         path: request.url,
       });
       return;
     }
 
-    if (
-      exception &&
-      typeof exception === 'object' &&
-      exception !== null &&
-      'code' in exception &&
-      'message' in exception
-    ) {
-      const ex = exception as any;
-      const status = ex.isHttpError
-        ? (ex.code as number)
-        : HttpStatus.INTERNAL_SERVER_ERROR;
-      response.status(status).json({
-        message: ex.message,
-        customMessage: ex.customMessage,
-        status,
-        code: ex.key || ex.code || 'ERROR',
-        timestamp: new Date().toISOString(),
-        path: request.url,
-      });
-
+    if (exception instanceof HttpException) {
+      const status = exception.getStatus();
+      const resp = exception.getResponse();
+      const body = typeof resp === 'string' ? { message: resp } : resp;
+      response.status(status).json(body as any);
       return;
     }
 
-    throw AppErrorCodes.INTERNAL_SERVER_ERROR.setCustomMessage(
-      exception.message,
-    );
+    const appErr = AppErrorCodes.INTERNAL_SERVER_ERROR;
+
+    response.status(appErr.code).json({
+      message: appErr.message,
+      customMessage: appErr.customMessage,
+      status: appErr.code,
+      code: appErr.key,
+      timestamp: new Date().toISOString(),
+      path: request.url,
+    });
   }
 }

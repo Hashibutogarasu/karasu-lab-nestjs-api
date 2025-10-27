@@ -42,6 +42,9 @@ import { JwtModule } from '@nestjs/jwt';
 import { ZodValidationPipe } from './zod-validation-type';
 import { AppConfigModule } from './app-config/app-config.module';
 import { GitHubModule } from './git-hub/git-hub.module';
+import { PermissionModule } from './permission/permission.module';
+import { DateTimeModule } from './date-time/date-time.module';
+import { DateTimeService } from './date-time/date-time.service';
 
 @Module({
   imports: [
@@ -101,6 +104,11 @@ import { GitHubModule } from './git-hub/git-hub.module';
     },
     AppConfigModule.forRoot(),
     GitHubModule,
+    PermissionModule,
+    {
+      global: true,
+      module: DateTimeModule,
+    },
   ],
   controllers: [AppController],
   providers: [
@@ -126,6 +134,7 @@ import { GitHubModule } from './git-hub/git-hub.module';
     AuthStateService,
     ExtraProfileService,
     PendingEmailChangeProcessService,
+    DateTimeService,
   ],
   exports: [AppService],
 })

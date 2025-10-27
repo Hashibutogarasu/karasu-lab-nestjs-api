@@ -14,6 +14,7 @@ import {
   UpdateAuthDto,
   UserResponseDto,
 } from './auth.dto';
+import { DateTimeService } from '../date-time/date-time.service';
 
 interface SessionResponse {
   sessionId: string;
@@ -34,6 +35,7 @@ export class AuthService {
     private readonly jwtstateService: JwtstateService,
     private readonly workflowService: WorkflowService,
     private readonly managerService: ManagerService,
+    private readonly dateTimeService: DateTimeService,
   ) {}
 
   /**
@@ -84,11 +86,15 @@ export class AuthService {
         throw AppErrorCodes.INVALID_CREDENTIALS;
       }
 
-      const { passwordHash, ...user } = verified;
+      const { passwordHash, createdAt, updatedAt, ...user } = verified;
 
       return {
         success: true,
-        user: user,
+        user: {
+          ...user,
+          createdAt: createdAt.toISOString(),
+          updatedAt: updatedAt.toISOString(),
+        },
       };
     } catch (error) {
       throw AppErrorCodes.INTERNAL_SERVER_ERROR;

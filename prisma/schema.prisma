@@ -22,18 +22,18 @@ datasource db {
 
 model User {
   /// @zod.custom.use(z.string())
-  id           String   @id @default(cuid())
-  username     String   @unique
-  email        String   @unique
+  id           String  @id @default(cuid())
+  username     String  @unique
+  email        String  @unique
   /// @zod.custom.use(z.string().optional().nullable())
-  passwordHash String?  @map("password_hash") // Nullable for SNS users
+  passwordHash String? @map("password_hash") // Nullable for SNS users
 
-  providers    String[] @default([])
-  
-  /// @zod.custom.use(z.string().transform((val) => new Date(val)))
-  createdAt    DateTime @default(now()) @map("created_at")
-  /// @zod.custom.use(z.string().transform((val) => new Date(val)))
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  providers String[] @default([])
+
+  /// @zod.custom.use(z.string())
+  createdAt DateTime @default(now()) @map("created_at")
+  /// @zod.custom.use(z.string())
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
   authorizationCodes          AuthorizationCode[]
@@ -48,6 +48,7 @@ model User {
   PendingMailChangeProcess    PendingEMailChangeProcess[]
   userOtps                    UserOTP[]
   issuedOtps                  UserOTP[]                     @relation("UserOTP_Issuer")
+  oAuthGrantedToken           OAuthGrantedToken[]
 
   @@map("users")
 }
@@ -81,7 +82,7 @@ model Role {
 }
 
 model AuthorizationCode {
-  code                String   @id // ハッシュ化推奨
+  code                String   @id
   clientId            String   @map("client_id")
   userId              String   @map("user_id")
   redirectUri         String   @map("redirect_uri")
@@ -98,7 +99,7 @@ model AuthorizationCode {
 }
 
 model AccessToken {
-  token     String   @id // ステートフルの場合ハッシュ化推奨
+  token     String   @id
   clientId  String   @map("client_id")
   userId    String   @map("user_id")
   scope     String?
@@ -113,7 +114,7 @@ model AccessToken {
 }
 
 model RefreshToken {
-  token       String   @id // ハッシュ化必須
+  token       String   @id
   accessToken String   @map("access_token")
   clientId    String   @map("client_id")
   userId      String   @map("user_id")
@@ -132,12 +133,12 @@ model RefreshToken {
 model ExtraProfile {
   id          String   @id @default(cuid())
   userId      String   @map("user_id")
-  provider    String // "google", "x", etc.
+  provider    String
   providerId  String   @map("provider_id")
   displayName String?  @map("display_name")
   email       String?
   avatarUrl   String?  @map("avatar_url")
-  rawProfile  Json     @map("raw_profile") // SNS固有のプロフィール情報をJSONで保存
+  rawProfile  Json     @map("raw_profile")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -156,7 +157,7 @@ model AuthState {
   oneTimeToken        String   @unique @map("one_time_token")
   provider            String
   callbackUrl         String   @map("callback_url")
-  userId              String?  @map("user_id") // 認証完了後にユーザーIDを保存
+  userId              String?  @map("user_id")
   codeVerifier        String?  @map("code_verifier") // PKCE code_verifier
   codeChallenge       String?  @map("code_challenge") // PKCE code_challenge
   codeChallengeMethod String?  @map("code_challenge_method") // PKCE method (S256 or plain)
@@ -177,7 +178,7 @@ model AuthState {
 model PasswordReset {
   id        String   @id @default(cuid())
   userId    String   @map("user_id")
-  resetCode String   @unique @map("reset_code") //  ハッシュ化された6桁の確認コード
+  resetCode String   @unique @map("reset_code")
   expiresAt DateTime @map("expires_at")
   used      Boolean  @default(false)
   createdAt DateTime @default(now()) @map("created_at")
@@ -336,8 +337,8 @@ model UserOTP {
   issuer      User            @relation("UserOTP_Issuer", fields: [issuerId], references: [id], onDelete: Cascade)
   backupCodes OTPBackupCode[] @relation("OTP_BackupCodes")
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt BigInt @map("created_at")
+  updatedAt BigInt @map("updated_at")
 
   @@unique([userId])
   @@index([userId])
@@ -346,9 +347,9 @@ model UserOTP {
 }
 
 model OTPBackupCode {
-  id         String   @id @default(cuid())
-  hashedCode String   @map("hashed_code")
-  createdAt  DateTime @default(now()) @map("created_at")
+  id         String @id @default(cuid())
+  hashedCode String @map("hashed_code")
+  createdAt  BigInt @map("created_at")
 
   // Relation to parent UserOTP
   userOtpId String  @map("user_otp_id")
@@ -357,3 +358,36 @@ model OTPBackupCode {
   @@index([userOtpId])
   @@map("otp_backup_codes")
 }
+
+// End of TOTP / OTP related models
+
+// Start of OAuth 2.0 PKCE related models
+
+model OAuthClient {
+  id           String   @id @default(cuid())
+  name         String
+  secret       String   @map("client_secret") // Hashed secret
+  redirectUris String[] @map("redirect_uris")
+
+  permissionBitMask BigInt @map("permission_bit_mask")
+
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+  OAuthGrantedToken OAuthGrantedToken[]
+}
+
+model OAuthGrantedToken {
+  jti String @id @unique
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  permissionBitMask BigInt @map("permission_bit_mask")
+
+  expiryAt DateTime @map("expiry_at")
+
+  clientId String      @map("client_id")
+  client   OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
+
+// End of OAuth 2.0 PKCE related models
