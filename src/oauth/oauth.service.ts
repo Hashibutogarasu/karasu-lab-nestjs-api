@@ -28,7 +28,7 @@ export class OauthService {
     private readonly userService: UserService,
     private readonly jwtTokenService: JwtTokenService,
     private readonly appConfig: AppConfigService,
-  ) {}
+  ) { }
 
   async authorize(params: OAuthAuthorizeQuery, user: PublicUser) {
     if (params.response_type !== 'code') {
@@ -156,12 +156,18 @@ export class OauthService {
 
     const scopesOut = this.permissionService.permissionsToScopes(finalPerms);
 
+    const oidcScopes = requestedScopes.filter((s) =>
+      ['openid', 'profile', 'email', 'address', 'phone'].includes(s),
+    );
+
+    const finalScopes = Array.from(new Set([...scopesOut, ...oidcScopes]));
+
     return {
       access_token: accessToken,
       token_type: 'Bearer',
       expires_in,
       refresh_token: refreshToken,
-      scope: scopesOut.join(' '),
+      scope: finalScopes.join(' '),
     } as OAuthTokenResponseDto;
   }
 

@@ -15,6 +15,7 @@ import {
   OAuthTokenBodyDto,
   OAuthTokenResponseDto,
   OAuthTokenRevokeDto,
+  OpenIdConnectUserProfile,
 } from './oauth.dto';
 import {
   ApiBadRequestResponse,
@@ -34,11 +35,12 @@ import { AuthUser, PublicUser } from '../auth/decorators/auth-user.decorator';
 import { BasicOAuthGuard } from './basic/basic.guard';
 import BasicAuthOauthClient from './basic-auth-oauth-client/basic-auth-oauth-client.decorator';
 import type { OAuthClient } from '@prisma/client';
+import { AuthorizedScopes } from './authorized-scopes/authorized-scopes.decorator';
 
 @Controller('oauth')
 @UsePipes(ZodValidationPipe)
 export class OauthController {
-  constructor(private readonly oauthService: OauthService) {}
+  constructor(private readonly oauthService: OauthService) { }
 
   @ApiBadRequestResponse(AppErrorCodes.INVALID_REDIRECT_URI.apiResponse)
   @ApiInternalServerErrorResponse(
@@ -109,5 +111,36 @@ export class OauthController {
     @AuthUser() user: PublicUser,
   ): Promise<void> {
     return this.oauthService.revoke(body, user);
+  }
+
+  @Get('userinfo')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOkResponse({ description: 'Authenticated user information' })
+  async userinfo(
+    @AuthUser() user: PublicUser,
+    @AuthorizedScopes() scopes: string[],
+  ): Promise<Partial<OpenIdConnectUserProfile>> {
+    const out: Partial<OpenIdConnectUserProfile> = { sub: user.id };
+
+    if (scopes.includes('profile') || scopes.includes('openid')) {
+      out.name = user.username;
+      out.preferred_username = user.username;
+    }
+
+    if (scopes.includes('email')) {
+      out.email = user.email;
+      out.email_verified = !!user.email;
+    }
+
+    if (scopes.includes('address')) {
+      out.address = undefined;
+    }
+    if (scopes.includes('phone')) {
+      out.phone_number = undefined;
+      out.phone_number_verified = undefined;
+    }
+
+    return out;
   }
 }

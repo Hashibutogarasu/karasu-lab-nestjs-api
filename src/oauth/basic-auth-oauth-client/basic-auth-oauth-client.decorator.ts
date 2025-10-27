@@ -3,13 +3,18 @@ import type { OAuthClient } from '@prisma/client';
 import { AppErrorCodes } from '../../types/error-codes';
 
 export const BasicAuthOauthClient = createParamDecorator(
-  (_data: unknown, ctx: ExecutionContext): OAuthClient | undefined => {
+  (_data: unknown, ctx: ExecutionContext): Partial<OAuthClient> | undefined => {
     const req = ctx.switchToHttp().getRequest() as Express.Request;
     const client = req?.client as OAuthClient | undefined;
     if (!client) {
       throw AppErrorCodes.INVALID_CLIENT;
     }
-    return client;
+    return {
+      id: client.id,
+      name: client.name,
+      redirectUris: client.redirectUris,
+      permissionBitMask: client.permissionBitMask, // Required for scope calculations
+    };
   },
 );
 

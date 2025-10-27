@@ -398,6 +398,8 @@ describe('OAuth e2e (PKCE) flow', () => {
     expect(tokRes.body).toHaveProperty('code', 'InvalidGrant');
   });
 
+
+
   it("general-client grants 'user:read' to general user's auth", async () => {
     const authRes = await request(app.getHttpServer())
       .get('/oauth/authorize')
@@ -676,5 +678,181 @@ describe('OAuth e2e (PKCE) flow', () => {
       .set('Authorization', `Bearer ${access}`);
 
     expect([401, 400]).toContain(protectedRes.status);
+  });
+
+  // OIDC scope tests
+  it('grants openid scope and returns it in token response', async () => {
+    const authRes = await request(app.getHttpServer())
+      .get('/oauth/authorize')
+      .set('Authorization', 'Bearer user:openid_user')
+      .query({
+        response_type: 'code',
+        client_id: 'test-client',
+        redirect_uri: 'https://app.test/callback',
+        scope: 'openid',
+        state: 's',
+        code_challenge: 'c',
+        code_challenge_method: 'S256',
+      });
+
+    expect(authRes.status).toBe(302);
+    const code = new URL(authRes.headers.location).searchParams.get('code')!;
+
+    const tokRes = await request(app.getHttpServer())
+      .post('/oauth/token')
+      .set(
+        'Authorization',
+        'Basic ' + Buffer.from('test-client:secret').toString('base64'),
+      )
+      .type('form')
+      .send({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: 'https://app.test/callback',
+        code_verifier: 'v',
+      });
+
+    expect([200, 201]).toContain(tokRes.status);
+    expect(tokRes.body.scope).toMatch(/openid/);
+  });
+
+  it('grants profile scope and returns it in token response', async () => {
+    const authRes = await request(app.getHttpServer())
+      .get('/oauth/authorize')
+      .set('Authorization', 'Bearer user:profile_user')
+      .query({
+        response_type: 'code',
+        client_id: 'test-client',
+        redirect_uri: 'https://app.test/callback',
+        scope: 'profile',
+        state: 's',
+        code_challenge: 'c',
+        code_challenge_method: 'S256',
+      });
+
+    expect(authRes.status).toBe(302);
+    const code = new URL(authRes.headers.location).searchParams.get('code')!;
+
+    const tokRes = await request(app.getHttpServer())
+      .post('/oauth/token')
+      .set(
+        'Authorization',
+        'Basic ' + Buffer.from('test-client:secret').toString('base64'),
+      )
+      .type('form')
+      .send({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: 'https://app.test/callback',
+        code_verifier: 'v',
+      });
+
+    expect([200, 201]).toContain(tokRes.status);
+    expect(tokRes.body.scope).toMatch(/profile/);
+  });
+
+  it('grants email scope and returns it in token response', async () => {
+    const authRes = await request(app.getHttpServer())
+      .get('/oauth/authorize')
+      .set('Authorization', 'Bearer user:email_user')
+      .query({
+        response_type: 'code',
+        client_id: 'test-client',
+        redirect_uri: 'https://app.test/callback',
+        scope: 'email',
+        state: 's',
+        code_challenge: 'c',
+        code_challenge_method: 'S256',
+      });
+
+    expect(authRes.status).toBe(302);
+    const code = new URL(authRes.headers.location).searchParams.get('code')!;
+
+    const tokRes = await request(app.getHttpServer())
+      .post('/oauth/token')
+      .set(
+        'Authorization',
+        'Basic ' + Buffer.from('test-client:secret').toString('base64'),
+      )
+      .type('form')
+      .send({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: 'https://app.test/callback',
+        code_verifier: 'v',
+      });
+
+    expect([200, 201]).toContain(tokRes.status);
+    expect(tokRes.body.scope).toMatch(/email/);
+  });
+
+  it('grants address scope and returns it in token response', async () => {
+    const authRes = await request(app.getHttpServer())
+      .get('/oauth/authorize')
+      .set('Authorization', 'Bearer user:address_user')
+      .query({
+        response_type: 'code',
+        client_id: 'test-client',
+        redirect_uri: 'https://app.test/callback',
+        scope: 'address',
+        state: 's',
+        code_challenge: 'c',
+        code_challenge_method: 'S256',
+      });
+
+    expect(authRes.status).toBe(302);
+    const code = new URL(authRes.headers.location).searchParams.get('code')!;
+
+    const tokRes = await request(app.getHttpServer())
+      .post('/oauth/token')
+      .set(
+        'Authorization',
+        'Basic ' + Buffer.from('test-client:secret').toString('base64'),
+      )
+      .type('form')
+      .send({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: 'https://app.test/callback',
+        code_verifier: 'v',
+      });
+
+    expect([200, 201]).toContain(tokRes.status);
+    expect(tokRes.body.scope).toMatch(/address/);
+  });
+
+  it('grants phone scope and returns it in token response', async () => {
+    const authRes = await request(app.getHttpServer())
+      .get('/oauth/authorize')
+      .set('Authorization', 'Bearer user:phone_user')
+      .query({
+        response_type: 'code',
+        client_id: 'test-client',
+        redirect_uri: 'https://app.test/callback',
+        scope: 'phone',
+        state: 's',
+        code_challenge: 'c',
+        code_challenge_method: 'S256',
+      });
+
+    expect(authRes.status).toBe(302);
+    const code = new URL(authRes.headers.location).searchParams.get('code')!;
+
+    const tokRes = await request(app.getHttpServer())
+      .post('/oauth/token')
+      .set(
+        'Authorization',
+        'Basic ' + Buffer.from('test-client:secret').toString('base64'),
+      )
+      .type('form')
+      .send({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: 'https://app.test/callback',
+        code_verifier: 'v',
+      });
+
+    expect([200, 201]).toContain(tokRes.status);
+    expect(tokRes.body.scope).toMatch(/phone/);
   });
 });

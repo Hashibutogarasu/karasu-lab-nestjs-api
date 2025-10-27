@@ -1,14 +1,11 @@
 import {
   createParamDecorator,
   ExecutionContext,
-  UnauthorizedException,
 } from '@nestjs/common';
-import { Prisma, Role, User } from '@prisma/client';
+import { Prisma, Role } from '@prisma/client';
 import { ModuleRef } from '@nestjs/core';
 import { AppErrorCodes } from '../../types/error-codes';
 import { UserService } from '../../data-base/query/user/user.service';
-import { RemoveNullProperties } from '../../types/remove-null-properties';
-import { OmitFunctions } from '../../types/omit-functions';
 import { UserSchema } from '../../generated/zod';
 import z from 'zod';
 import { createZodDto } from 'nestjs-zod';

@@ -13,7 +13,7 @@ export const oAuthAuthorizeQuerySchema = z.object({
 
 export class OAuthAuthorizeQuery extends createZodDto(
   oAuthAuthorizeQuerySchema,
-) {}
+) { }
 
 export const oAuthTokenBodySchema = z.object({
   grant_type: z.string(),
@@ -25,7 +25,7 @@ export const oAuthTokenBodySchema = z.object({
   code_verifier: z.string().optional(),
 });
 
-export class OAuthTokenBodyDto extends createZodDto(oAuthTokenBodySchema) {}
+export class OAuthTokenBodyDto extends createZodDto(oAuthTokenBodySchema) { }
 
 export const oAuthTokenRevokeSchema = z.object({
   token: z.string(),
@@ -43,17 +43,37 @@ export const oAuthTokenResponseSchema = z.object({
 
 export class OAuthTokenResponseDto extends createZodDto(
   oAuthTokenResponseSchema,
-) {}
+) { }
 
-export class OAuthTokenRevokeDto extends createZodDto(oAuthTokenRevokeSchema) {}
+export class OAuthTokenRevokeDto extends createZodDto(oAuthTokenRevokeSchema) { }
 
 export const oAuthJWTSchema = z.object({
   iss: z.string(),
   sub: z.string(),
   aud: z.string(),
-  exp: z.string(),
+  exp: z.number(),
   jti: z.string(),
-  iat: z.string(),
+  iat: z.number(),
 });
 
-export class OAuthJWT extends createZodDto(oAuthJWTSchema) {}
+export class OAuthJWT extends createZodDto(oAuthJWTSchema) { }
+
+export const openIdConnectUserProfileSchema = z.object({
+  sub: z.string(),
+  name: z.string().optional(),
+  given_name: z.string().optional(),
+  family_name: z.string().optional(),
+  preferred_username: z.string().optional(),
+  picture: z.string().optional(),
+  profile: z.string().optional(),
+  updated_at: z.number().optional(),
+  email: z.string().optional(),
+  email_verified: z.boolean().optional(),
+  address: z.object({}).optional(),
+  phone_number: z.string().optional(),
+  phone_number_verified: z.boolean().optional(),
+});
+
+export class OpenIdConnectUserProfile extends createZodDto(
+  openIdConnectUserProfileSchema,
+) { }
