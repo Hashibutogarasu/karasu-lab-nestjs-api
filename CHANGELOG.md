@@ -1,3 +1,33 @@
+# [1.1.0](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.0.0...v1.1.0) (2025-10-27)
+
+
+### Bug Fixes
+
+* broaden date type validation for user schema ([147f78a](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/147f78ac30862e769f87da41b1e8ee661edd713a))
+* handle MFA setup conflict error and improve formatting ([40c4475](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/40c447533c444bf469096a8ffea2364fcb4c910d))
+* improve date parsing and error handling for user schemas ([2cbabbc](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/2cbabbc361534168674f0e1357c7d21d5ae4f813))
+* unify date handling and streamline zod schemas ([e68e423](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/e68e4236d5be856d03c3a31408580a337e5b7f98))
+* update OAuth endpoint docs and error handling ([0a98a84](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/0a98a8431562af3bec359eba245aaa06f150adcf))
+
+
+### Features
+
+* add ApiBearerAuth to user and dify controllers ([d72f8e8](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/d72f8e83c1a29f2a0a37c767add1d87e5bd4b9ae))
+* add database middleware and improve error handling ([756f29e](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/756f29e15989b3f7bda045da5123b3286d1b8245))
+* add DateTimeService and OAuth models, unify date handling ([6862df5](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/6862df5cfedf69784e22debe0d0bc0fb3fa18b03))
+* add GitHub module and improve zod schema formatting ([7ee8373](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/7ee8373323c3bdb49639cf95f0e4741d761dfe80))
+* add OpenID Connect userinfo endpoint and OIDC scope support ([35a5b83](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/35a5b83bc4c4abd65d08dd86cbd06dcba2362a89))
+* enhance OAuth error handling and API docs ([6a2a8f1](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/6a2a8f1e7cac0fa57b332970bcecf65efbb296cd))
+* implement OAuth controller-service methods ([68e8ffd](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/68e8ffd73df24f0fa9a3279a1b727467ecb67c24))
+* implement OAuth2 authorization code and refresh token flows ([b67fbeb](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/b67fbeb8407cbf123ee59f1dc98cd093dbe9e17d))
+* integrate Swagger API docs and upgrade zod to v4 ([746958e](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/746958e967df613bdf5370cef23accf1169c3747))
+* migrate config and DTOs to zod, enhance test setup ([bb93ab7](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/bb93ab7db5134c5b3ffbba5bcc4c7f71dc7a5d1c))
+* refactor DTOs, improve error codes, add OAuth endpoints ([6d13949](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/6d139492c65dedb7ed1ad28a03b7ab6f0bb4dae7))
+* refactors Discord token module to use AppConfigService and improves DTO formatting ([e9d3336](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/e9d3336f155a52b76a117a721810a1142c28d9d9))
+* refactors error handling with zod schemas and improves validation ([ed481a8](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/ed481a85196d4fca654cc391e254b37a9cc7f84d))
+* secure token endpoints with JWT guard and user context ([1588e1d](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/1588e1dae704499e3c62f3f2297be454d3bd4c2d))
+* unify user DTOs and schemas, improve API error handling ([d475049](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/d4750497fb1bd038cc4024f7a6af737d5936748d))
+
 # [1.1.0](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.0.0...v1.1.0) (2025-10-26)
 
 
