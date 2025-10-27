@@ -4,8 +4,6 @@ import { DiscordAppController } from './discord-app.controller';
 import { NecordModule } from 'necord';
 import { IntentsBitField } from 'discord.js';
 import { AppCommands } from './app.commands';
-import { CoinService } from '../gmo/coin/coin.service';
-import { FxCommands } from './commands/fx.commands';
 import { DiscordAppCronService } from './discord-app-cron.service';
 
 @Module({
@@ -21,8 +19,6 @@ import { DiscordAppCronService } from './discord-app-cron.service';
   providers: [
     DiscordAppService,
     AppCommands,
-    FxCommands,
-    CoinService,
     DiscordAppCronService,
   ],
 })

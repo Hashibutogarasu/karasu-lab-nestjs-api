@@ -3,7 +3,6 @@ import { AuthModule } from '../auth/auth.module';
 import { UtilityService } from './utility/utility.service';
 import { PasswordService } from './utility/password/password.service';
 import { JwtstateService } from './query/jwtstate/jwtstate.service';
-import { GmocoinService } from './query/gmocoin/gmocoin.service';
 import { ExternalProviderAccessTokenService } from './query/external-provider-access-token/external-provider-access-token.service';
 import { RoleService } from './query/role/role.service';
 import { MfaService } from './query/mfa/mfa.service';
@@ -27,7 +26,6 @@ import { OauthGrantedTokenService } from './query/oauth-granted-token/oauth-gran
     UtilityService,
     PasswordService,
     JwtstateService,
-    GmocoinService,
     ExternalProviderAccessTokenService,
     RoleService,
     MfaService,
@@ -44,7 +42,6 @@ import { OauthGrantedTokenService } from './query/oauth-granted-token/oauth-gran
     UtilityService,
     PasswordService,
     JwtstateService,
-    GmocoinService,
     ExternalProviderAccessTokenService,
     RoleService,
     MfaService,

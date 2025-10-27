@@ -78,20 +78,6 @@ export const JWTStateScalarFieldEnumSchema = z.enum(['id','userId','revoked','to
 
 export const ExternalProviderAccessTokenScalarFieldEnumSchema = z.enum(['id','userId','encryptedToken','provider','createdAt','updatedAt']);
 
-export const GmoCoinStatusScalarFieldEnumSchema = z.enum(['id','statusCode','data','responsetime','createdAt','updatedAt']);
-
-export const GmoCoinTickerItemScalarFieldEnumSchema = z.enum(['id','symbol','ask','bid','timestamp','status','tickerId','createdAt','updatedAt']);
-
-export const GmoCoinTickerScalarFieldEnumSchema = z.enum(['id','statusCode','responsetime','createdAt','updatedAt']);
-
-export const GmoCoinKlineItemScalarFieldEnumSchema = z.enum(['id','openTime','open','high','low','close','klineId','createdAt','updatedAt']);
-
-export const GmoCoinKlineScalarFieldEnumSchema = z.enum(['id','statusCode','responsetime','createdAt','updatedAt']);
-
-export const GmoCoinSymbolRuleScalarFieldEnumSchema = z.enum(['id','symbol','tickSize','minOpenOrderSize','maxOrderSize','sizeStep','rulesId','createdAt','updatedAt']);
-
-export const GmoCoinRulesScalarFieldEnumSchema = z.enum(['id','statusCode','responsetime','createdAt','updatedAt']);
-
 export const UserOTPScalarFieldEnumSchema = z.enum(['id','secret','issuedAt','lastAuthenticatedAt','issuerId','userId','setupCompleted','createdAt','updatedAt']);
 
 export const OTPBackupCodeScalarFieldEnumSchema = z.enum(['id','hashedCode','createdAt','userOtpId']);
@@ -293,117 +279,6 @@ export const ExternalProviderAccessTokenSchema = z.object({
 })
 
 export type ExternalProviderAccessToken = z.infer<typeof ExternalProviderAccessTokenSchema>
-
-/////////////////////////////////////////
-// GMO COIN STATUS SCHEMA
-/////////////////////////////////////////
-
-export const GmoCoinStatusSchema = z.object({
-  id: z.cuid(),
-  statusCode: z.number().int(),
-  data: JsonValueSchema,
-  responsetime: z.coerce.date(),
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date(),
-})
-
-export type GmoCoinStatus = z.infer<typeof GmoCoinStatusSchema>
-
-/////////////////////////////////////////
-// GMO COIN TICKER ITEM SCHEMA
-/////////////////////////////////////////
-
-export const GmoCoinTickerItemSchema = z.object({
-  id: z.cuid(),
-  symbol: z.string(),
-  ask: z.string(),
-  bid: z.string(),
-  timestamp: z.coerce.date(),
-  status: z.string(),
-  tickerId: z.string(),
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date(),
-})
-
-export type GmoCoinTickerItem = z.infer<typeof GmoCoinTickerItemSchema>
-
-/////////////////////////////////////////
-// GMO COIN TICKER SCHEMA
-/////////////////////////////////////////
-
-export const GmoCoinTickerSchema = z.object({
-  id: z.cuid(),
-  statusCode: z.number().int(),
-  responsetime: z.coerce.date(),
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date(),
-})
-
-export type GmoCoinTicker = z.infer<typeof GmoCoinTickerSchema>
-
-/////////////////////////////////////////
-// GMO COIN KLINE ITEM SCHEMA
-/////////////////////////////////////////
-
-export const GmoCoinKlineItemSchema = z.object({
-  id: z.cuid(),
-  openTime: z.coerce.date(),
-  open: z.string(),
-  high: z.string(),
-  low: z.string(),
-  close: z.string(),
-  klineId: z.string(),
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date(),
-})
-
-export type GmoCoinKlineItem = z.infer<typeof GmoCoinKlineItemSchema>
-
-/////////////////////////////////////////
-// GMO COIN KLINE SCHEMA
-/////////////////////////////////////////
-
-export const GmoCoinKlineSchema = z.object({
-  id: z.cuid(),
-  statusCode: z.number().int(),
-  responsetime: z.coerce.date(),
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date(),
-})
-
-export type GmoCoinKline = z.infer<typeof GmoCoinKlineSchema>
-
-/////////////////////////////////////////
-// GMO COIN SYMBOL RULE SCHEMA
-/////////////////////////////////////////
-
-export const GmoCoinSymbolRuleSchema = z.object({
-  id: z.cuid(),
-  symbol: z.string(),
-  tickSize: z.string(),
-  minOpenOrderSize: z.string(),
-  maxOrderSize: z.string(),
-  sizeStep: z.string(),
-  rulesId: z.string(),
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date(),
-})
-
-export type GmoCoinSymbolRule = z.infer<typeof GmoCoinSymbolRuleSchema>
-
-/////////////////////////////////////////
-// GMO COIN RULES SCHEMA
-/////////////////////////////////////////
-
-export const GmoCoinRulesSchema = z.object({
-  id: z.cuid(),
-  statusCode: z.number().int(),
-  responsetime: z.coerce.date(),
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date(),
-})
-
-export type GmoCoinRules = z.infer<typeof GmoCoinRulesSchema>
 
 /////////////////////////////////////////
 // USER OTP SCHEMA

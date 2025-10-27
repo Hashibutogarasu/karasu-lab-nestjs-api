@@ -13,7 +13,6 @@ import { McpServerModule } from './mcp/mcp.module';
 import { DifyModule } from './dify/dify.module';
 import { JwtStateModule } from './jwt-state/jwt-state.module';
 import { UsersModule } from './users/users.module';
-import { GmoModule } from './gmo/gmo.module';
 import { EncryptionModule } from './encryption/encryption.module';
 import { DiscordTokenModule } from './tokens/discord-token/discord-token.module';
 import { ResponseFormatterInterceptor } from './interceptors/response-formatter.interceptor';
@@ -63,7 +62,6 @@ import { DateTimeService } from './date-time/date-time.service';
     McpServerModule,
     DifyModule,
     JwtStateModule,
-    GmoModule,
     EncryptionModule.forRoot({
       privateKey: process.env.ENCRYPTION_PRIVATE_KEY!,
       publicKey: process.env.ENCRYPTION_PUBLIC_KEY!,
