@@ -63,6 +63,7 @@ export class PermissionService {
    * OAuth クライアントが要求する権限リストから、ユーザーが付与可能なものだけを残すフィルタ。
    * - 第一引数: ユーザーが持つ権限の配列 (PermissionType の配列または数値配列)
    * - 第二引数: OAuth クライアントが要求する権限の配列 (PermissionType の配列または数値配列)
+   * - 第三引数(省略可能): OAuth クライアントのオーナーが持つ権限の配列 (PermissionType の配列または数値配列)
    *
    * 動作: ユーザーの権限をビットマスクに合成し、クライアント要求中の各権限がそのマスクに含まれているかを判定する。
    *  含まれていれば許可対象として残し、含まれていなければ除外する。
@@ -70,9 +71,21 @@ export class PermissionService {
   filterRequestedPermissions(
     userPerms: (PermissionType | number)[],
     clientPerms: (PermissionType | number)[],
+    clientOwnerPerms?: (PermissionType | number)[],
   ): PermissionType[] {
+    let cappedRequested = clientPerms;
+    if (clientOwnerPerms && clientOwnerPerms.length > 0) {
+      const ownerMask = clientOwnerPerms.reduce(
+        (acc, p) => acc | (p as number),
+        0,
+      );
+      cappedRequested = clientPerms.filter(
+        (p) => ((p as number) & ownerMask) === (p as number),
+      );
+    }
+
     const userMask = userPerms.reduce((acc, p) => acc | (p as number), 0);
-    return clientPerms.filter(
+    return cappedRequested.filter(
       (p) => ((p as number) & userMask) === (p as number),
     ) as PermissionType[];
   }

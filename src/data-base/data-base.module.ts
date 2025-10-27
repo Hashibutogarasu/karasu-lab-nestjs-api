@@ -15,6 +15,8 @@ import { TotpService } from '../totp/totp.service';
 import { PermissionBitcalcModule } from '../permission-bitcalc/permission-bitcalc.module';
 import { DataBaseMiddleware } from './data-base.middleware';
 import { DateTimeService } from '../date-time/date-time.service';
+import { OauthClientService } from './query/oauth-client/oauth-client.service';
+import { OauthGrantedTokenService } from './query/oauth-granted-token/oauth-granted-token.service';
 
 @Module({
   imports: [
@@ -35,6 +37,8 @@ import { DateTimeService } from '../date-time/date-time.service';
     ExtraProfileService,
     TotpService,
     DateTimeService,
+    OauthClientService,
+    OauthGrantedTokenService,
   ],
   exports: [
     UtilityService,

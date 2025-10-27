@@ -123,8 +123,10 @@ export class JwtTokenService extends BaseService {
       const decoded = verify(token, jwtSecret) as JWTPayload;
 
       // JWT State が無効化されていないかチェック
-      if (decoded.id) {
-        const jwtState = await this.jwtStateService.getJWTStateById(decoded.id);
+      if (decoded.jti) {
+        const jwtState = await this.jwtStateService.getJWTStateById(
+          decoded.jti,
+        );
         if (!jwtState || jwtState.revoked) {
           return {
             success: false,
@@ -163,8 +165,16 @@ export class JwtTokenService extends BaseService {
     }
   }
 
+  encodePayload(payload: JWTPayload): string {
+    const jwtSecret = this.config.get('jwtSecret');
+    if (!jwtSecret) {
+      throw AppErrorCodes.INTERNAL_SERVER_ERROR;
+    }
+    return sign(payload, jwtSecret);
+  }
+
   /**
-   * JWTトークンをデコード（検証なし）
+   * JWTトークンをデコード
    */
   decodeJWTToken(token: string): JWTPayload | null {
     try {
@@ -214,29 +224,5 @@ export class JwtTokenService extends BaseService {
       expirationHours: 24 * 30, // 30日間有効
       jwtStateId: options?.jwtStateId,
     });
-  }
-
-  /**
-   * トークンのメタデータを取得
-   */
-  getTokenMetadata(token: string): {
-    issuedAt?: Date;
-    expiresAt?: Date;
-    userId?: string;
-    jwtId?: string;
-    provider?: string;
-  } {
-    const decoded = this.decodeJWTToken(token);
-    if (!decoded) {
-      return {};
-    }
-
-    return {
-      issuedAt: decoded.iat ? new Date(decoded.iat * 1000) : undefined,
-      expiresAt: decoded.exp ? new Date(decoded.exp * 1000) : undefined,
-      userId: decoded.sub,
-      jwtId: decoded.id,
-      provider: decoded.provider,
-    };
   }
 }

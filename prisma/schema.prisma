@@ -82,7 +82,7 @@ model Role {
 }
 
 model AuthorizationCode {
-  code                String   @id // ハッシュ化推奨
+  code                String   @id
   clientId            String   @map("client_id")
   userId              String   @map("user_id")
   redirectUri         String   @map("redirect_uri")
@@ -99,7 +99,7 @@ model AuthorizationCode {
 }
 
 model AccessToken {
-  token     String   @id // ステートフルの場合ハッシュ化推奨
+  token     String   @id
   clientId  String   @map("client_id")
   userId    String   @map("user_id")
   scope     String?
@@ -114,7 +114,7 @@ model AccessToken {
 }
 
 model RefreshToken {
-  token       String   @id // ハッシュ化必須
+  token       String   @id
   accessToken String   @map("access_token")
   clientId    String   @map("client_id")
   userId      String   @map("user_id")
@@ -178,7 +178,7 @@ model AuthState {
 model PasswordReset {
   id        String   @id @default(cuid())
   userId    String   @map("user_id")
-  resetCode String   @unique @map("reset_code") //  ハッシュ化された6桁の確認コード
+  resetCode String   @unique @map("reset_code")
   expiresAt DateTime @map("expires_at")
   used      Boolean  @default(false)
   createdAt DateTime @default(now()) @map("created_at")
@@ -366,7 +366,7 @@ model OTPBackupCode {
 model OAuthClient {
   id           String   @id @default(cuid())
   name         String
-  secret       String   @map("client_secret")
+  secret       String   @map("client_secret") // Hashed secret
   redirectUris String[] @map("redirect_uris")
 
   permissionBitMask BigInt @map("permission_bit_mask")

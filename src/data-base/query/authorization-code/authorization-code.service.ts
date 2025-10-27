@@ -26,7 +26,7 @@ export class AuthorizationCodeService {
     codeChallenge?: string;
     codeChallengeMethod?: string;
   }) {
-    const code = this.utilityService.generateRandomString(32); // 64文字の認可コード生成
+    const code = this.utilityService.generateRandomString(32);
     const hashedCode = this.utilityService.hashString(code);
 
     await this.prisma.authorizationCode.create({
@@ -38,11 +38,11 @@ export class AuthorizationCodeService {
         scope: data.scope,
         codeChallenge: data.codeChallenge,
         codeChallengeMethod: data.codeChallengeMethod,
-        expiresAt: this.utilityService.calculateExpiration(10), // 10分間有効
+        expiresAt: this.utilityService.calculateExpiration(10),
       },
     });
 
-    return code; // 元のコードを返す（ハッシュ化前）
+    return code;
   }
 
   /**
@@ -58,7 +58,6 @@ export class AuthorizationCodeService {
 
     if (!authCode) return null;
 
-    // 有効期限チェック
     if (authCode.expiresAt < new Date()) {
       await this.prisma.authorizationCode.delete({
         where: { code: hashedCode },
@@ -66,7 +65,6 @@ export class AuthorizationCodeService {
       return null;
     }
 
-    // 認可コードを削除（一度のみ使用）
     await this.prisma.authorizationCode.delete({
       where: { code: hashedCode },
     });

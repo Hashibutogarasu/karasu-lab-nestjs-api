@@ -117,7 +117,7 @@ export class MfaController {
     }
 
     const userId = verifyResult.payload.sub;
-    const jwtStateId = verifyResult.payload.id;
+    const jwtStateId = verifyResult.payload.jti;
 
     if (!userId) throw AppErrorCodes.INVALID_TOKEN;
 

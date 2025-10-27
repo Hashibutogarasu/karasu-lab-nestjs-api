@@ -7,6 +7,7 @@ import {
   Query,
   UseGuards,
   UsePipes,
+  Redirect,
 } from '@nestjs/common';
 import { AppErrorCodes } from '../types/error-codes';
 import {
@@ -30,11 +31,14 @@ import { OauthService } from './oauth.service';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AuthUser, PublicUser } from '../auth/decorators/auth-user.decorator';
+import { BasicOAuthGuard } from './basic/basic.guard';
+import BasicAuthOauthClient from './basic-auth-oauth-client/basic-auth-oauth-client.decorator';
+import type { OAuthClient } from '@prisma/client';
 
 @Controller('oauth')
 @UsePipes(ZodValidationPipe)
 export class OauthController {
-  constructor(private readonly oauthService: OauthService) { }
+  constructor(private readonly oauthService: OauthService) {}
 
   @ApiBadRequestResponse(AppErrorCodes.INVALID_REDIRECT_URI.apiResponse)
   @ApiInternalServerErrorResponse(
@@ -52,8 +56,14 @@ export class OauthController {
     type: OAuthAuthorizeQuery,
   })
   @Get('authorize')
-  async authorize(@Query() params: OAuthAuthorizeQuery) {
-    return this.oauthService.authorize(params);
+  @UseGuards(JwtAuthGuard)
+  @Redirect()
+  async authorize(
+    @Query() params: OAuthAuthorizeQuery,
+    @AuthUser() user: PublicUser,
+  ) {
+    const redirect = await this.oauthService.authorize(params, user);
+    return { url: redirect };
   }
 
   @ApiOkResponse({ type: OAuthTokenResponseDto })
@@ -67,15 +77,21 @@ export class OauthController {
   @ApiBody({
     type: OAuthTokenBodyDto,
   })
-  @ApiBearerAuth()
   @ApiConsumes('application/x-www-form-urlencoded')
-  // clientId:clientSecret base64 encoded in Authorization header
+  @UseGuards(BasicOAuthGuard)
   @Post('token')
   async token(
     @Body() body: OAuthTokenBodyDto,
-    @AuthUser() user: PublicUser,
+    @BasicAuthOauthClient() client: OAuthClient,
   ): Promise<OAuthTokenResponseDto> {
-    return this.oauthService.token(body, user);
+    switch (body.grant_type) {
+      case 'authorization_code':
+        return this.oauthService.token(body, client);
+      case 'refresh_token':
+        return this.oauthService.refreshToken(body, client);
+      default:
+        throw AppErrorCodes.UNSUPPORTED_TOKEN_TYPE;
+    }
   }
 
   @ApiBadRequestResponse(AppErrorCodes.INVALID_REQUEST.apiResponse)

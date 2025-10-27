@@ -28,6 +28,10 @@ const getErrorSchema = ({
 
 export class ErrorDto extends createZodDto(getErrorSchema()) {}
 
+/**
+ * @example
+ * throw AppErrorCodes.NOT_FOUND.setCustomMessage('User not found');
+ */
 export class AppErrorCode extends Error {
   public readonly key: string;
   public readonly code: number;

@@ -11,6 +11,8 @@ import { UtilityService } from '../data-base/utility/utility.service';
 import { RoleService } from '../data-base/query/role/role.service';
 import { APP_CONFIG } from '../app-config/app-config.constants';
 import { PermissionBitcalcService } from '../permission-bitcalc/permission-bitcalc.service';
+import { BasicAuthService } from './basic/basic.service';
+import { OauthClientService } from '../data-base/query/oauth-client/oauth-client.service';
 
 describe('OauthController', () => {
   let controller: OauthController;
@@ -37,6 +39,8 @@ describe('OauthController', () => {
         UtilityService,
         RoleService,
         PermissionBitcalcService,
+        BasicAuthService,
+        OauthClientService,
       ],
     }).compile();
 

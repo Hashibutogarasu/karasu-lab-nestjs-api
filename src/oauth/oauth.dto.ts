@@ -17,11 +17,12 @@ export class OAuthAuthorizeQuery extends createZodDto(
 
 export const oAuthTokenBodySchema = z.object({
   grant_type: z.string(),
-  code: z.string(),
-  redirect_uri: z.string(),
-  client_id: z.string(),
-  client_secret: z.string(),
-  code_verifier: z.string(),
+  code: z.string().optional(),
+  redirect_uri: z.string().optional(),
+  client_id: z.string().optional(),
+  client_secret: z.string().optional(),
+  refresh_token: z.string().optional(),
+  code_verifier: z.string().optional(),
 });
 
 export class OAuthTokenBodyDto extends createZodDto(oAuthTokenBodySchema) {}
@@ -29,7 +30,7 @@ export class OAuthTokenBodyDto extends createZodDto(oAuthTokenBodySchema) {}
 export const oAuthTokenRevokeSchema = z.object({
   token: z.string(),
   client_id: z.string(),
-  client_secret: z.string(),
+  client_secret: z.string().optional(),
 });
 
 export const oAuthTokenResponseSchema = z.object({
@@ -37,7 +38,7 @@ export const oAuthTokenResponseSchema = z.object({
   token_type: z.string(),
   expires_in: z.number(),
   refresh_token: z.string(),
-  score: z.string(),
+  scope: z.string(),
 });
 
 export class OAuthTokenResponseDto extends createZodDto(

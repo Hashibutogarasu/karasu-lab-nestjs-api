@@ -3,9 +3,10 @@ import z from 'zod';
 import { RoleSchema } from '../../generated/zod';
 
 export const jwtPayloadSchema = z.object({
-  id: z.string().uuid(),
-  sub: z.string().uuid(),
+  jti: z.string(),
+  sub: z.string(),
   provider: z.string().optional(),
+  aud: z.string().optional(),
   iat: z.number().optional(),
   exp: z.number().optional(),
 });
