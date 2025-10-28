@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.1.0...v1.2.0) (2025-10-28)
+
+
+### Features
+
+* add OAuth client CRUD and i18n support ([b9b7cbc](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/b9b7cbc1538532fc96a8e79fc7a549c43b71470c))
+
 # [1.1.0](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.0.0...v1.1.0) (2025-10-27)
 
 
