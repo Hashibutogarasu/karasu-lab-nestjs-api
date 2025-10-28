@@ -14,7 +14,7 @@ export const oAuthAuthorizeQuerySchema = z.object({
 
 export class OAuthAuthorizeQuery extends createZodDto(
   oAuthAuthorizeQuerySchema,
-) {}
+) { }
 
 export const oAuthTokenBodySchema = z.object({
   grant_type: z.string(),
@@ -26,7 +26,7 @@ export const oAuthTokenBodySchema = z.object({
   code_verifier: z.string().optional(),
 });
 
-export class OAuthTokenBodyDto extends createZodDto(oAuthTokenBodySchema) {}
+export class OAuthTokenBodyDto extends createZodDto(oAuthTokenBodySchema) { }
 
 export const oAuthTokenRevokeSchema = z.object({
   token: z.string(),
@@ -44,9 +44,9 @@ export const oAuthTokenResponseSchema = z.object({
 
 export class OAuthTokenResponseDto extends createZodDto(
   oAuthTokenResponseSchema,
-) {}
+) { }
 
-export class OAuthTokenRevokeDto extends createZodDto(oAuthTokenRevokeSchema) {}
+export class OAuthTokenRevokeDto extends createZodDto(oAuthTokenRevokeSchema) { }
 
 export const commonJwtPayloadSchema = z
   .object({
@@ -58,13 +58,13 @@ export const commonJwtPayloadSchema = z
   })
   .partial();
 
-export class CommonJWTPayload extends createZodDto(commonJwtPayloadSchema) {}
+export class CommonJWTPayload extends createZodDto(commonJwtPayloadSchema) { }
 
 export const oAuthJWTSchema = commonJwtPayloadSchema.extend({
   aud: z.string(),
 });
 
-export class OAuthJWT extends createZodDto(oAuthJWTSchema) {}
+export class OAuthJWT extends createZodDto(oAuthJWTSchema) { }
 
 export const openIdConnectUserProfileSchema = z.object({
   sub: z.string(),
@@ -84,7 +84,7 @@ export const openIdConnectUserProfileSchema = z.object({
 
 export class OpenIdConnectUserProfile extends createZodDto(
   openIdConnectUserProfileSchema,
-) {}
+) { }
 
 export const getAvailableScopesRequestSchema = z.object({
   client_id: z.string().optional(),
@@ -92,7 +92,7 @@ export const getAvailableScopesRequestSchema = z.object({
 
 export class GetAvailableScopesRequestDto extends createZodDto(
   getAvailableScopesRequestSchema,
-) {}
+) { }
 
 export const getAvailableScopesResponseSchema = z.object({
   scopes: z.array(z.string()),
@@ -106,7 +106,7 @@ export const getAvailableScopesResponseSchema = z.object({
 
 export class GetAvailableScopesResponseDto extends createZodDto(
   getAvailableScopesResponseSchema,
-) {}
+) { }
 
 export const createOAuthClientSchema = OAuthClientSchema.omit({
   id: true,
@@ -117,7 +117,20 @@ export const createOAuthClientSchema = OAuthClientSchema.omit({
 
 export class CreateOAuthClientDto extends createZodDto(
   createOAuthClientSchema,
-) {}
+) { }
+
+export const regenerateOAuthClientRequestSchema = z.object({
+  clientId: z.string()
+});
+
+export class RegenerateOAuthClientDto extends createZodDto(regenerateOAuthClientRequestSchema) { }
+
+export const createOAuthClientResponseSchema = z.object({
+  clientId: z.string(),
+  clientSecret: z.string()
+});
+
+export class CreateOAuthClientResponseDto extends createZodDto(createOAuthClientResponseSchema) { }
 
 export const updateOAuthClientDto = OAuthClientSchema.omit({
   createdAt: true,
@@ -130,7 +143,7 @@ export const updateOAuthClientDto = OAuthClientSchema.omit({
     id: z.string(),
   });
 
-export class UpdateOAuthClientDto extends createZodDto(updateOAuthClientDto) {}
+export class UpdateOAuthClientDto extends createZodDto(updateOAuthClientDto) { }
 
 export const deleteOAuthClientSchema = z.object({
   id: z.string(),
@@ -138,4 +151,4 @@ export const deleteOAuthClientSchema = z.object({
 
 export class DeleteOAuthClientDto extends createZodDto(
   deleteOAuthClientSchema,
-) {}
+) { }

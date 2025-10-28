@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import {
   CreateOAuthClientDto,
+  CreateOAuthClientResponseDto,
   DeleteOAuthClientDto,
   GetAvailableScopesRequestDto,
   GetAvailableScopesResponseDto,
@@ -9,6 +10,7 @@ import {
   OAuthTokenBodyDto,
   OAuthTokenResponseDto,
   OAuthTokenRevokeDto,
+  RegenerateOAuthClientDto,
   UpdateOAuthClientDto,
 } from './oauth.dto';
 import { AppErrorCodes } from '../types/error-codes';
@@ -37,7 +39,7 @@ export class OauthService {
     private readonly jwtTokenService: JwtTokenService,
     private readonly appConfig: AppConfigService,
     private readonly i18nService: I18nTranslateService,
-  ) {}
+  ) { }
 
   async authorize(params: OAuthAuthorizeQuery, user: PublicUser) {
     if (params.response_type !== 'code') {
@@ -307,8 +309,13 @@ export class OauthService {
     return permsAfterOwnerCap;
   }
 
-  async createClient(body: CreateOAuthClientDto, user: PublicUser) {
-    return this.oauthClientService.create(body, user);
+  async createClient(body: CreateOAuthClientDto, user: PublicUser): Promise<CreateOAuthClientResponseDto> {
+    return await this.oauthClientService.create(body, user);
+  }
+
+  async regenerateClientSecret(body: RegenerateOAuthClientDto, user: PublicUser) {
+    await this.oauthClientService.regenerateClientSecret(body.clientId, user);
+    await this.oauthGrantedTokenService.deleteByUserAndClient(user.id, body.clientId);
   }
 
   async updateClient(body: UpdateOAuthClientDto, user: PublicUser) {
@@ -316,7 +323,8 @@ export class OauthService {
   }
 
   async deleteClient(body: DeleteOAuthClientDto, user: PublicUser) {
-    return this.oauthClientService.delete(body.id, user);
+    await this.oauthClientService.delete(body.id, user);
+    await this.oauthGrantedTokenService.deleteByUserAndClient(user.id, body.id);
   }
 
   async getAvailableScopes(

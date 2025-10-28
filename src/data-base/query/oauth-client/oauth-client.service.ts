@@ -7,6 +7,7 @@ import { BaseService } from '../../../impl/base-service';
 import { AppConfigService } from '../../../app-config/app-config.service';
 import { UtilityService } from '../../utility/utility.service';
 import { PublicUser } from '../../../auth/decorators/auth-user.decorator';
+import { CreateOAuthClientResponseDto } from '../../../oauth/oauth.dto';
 
 @Injectable()
 export class OauthClientService extends BaseService {
@@ -25,23 +26,25 @@ export class OauthClientService extends BaseService {
   async create(
     client: Omit<OAuthClient, 'id' | 'secret' | 'createdAt' | 'updatedAt'>,
     user: PublicUser,
-  ): Promise<void> {
-    const secret = await bcrypt.hash(
-      this.utilityService.generateRandomString(32),
-      10,
-    );
+  ): Promise<CreateOAuthClientResponseDto> {
+    const { rawSecret, secret } = await this.generateSecret();
 
     if (!client.name) {
       throw AppErrorCodes.INVALID_CLIENT;
     }
 
-    await this.prisma.oAuthClient.create({
+    const clientResult = await this.prisma.oAuthClient.create({
       data: {
         ...client,
         secret,
         userId: user.id,
       },
     });
+
+    return {
+      clientId: clientResult.id,
+      clientSecret: rawSecret,
+    };
   }
 
   async update(
@@ -65,6 +68,19 @@ export class OauthClientService extends BaseService {
     });
   }
 
+  private async updateClientSecret(clientId: string, hashedSecret: string, params?: { userId?: string }) {
+    const client = await this.findById(clientId, params);
+
+    await this.prisma.oAuthClient.update({
+      where: {
+        id: client.id
+      },
+      data: {
+        secret: hashedSecret,
+      }
+    });
+  }
+
   async delete(clientId: string, user: PublicUser): Promise<void> {
     const client = await this.findByIdAndCheckForAccess(clientId, user);
 
@@ -73,12 +89,16 @@ export class OauthClientService extends BaseService {
     });
   }
 
-  async findById(clientId: string): Promise<OAuthClient> {
+  async findById(clientId: string, params?: { userId?: string }): Promise<OAuthClient> {
     if (!clientId) throw AppErrorCodes.INVALID_CLIENT;
     try {
       const client = await this.prisma.oAuthClient.findUnique({
         where: { id: clientId },
       });
+
+      if (params && params.userId && client?.userId !== params.userId) {
+        throw AppErrorCodes.FORBIDDEN;
+      }
 
       if (!client) {
         throw AppErrorCodes.CLIENT_NOT_FOUND;
@@ -87,6 +107,27 @@ export class OauthClientService extends BaseService {
       return client;
     } catch (err) {
       throw AppErrorCodes.INTERNAL_SERVER_ERROR;
+    }
+  }
+
+  async regenerateClientSecret(clientId: string, user: PublicUser) {
+    const { rawSecret, secret } = await this.generateSecret();
+
+    await this.updateClientSecret(clientId, secret, { userId: user.id });
+
+    return rawSecret;
+  }
+
+  async generateSecret() {
+    const rawSecret = this.utilityService.generateRandomString(32);
+    const secret = await bcrypt.hash(
+      rawSecret,
+      10,
+    );
+
+    return {
+      rawSecret,
+      secret,
     }
   }
 

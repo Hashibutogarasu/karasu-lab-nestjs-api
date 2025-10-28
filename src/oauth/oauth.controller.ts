@@ -14,6 +14,7 @@ import {
 import { AppErrorCodes } from '../types/error-codes';
 import {
   CreateOAuthClientDto,
+  CreateOAuthClientResponseDto,
   DeleteOAuthClientDto,
   GetAvailableScopesRequestDto,
   OAuthAuthorizeQuery,
@@ -21,6 +22,7 @@ import {
   OAuthTokenResponseDto,
   OAuthTokenRevokeDto,
   OpenIdConnectUserProfile,
+  RegenerateOAuthClientDto,
   UpdateOAuthClientDto,
 } from './oauth.dto';
 import {
@@ -46,7 +48,7 @@ import { AuthorizedScopes } from './authorized-scopes/authorized-scopes.decorato
 @Controller('oauth')
 @UsePipes(ZodValidationPipe)
 export class OauthController {
-  constructor(private readonly oauthService: OauthService) {}
+  constructor(private readonly oauthService: OauthService) { }
 
   @ApiBadRequestResponse(AppErrorCodes.INVALID_REDIRECT_URI.apiResponse)
   @ApiInternalServerErrorResponse(
@@ -167,8 +169,15 @@ export class OauthController {
   async createClient(
     @AuthUser() user: PublicUser,
     @Body() body: CreateOAuthClientDto,
-  ) {
+  ): Promise<CreateOAuthClientResponseDto> {
     return this.oauthService.createClient(body, user);
+  }
+
+  @Post('client/regenerate-secret')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async regenerateClientSecret(@AuthUser() user: PublicUser, @Body() body: RegenerateOAuthClientDto) {
+    return this.oauthService.regenerateClientSecret(body, user);
   }
 
   @Put('client')
