@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.3.1...v1.4.0) (2025-10-28)
+
+
+### Features
+
+* add Cloudflare R2 integration and refactor OAuth models ([7193f43](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/7193f4336478e768a9444ef6046f1bdc3695ea44))
+
 ## [1.3.1](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.3.0...v1.3.1) (2025-10-28)
 
 
