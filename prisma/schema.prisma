@@ -263,12 +263,13 @@ model OTPBackupCode {
 // Start of OAuth 2.0 PKCE related models
 
 model OAuthClient {
-  id                String   @id @default(cuid())
-  name              String
-  secret            String   @map("client_secret") // Hashed secret
-  redirectUris      String[] @map("redirect_uris")
-  permissionBitMask BigInt   @map("permission_bit_mask")
-  userId            String   @map("user_id")
+  id           String   @id @default(cuid())
+  name         String
+  secret       String   @map("client_secret") // Hashed secret
+  redirectUris String[] @map("redirect_uris")
+
+  permissionBitMask Int    @map("permission_bit_mask")
+  userId            String @map("user_id")
 
   createdAt         DateTime            @default(now()) @map("created_at")
   updatedAt         DateTime            @updatedAt @map("updated_at")
@@ -282,7 +283,7 @@ model OAuthGrantedToken {
   userId String @map("user_id")
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  permissionBitMask BigInt @map("permission_bit_mask")
+  permissionBitMask Int @map("permission_bit_mask")
 
   expiryAt DateTime @map("expiry_at")
 

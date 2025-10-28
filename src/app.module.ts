@@ -46,6 +46,7 @@ import { DateTimeModule } from './date-time/date-time.module';
 import { DateTimeService } from './date-time/date-time.service';
 import { JwtStateCronService } from './data-base/query/jwtstate/jwt-state-cron.service';
 import { I18nTranslateModule } from './i18n-translate/i18n-translate.module';
+import { R2Module } from './cloudflare/r2/r2.module';
 
 @Module({
   imports: [
@@ -113,6 +114,7 @@ import { I18nTranslateModule } from './i18n-translate/i18n-translate.module';
       global: true,
       module: I18nTranslateModule,
     },
+    R2Module,
   ],
   controllers: [AppController],
   providers: [

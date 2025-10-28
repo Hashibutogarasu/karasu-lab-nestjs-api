@@ -21,8 +21,8 @@ describe('I18nTranslateService', () => {
         AppConfigService,
         {
           provide: APP_CONFIG,
-          useValue: {}
-        }
+          useValue: {},
+        },
       ],
     }).compile();
 

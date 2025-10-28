@@ -68,16 +68,20 @@ export class OauthClientService extends BaseService {
     });
   }
 
-  private async updateClientSecret(clientId: string, hashedSecret: string, params?: { userId?: string }) {
+  private async updateClientSecret(
+    clientId: string,
+    hashedSecret: string,
+    params?: { userId?: string },
+  ) {
     const client = await this.findById(clientId, params);
 
     await this.prisma.oAuthClient.update({
       where: {
-        id: client.id
+        id: client.id,
       },
       data: {
         secret: hashedSecret,
-      }
+      },
     });
   }
 
@@ -89,7 +93,10 @@ export class OauthClientService extends BaseService {
     });
   }
 
-  async findById(clientId: string, params?: { userId?: string }): Promise<OAuthClient> {
+  async findById(
+    clientId: string,
+    params?: { userId?: string },
+  ): Promise<OAuthClient> {
     if (!clientId) throw AppErrorCodes.INVALID_CLIENT;
     try {
       const client = await this.prisma.oAuthClient.findUnique({
@@ -120,15 +127,12 @@ export class OauthClientService extends BaseService {
 
   async generateSecret() {
     const rawSecret = this.utilityService.generateRandomString(32);
-    const secret = await bcrypt.hash(
-      rawSecret,
-      10,
-    );
+    const secret = await bcrypt.hash(rawSecret, 10);
 
     return {
       rawSecret,
       secret,
-    }
+    };
   }
 
   async authenticate(

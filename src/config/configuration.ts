@@ -45,6 +45,11 @@ export const configSchema = z.object({
   PRIVATE_DOMAIN: z.string().optional(),
   ADMIN_DOMAIN: z.string().optional(),
   I18N_DEFAULT_LANGUAGE: z.string().optional().default('en'),
+  CLOUDFLARE_ACCOUNT_ID: z.string().optional(),
+  CLOUDFLARE_R2_BUCKET_NAME: z.string().optional(),
+  CLOUDFLARE_R2_ACCESS_KEY_ID: z.string().optional(),
+  CLOUDFLARE_R2_SECRET_ACCESS_KEY: z.string().optional(),
+  CLOUDFLARE_R2_CUSTOM_DOMAIN: z.string().optional(),
 });
 
 export class Configuration extends createZodDto(configSchema) {}
@@ -74,4 +79,9 @@ export default (env: Configuration) => ({
   adminDomain: env.ADMIN_DOMAIN,
   privateDomain: env.PRIVATE_DOMAIN,
   i18nDefaultLanguage: env.I18N_DEFAULT_LANGUAGE,
+  cloudflareAccountId: env.CLOUDFLARE_ACCOUNT_ID,
+  cloudflareR2BucketName: env.CLOUDFLARE_R2_BUCKET_NAME,
+  cloudflareR2AccessKeyId: env.CLOUDFLARE_R2_ACCESS_KEY_ID,
+  cloudflareR2SecretAccessKey: env.CLOUDFLARE_R2_SECRET_ACCESS_KEY,
+  cloudflareR2CustomDomain: env.CLOUDFLARE_R2_CUSTOM_DOMAIN,
 });

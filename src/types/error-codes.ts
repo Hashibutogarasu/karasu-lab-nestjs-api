@@ -767,4 +767,13 @@ export const AppErrorCodes = {
       customMessage: z.string().default('Failed to create JWT'),
     }),
   ),
+
+  // Profile picture
+  PROFILE_PICTURE_NOT_FOUND: new AppErrorCode(
+    z.object({
+      name: z.string().default('ProfilePictureNotFound'),
+      code: z.number().default(404),
+      customMessage: z.string().default('Profile picture not found'),
+    }),
+  ),
 };

@@ -23,7 +23,7 @@ export class OauthGrantedTokenService extends BaseService {
 
   async create(data: {
     userId: string;
-    permissionBitMask: bigint | number;
+    permissionBitMask: number;
     expiryAt: Date;
     clientId: string;
     jti?: string;
@@ -35,7 +35,7 @@ export class OauthGrantedTokenService extends BaseService {
         data: {
           jti,
           userId: data.userId,
-          permissionBitMask: BigInt(data.permissionBitMask),
+          permissionBitMask: data.permissionBitMask,
           expiryAt: data.expiryAt,
           clientId: data.clientId,
         },

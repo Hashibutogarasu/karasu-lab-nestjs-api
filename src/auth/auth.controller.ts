@@ -57,8 +57,7 @@ import {
   ApiServiceUnavailableResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { createZodDto, ZodValidationPipe } from 'nestjs-zod';
-import z from 'zod';
+import { ZodValidationPipe } from 'nestjs-zod';
 
 @NoInterceptor()
 @UsePipes(ZodValidationPipe)

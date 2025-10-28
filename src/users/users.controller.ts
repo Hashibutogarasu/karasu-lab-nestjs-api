@@ -8,11 +8,21 @@ import { Permission } from '../auth/decorators/permission.decorator';
 import { PermissionType } from '../types/permission';
 import { UserService } from '../data-base/query/user/user.service';
 import { ApiBearerAuth, ApiOkResponse } from '@nestjs/swagger';
+import { AuthUser, PublicUser } from '../auth/decorators/auth-user.decorator';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
 export class UsersController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService) { }
+
+  @ApiOkResponse({
+    type: PublicUser,
+  })
+  @ApiBearerAuth()
+  @Get('me')
+  async getMe(@AuthUser() user: PublicUser): Promise<PublicUser> {
+    return user;
+  }
 
   /**
    * GET /users/me/discord

@@ -48,7 +48,7 @@ import { AuthorizedScopes } from './authorized-scopes/authorized-scopes.decorato
 @Controller('oauth')
 @UsePipes(ZodValidationPipe)
 export class OauthController {
-  constructor(private readonly oauthService: OauthService) { }
+  constructor(private readonly oauthService: OauthService) {}
 
   @ApiBadRequestResponse(AppErrorCodes.INVALID_REDIRECT_URI.apiResponse)
   @ApiInternalServerErrorResponse(
@@ -176,7 +176,10 @@ export class OauthController {
   @Post('client/regenerate-secret')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  async regenerateClientSecret(@AuthUser() user: PublicUser, @Body() body: RegenerateOAuthClientDto) {
+  async regenerateClientSecret(
+    @AuthUser() user: PublicUser,
+    @Body() body: RegenerateOAuthClientDto,
+  ) {
     return this.oauthService.regenerateClientSecret(body, user);
   }
 
