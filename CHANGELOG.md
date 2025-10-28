@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.5.0...v1.6.0) (2025-10-28)
+
+
+### Features
+
+* add user reference to OAuth clients, update permissions type ([3c338a4](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/3c338a42502e3e99feac9a4ef7d0a37b09bf83f2))
+
 # [1.5.0](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.4.0...v1.5.0) (2025-10-28)
 
 
