@@ -152,7 +152,7 @@ export class OauthController {
     return out;
   }
 
-  @Get('availlable-scopes')
+  @Post('availlable-scopes')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOkResponse({ description: 'List of available OAuth scopes' })
