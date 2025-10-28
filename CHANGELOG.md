@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.4.0...v1.5.0) (2025-10-28)
+
+
+### Features
+
+* add Cloudflare R2 config variables to env example ([2592bc9](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/2592bc906270eefaaaafe604f4c8beeba9f3adf5))
+
 # [1.4.0](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.3.1...v1.4.0) (2025-10-28)
 
 
