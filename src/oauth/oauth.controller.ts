@@ -8,14 +8,20 @@ import {
   UseGuards,
   UsePipes,
   Redirect,
+  Put,
+  Delete,
 } from '@nestjs/common';
 import { AppErrorCodes } from '../types/error-codes';
 import {
+  CreateOAuthClientDto,
+  DeleteOAuthClientDto,
+  GetAvailableScopesRequestDto,
   OAuthAuthorizeQuery,
   OAuthTokenBodyDto,
   OAuthTokenResponseDto,
   OAuthTokenRevokeDto,
   OpenIdConnectUserProfile,
+  UpdateOAuthClientDto,
 } from './oauth.dto';
 import {
   ApiBadRequestResponse,
@@ -142,5 +148,46 @@ export class OauthController {
     }
 
     return out;
+  }
+
+  @Get('availlable-scopes')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOkResponse({ description: 'List of available OAuth scopes' })
+  async availableScopes(
+    @AuthUser() user: PublicUser,
+    @Body() body: GetAvailableScopesRequestDto,
+  ): Promise<any> {
+    return this.oauthService.getAvailableScopes(body, user);
+  }
+
+  @Post('client')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async createClient(
+    @AuthUser() user: PublicUser,
+    @Body() body: CreateOAuthClientDto,
+  ) {
+    return this.oauthService.createClient(body, user);
+  }
+
+  @Put('client')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async updateClient(
+    @AuthUser() user: PublicUser,
+    @Body() body: UpdateOAuthClientDto,
+  ) {
+    return this.oauthService.updateClient(body, user);
+  }
+
+  @Delete('client')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async deleteClient(
+    @AuthUser() user: PublicUser,
+    @Body() body: DeleteOAuthClientDto,
+  ) {
+    return this.oauthService.deleteClient(body, user);
   }
 }

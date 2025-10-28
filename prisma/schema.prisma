@@ -49,6 +49,7 @@ model User {
   userOtps                    UserOTP[]
   issuedOtps                  UserOTP[]                     @relation("UserOTP_Issuer")
   oAuthGrantedToken           OAuthGrantedToken[]
+  OAuthClient                 OAuthClient[]
 
   @@map("users")
 }
@@ -262,16 +263,17 @@ model OTPBackupCode {
 // Start of OAuth 2.0 PKCE related models
 
 model OAuthClient {
-  id           String   @id @default(cuid())
-  name         String
-  secret       String   @map("client_secret") // Hashed secret
-  redirectUris String[] @map("redirect_uris")
-
-  permissionBitMask BigInt @map("permission_bit_mask")
+  id                String   @id @default(cuid())
+  name              String
+  secret            String   @map("client_secret") // Hashed secret
+  redirectUris      String[] @map("redirect_uris")
+  permissionBitMask BigInt   @map("permission_bit_mask")
+  userId            String   @map("user_id")
 
   createdAt         DateTime            @default(now()) @map("created_at")
   updatedAt         DateTime            @updatedAt @map("updated_at")
   OAuthGrantedToken OAuthGrantedToken[]
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model OAuthGrantedToken {

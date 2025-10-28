@@ -4,6 +4,7 @@ import { DataBaseService } from '../../data-base.service';
 import { mock } from 'jest-mock-extended';
 import { AppConfigService } from '../../../app-config/app-config.service';
 import { APP_CONFIG } from '../../../app-config/app-config.constants';
+import { UtilityService } from '../../utility/utility.service';
 
 describe('OauthClientService', () => {
   let service: OauthClientService;
@@ -14,6 +15,7 @@ describe('OauthClientService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         OauthClientService,
+        UtilityService,
         { provide: DataBaseService, useValue: mockDatabaseService },
         AppConfigService,
         {

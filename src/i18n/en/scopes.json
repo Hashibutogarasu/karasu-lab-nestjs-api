@@ -1,0 +1,10 @@
+{
+  "user": {
+    "read": "Read User",
+    "write": "Write User"
+  },
+  "admin": {
+    "read": "Read Admin",
+    "write": "Write Admin"
+  }
+}

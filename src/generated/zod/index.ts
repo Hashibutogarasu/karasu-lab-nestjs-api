@@ -213,6 +213,7 @@ export const OAuthClientScalarFieldEnumSchema = z.enum([
   'secret',
   'redirectUris',
   'permissionBitMask',
+  'userId',
   'createdAt',
   'updatedAt',
 ]);
@@ -476,6 +477,7 @@ export const OAuthClientSchema = z.object({
   secret: z.string(),
   redirectUris: z.string().array(),
   permissionBitMask: z.bigint(),
+  userId: z.string(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 });

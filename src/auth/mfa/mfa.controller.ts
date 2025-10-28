@@ -42,7 +42,7 @@ export class MfaController {
     private readonly authService: AuthService,
     private readonly totp: TotpService,
     private readonly jwtTokenService: JwtTokenService,
-  ) { }
+  ) {}
 
   @ApiCreatedResponse({ type: MfaSetupResponseDto })
   @Post('setup')
@@ -131,7 +131,11 @@ export class MfaController {
       expirationHours: 1,
       jwtStateId,
     });
-    if (!tokenResult.success || !tokenResult.accessToken || !tokenResult.refreshToken) {
+    if (
+      !tokenResult.success ||
+      !tokenResult.accessToken ||
+      !tokenResult.refreshToken
+    ) {
       throw AppErrorCodes.TOKEN_GENERATION_FAILED;
     }
 

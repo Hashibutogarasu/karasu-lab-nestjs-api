@@ -17,6 +17,7 @@ import { JwtAuthGuard } from '../src/auth/jwt-auth.guard';
 import { setAuthUserModuleRef } from '../src/auth/decorators/auth-user.decorator';
 import { BasicOAuthGuard } from '../src/oauth/basic/basic.guard';
 import { AppErrorCodes } from '../src/types/error-codes';
+import { I18nTranslateService } from '../src/i18n-translate/i18n-translate.service';
 import { mock } from 'jest-mock-extended';
 
 describe('OAuth e2e (PKCE) flow', () => {
@@ -187,6 +188,7 @@ describe('OAuth e2e (PKCE) flow', () => {
     clients['test-client'] = {
       id: 'test-client',
       name: 'Test Client',
+      userId: 'owner-test-client',
       secret: 'secret',
       redirectUris: ['https://app.test/callback'],
       permissionBitMask: BigInt(3),
@@ -197,6 +199,7 @@ describe('OAuth e2e (PKCE) flow', () => {
     clients['client-general'] = {
       id: 'client-general',
       name: 'Client General',
+      userId: 'owner-client-general',
       secret: 'secret',
       redirectUris: ['https://app.test/callback'],
       permissionBitMask: BigInt(1),
@@ -207,6 +210,7 @@ describe('OAuth e2e (PKCE) flow', () => {
     clients['client-admin'] = {
       id: 'client-admin',
       name: 'Client Admin',
+      userId: 'owner-client-admin',
       secret: 'secret',
       redirectUris: ['https://app.test/callback'],
       permissionBitMask: BigInt((1 << 0) | (1 << 3)),
@@ -233,6 +237,13 @@ describe('OAuth e2e (PKCE) flow', () => {
         },
         { provide: JwtTokenService, useValue: mockJwtTokenService },
         { provide: AppConfigService, useValue: { get: () => ({}) } },
+        {
+          provide: I18nTranslateService,
+          useValue: {
+            text: (k: string) => k,
+            scopeText: (p: string) => p,
+          },
+        },
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -245,7 +256,7 @@ describe('OAuth e2e (PKCE) flow', () => {
           const [, token] = (auth as string).split(' ');
           if (!token) throw AppErrorCodes.UNAUTHORIZED;
           const result = await mockJwtTokenService.verifyJWTToken(token);
-          if (!result.success || !result.payload)
+          if (!result.success || !result.payload || !result.payload.sub)
             throw AppErrorCodes.UNAUTHORIZED;
           const exists = await mockUserService.exists(result.payload.sub);
           if (!exists) throw AppErrorCodes.UNAUTHORIZED;

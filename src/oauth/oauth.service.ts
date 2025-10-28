@@ -1,10 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import {
+  CreateOAuthClientDto,
+  DeleteOAuthClientDto,
+  GetAvailableScopesRequestDto,
+  GetAvailableScopesResponseDto,
   OAuthAuthorizeQuery,
   OAuthJWT,
   OAuthTokenBodyDto,
   OAuthTokenResponseDto,
   OAuthTokenRevokeDto,
+  UpdateOAuthClientDto,
 } from './oauth.dto';
 import { AppErrorCodes } from '../types/error-codes';
 import { PublicUser } from '../auth/decorators/auth-user.decorator';
@@ -17,6 +22,8 @@ import { AuthorizationCodeService } from '../data-base/query/authorization-code/
 import { UserService } from '../data-base/query/user/user.service';
 import { JwtTokenService } from '../auth/jwt-token/jwt-token.service';
 import { OAuthClient } from '@prisma/client';
+import { I18nTranslateService } from '../i18n-translate/i18n-translate.service';
+import { PermissionType } from '../types/permission';
 
 @Injectable()
 export class OauthService {
@@ -29,6 +36,7 @@ export class OauthService {
     private readonly userService: UserService,
     private readonly jwtTokenService: JwtTokenService,
     private readonly appConfig: AppConfigService,
+    private readonly i18nService: I18nTranslateService,
   ) {}
 
   async authorize(params: OAuthAuthorizeQuery, user: PublicUser) {
@@ -106,22 +114,10 @@ export class OauthService {
     const scopeStr = authCode.scope ?? '';
     const requestedScopes =
       scopeStr === '' ? [] : scopeStr.split(' ').filter(Boolean);
-
-    const roles = user.roles ?? [];
-    const userMask = roles.reduce((acc, r) => acc | (r.bitmask ?? 0), 0);
-
-    const userPerms = this.permissionBitCalcService.decode(userMask);
-    const clientPerms =
-      this.permissionService.scopesToPermissions(requestedScopes);
-
-    const clientOwnerPerms = this.permissionBitCalcService.decode(
-      Number(client.permissionBitMask ?? 0),
-    );
-
-    const finalPerms = this.permissionService.filterRequestedPermissions(
-      userPerms,
-      clientPerms,
-      clientOwnerPerms,
+    const finalPerms = await this.determineFinalPermissions(
+      user.id,
+      client.id,
+      requestedScopes,
     );
 
     const permissionBitMask = this.permissionBitCalcService.encode(finalPerms);
@@ -274,5 +270,84 @@ export class OauthService {
       }
       throw e;
     }
+  }
+
+  private async determineFinalPermissions(
+    userId: string,
+    clientId: string,
+    requestedScopes?: string[],
+  ) {
+    const user = await this.userService.findById(userId);
+    if (!user) throw AppErrorCodes.USER_NOT_FOUND;
+
+    const roles = user.roles ?? [];
+    const userMask = roles.reduce((acc, r) => acc | (r.bitmask ?? 0), 0);
+    const userPerms = this.permissionBitCalcService.decode(userMask);
+
+    const client = await this.oauthClientService.findById(clientId);
+    if (!client) throw AppErrorCodes.INVALID_CLIENT;
+
+    const clientOwnerPerms = this.permissionBitCalcService.decode(
+      Number(client.permissionBitMask ?? 0),
+    );
+
+    const ownerSet = new Set(clientOwnerPerms);
+    const permsAfterOwnerCap = userPerms.filter((p) => ownerSet.has(p));
+
+    if (requestedScopes && requestedScopes.length > 0) {
+      const clientRequestedPerms =
+        this.permissionService.scopesToPermissions(requestedScopes);
+      return this.permissionService.filterRequestedPermissions(
+        permsAfterOwnerCap,
+        clientRequestedPerms,
+        clientOwnerPerms,
+      );
+    }
+
+    return permsAfterOwnerCap;
+  }
+
+  async createClient(body: CreateOAuthClientDto, user: PublicUser) {
+    return this.oauthClientService.create(body, user);
+  }
+
+  async updateClient(body: UpdateOAuthClientDto, user: PublicUser) {
+    return this.oauthClientService.update(body, user);
+  }
+
+  async deleteClient(body: DeleteOAuthClientDto, user: PublicUser) {
+    return this.oauthClientService.delete(body.id, user);
+  }
+
+  async getAvailableScopes(
+    body: GetAvailableScopesRequestDto,
+    user: PublicUser,
+  ): Promise<GetAvailableScopesResponseDto> {
+    let finalPerms: PermissionType[];
+    if (body.client_id) {
+      finalPerms = await this.determineFinalPermissions(
+        user.id,
+        body.client_id,
+        undefined,
+      );
+    } else {
+      const dbUser = await this.userService.findById(user.id);
+      if (!dbUser) throw AppErrorCodes.USER_NOT_FOUND;
+      const roles = dbUser.roles ?? [];
+      const userMask = roles.reduce((acc, r) => acc | (r.bitmask ?? 0), 0);
+      finalPerms = this.permissionBitCalcService.decode(userMask);
+    }
+
+    const scopes = this.permissionService.permissionsToScopes(finalPerms);
+
+    const translations = scopes.map((s) => ({
+      key: s,
+      description: this.i18nService.scopeText(s),
+    }));
+
+    return {
+      scopes,
+      translations,
+    };
   }
 }

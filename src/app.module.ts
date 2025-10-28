@@ -45,6 +45,7 @@ import { PermissionModule } from './permission/permission.module';
 import { DateTimeModule } from './date-time/date-time.module';
 import { DateTimeService } from './date-time/date-time.service';
 import { JwtStateCronService } from './data-base/query/jwtstate/jwt-state-cron.service';
+import { I18nTranslateModule } from './i18n-translate/i18n-translate.module';
 
 @Module({
   imports: [
@@ -107,6 +108,10 @@ import { JwtStateCronService } from './data-base/query/jwtstate/jwt-state-cron.s
     {
       global: true,
       module: DateTimeModule,
+    },
+    {
+      global: true,
+      module: I18nTranslateModule,
     },
   ],
   controllers: [AppController],

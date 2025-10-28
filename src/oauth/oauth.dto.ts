@@ -1,5 +1,6 @@
 import { createZodDto } from 'nestjs-zod';
 import z from 'zod';
+import { OAuthClientSchema } from '../generated/zod';
 
 export const oAuthAuthorizeQuerySchema = z.object({
   response_type: z.string(),
@@ -83,4 +84,58 @@ export const openIdConnectUserProfileSchema = z.object({
 
 export class OpenIdConnectUserProfile extends createZodDto(
   openIdConnectUserProfileSchema,
+) {}
+
+export const getAvailableScopesRequestSchema = z.object({
+  client_id: z.string().optional(),
+});
+
+export class GetAvailableScopesRequestDto extends createZodDto(
+  getAvailableScopesRequestSchema,
+) {}
+
+export const getAvailableScopesResponseSchema = z.object({
+  scopes: z.array(z.string()),
+  translations: z.array(
+    z.object({
+      key: z.string(),
+      description: z.string(),
+    }),
+  ),
+});
+
+export class GetAvailableScopesResponseDto extends createZodDto(
+  getAvailableScopesResponseSchema,
+) {}
+
+export const createOAuthClientSchema = OAuthClientSchema.omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  secret: true,
+});
+
+export class CreateOAuthClientDto extends createZodDto(
+  createOAuthClientSchema,
+) {}
+
+export const updateOAuthClientDto = OAuthClientSchema.omit({
+  createdAt: true,
+  updatedAt: true,
+  secret: true,
+  userId: true,
+})
+  .partial()
+  .extend({
+    id: z.string(),
+  });
+
+export class UpdateOAuthClientDto extends createZodDto(updateOAuthClientDto) {}
+
+export const deleteOAuthClientSchema = z.object({
+  id: z.string(),
+});
+
+export class DeleteOAuthClientDto extends createZodDto(
+  deleteOAuthClientSchema,
 ) {}

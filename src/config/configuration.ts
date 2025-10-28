@@ -44,6 +44,7 @@ export const configSchema = z.object({
   RESEND_FROM_EMAIL: z.string().email().optional(),
   PRIVATE_DOMAIN: z.string().optional(),
   ADMIN_DOMAIN: z.string().optional(),
+  I18N_DEFAULT_LANGUAGE: z.string().optional().default('en'),
 });
 
 export class Configuration extends createZodDto(configSchema) {}
@@ -72,4 +73,5 @@ export default (env: Configuration) => ({
   resendFromEmail: env.RESEND_FROM_EMAIL,
   adminDomain: env.ADMIN_DOMAIN,
   privateDomain: env.PRIVATE_DOMAIN,
+  i18nDefaultLanguage: env.I18N_DEFAULT_LANGUAGE,
 });
