@@ -173,9 +173,12 @@ describe('OAuth e2e (PKCE) flow', () => {
     deleteByUserAndClient: jest
       .fn()
       .mockImplementation(async (userId: string, clientId: string) => {
+        // Delete all grants for the given clientId regardless of the userId.
+        // This simulates invalidating all authorizations for that client when
+        // the owner rotates the secret or deletes the client.
         let count = 0;
         for (const k of Object.keys(grants)) {
-          if (grants[k].userId === userId && grants[k].clientId === clientId) {
+          if (grants[k].clientId === clientId) {
             delete grants[k];
             count++;
           }
@@ -687,6 +690,118 @@ describe('OAuth e2e (PKCE) flow', () => {
       .set('Authorization', `Bearer ${access}`);
 
     expect([401, 400]).toContain(protectedRes.status);
+  });
+
+  it('owner rotating secret invalidates other user access', async () => {
+    // victim obtains a token from the client owned by owner-test-client
+    const authRes = await request(app.getHttpServer())
+      .get('/oauth/authorize')
+      .set('Authorization', 'Bearer user:victim')
+      .query({
+        response_type: 'code',
+        client_id: 'test-client',
+        redirect_uri: 'https://app.test/callback',
+        scope: 'user:read',
+        state: 's',
+        code_challenge: 'c',
+        code_challenge_method: 'S256',
+      });
+
+    expect(authRes.status).toBe(302);
+    const code = new URL(authRes.headers.location).searchParams.get('code')!;
+
+    const tokRes = await request(app.getHttpServer())
+      .post('/oauth/token')
+      .set(
+        'Authorization',
+        'Basic ' + Buffer.from('test-client:secret').toString('base64'),
+      )
+      .type('form')
+      .send({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: 'https://app.test/callback',
+        code_verifier: 'v',
+      });
+
+    expect([200, 201]).toContain(tokRes.status);
+    const access = tokRes.body.access_token;
+
+    // access should work before rotation
+    const before = await request(app.getHttpServer())
+      .get('/oauth/userinfo')
+      .set('Authorization', `Bearer ${access}`);
+    expect(before.status).toBe(200);
+
+    // owner rotates secret -> call regen endpoint as owner
+    const regenRes = await request(app.getHttpServer())
+      .post('/oauth/client/regenerate-secret')
+      .set('Authorization', 'Bearer user:owner-test-client')
+      .send({ clientId: 'test-client' });
+
+    expect([200, 201]).toContain(regenRes.status);
+
+    // previous access should now be invalid
+    const after = await request(app.getHttpServer())
+      .get('/oauth/userinfo')
+      .set('Authorization', `Bearer ${access}`);
+    expect([401, 400]).toContain(after.status);
+  });
+
+  it('owner deleting client invalidates other user access', async () => {
+    // victim obtains a token again
+    const authRes = await request(app.getHttpServer())
+      .get('/oauth/authorize')
+      .set('Authorization', 'Bearer user:victim2')
+      .query({
+        response_type: 'code',
+        client_id: 'test-client',
+        redirect_uri: 'https://app.test/callback',
+        scope: 'user:read',
+        state: 's',
+        code_challenge: 'c',
+        code_challenge_method: 'S256',
+      });
+
+    expect(authRes.status).toBe(302);
+    const code = new URL(authRes.headers.location).searchParams.get('code')!;
+
+    const tokRes = await request(app.getHttpServer())
+      .post('/oauth/token')
+      .set(
+        'Authorization',
+        'Basic ' + Buffer.from('test-client:secret').toString('base64'),
+      )
+      .type('form')
+      .send({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: 'https://app.test/callback',
+        code_verifier: 'v',
+      });
+
+    expect([200, 201]).toContain(tokRes.status);
+    const access = tokRes.body.access_token;
+
+    // verify access works
+    const before = await request(app.getHttpServer())
+      .get('/oauth/userinfo')
+      .set('Authorization', `Bearer ${access}`);
+    expect(before.status).toBe(200);
+
+    // owner deletes client
+    const delRes = await request(app.getHttpServer())
+      .delete('/oauth/client')
+      .set('Authorization', 'Bearer user:owner-test-client')
+      .send({ id: 'test-client' });
+
+    expect([200, 201]).toContain(delRes.status);
+
+    // previous access should now be invalid
+    const after = await request(app.getHttpServer())
+      .get('/oauth/userinfo')
+      .set('Authorization', `Bearer ${access}`);
+    expect([401, 400]).toContain(after.status);
   });
 
   // OIDC scope tests
