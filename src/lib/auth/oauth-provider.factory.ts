@@ -28,6 +28,22 @@ export class OAuthProviderFactory {
   }
 
   /**
+   * 指定プロバイダーでPKCEが必要かどうかを判定する
+   * 基本的にはプロバイダーがcode verifier / challenge を生成する実装を持っていれば true を返す
+   */
+  isPKCERequired(providerName: string): boolean {
+    try {
+      const provider = this.getProvider(providerName);
+      return (
+        typeof provider.generateCodeVerifier === 'function' &&
+        typeof provider.generateCodeChallenge === 'function'
+      );
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /**
    * プロバイダー名から適切なOAuthプロバイダーを取得
    * @param provider プロバイダー名 ('google', 'discord', etc.)
    * @throws ProviderNotImplementedError プロバイダーが実装されていない場合

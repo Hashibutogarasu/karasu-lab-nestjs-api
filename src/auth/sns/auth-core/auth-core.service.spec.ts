@@ -9,6 +9,10 @@ import { AuthStateService } from '../../../data-base/query/auth-state/auth-state
 import { UserService } from '../../../data-base/query/user/user.service';
 import { ExtraProfileService } from '../../../data-base/query/extra-profile/extra-profile.service';
 import { SnsAuthCallback } from '../../../lib/auth/sns-auth';
+import { OAuthProviderFactory } from '../../../lib/auth/oauth-provider.factory';
+import { GoogleOAuthProvider } from '../../../lib/auth/google-oauth.provider';
+import { DiscordOAuthProvider } from '../../../lib/auth/discord-oauth.provider';
+import { XOAuthProvider } from '../../../lib/auth/x-oauth.provider';
 
 describe('CoreService', () => {
   let service: AuthCoreService;
@@ -32,6 +36,10 @@ describe('CoreService', () => {
         { provide: JwtTokenService, useValue: mockJwtTokenService },
         { provide: JwtstateService, useValue: mockJwtStateService },
         { provide: SnsAuthCallback, useValue: mockSnsAuthCallback },
+        OAuthProviderFactory,
+        GoogleOAuthProvider,
+        DiscordOAuthProvider,
+        XOAuthProvider,
       ],
     }).compile();
 

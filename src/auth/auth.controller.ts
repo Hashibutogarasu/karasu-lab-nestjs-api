@@ -245,7 +245,6 @@ export class AuthController {
         }
       }
 
-      const sessionData = await this.authService.createSession(result.user!.id);
       const tokenResult = await this.jwtTokenService.generateJWTToken({
         userId: result.user!.id,
         expirationHours: 1,
@@ -273,7 +272,6 @@ export class AuthController {
         expires_in: 60 * 60,
         refresh_token: refreshTokenResult.token,
         refresh_expires_in: 60 * 60 * 24 * 30,
-        session_id: sessionData.sessionId,
       });
     } catch (error) {
       if (error instanceof AppErrorCode) {
@@ -375,28 +373,6 @@ export class AuthController {
       if (error instanceof AppErrorCode) {
         throw error;
       }
-      throw AppErrorCodes.INTERNAL_SERVER_ERROR;
-    }
-  }
-
-  /**
-   * ユーザーログアウトエンドポイント
-   * POST /auth/logout
-   */
-  @Post('logout')
-  async logout(@Req() req: Request, @Res() res: Response): Promise<void> {
-    try {
-      const sessionId = (req.headers['x-session-id'] ||
-        req.headers['X-Session-ID'] ||
-        req.headers['X-Session-Id']) as string;
-      if (sessionId && sessionId.trim() !== '') {
-        await this.authService.logout(sessionId);
-      }
-
-      res.status(HttpStatus.OK).json({
-        message: 'Logout successful',
-      });
-    } catch (error) {
       throw AppErrorCodes.INTERNAL_SERVER_ERROR;
     }
   }
@@ -611,11 +587,6 @@ export class AuthController {
       // Check if user has MFA enabled; if so, return temporary MFA token for OTP verification
       await this.checkForMfa(res, { userId: tokenResult.profile.sub });
 
-      // No MFA required: proceed with normal session/token issuance
-      const sessionData = await this.authService.createSession(
-        tokenResult.profile.sub,
-      );
-
       const refreshTokenResult =
         await this.jwtTokenService.generateRefreshToken(
           tokenResult.profile.sub,
@@ -634,7 +605,6 @@ export class AuthController {
         profile: tokenResult.profile,
         access_token: tokenResult.token,
         refresh_token: refreshTokenResult.token,
-        session_id: sessionData.sessionId,
       });
     } catch (error) {
       if (error instanceof AppErrorCode) {

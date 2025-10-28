@@ -16,7 +16,6 @@ import { OAuthProviderFactory } from '../lib/auth/oauth-provider.factory';
 import { MfaController } from './mfa/mfa.controller';
 import { TotpService } from '../totp/totp.service';
 import { WorkflowService } from './sns/workflow/workflow.service';
-import { ManagerService } from './session/manager/manager.service';
 import { JwtTokenService } from './jwt-token/jwt-token.service';
 import { AuthCoreService } from './sns/auth-core/auth-core.service';
 import { SnsAuthCallback } from '../lib/auth/sns-auth';
@@ -48,7 +47,6 @@ import { DateTimeService } from '../date-time/date-time.service';
     OAuthProviderFactory,
     TotpService,
     WorkflowService,
-    ManagerService,
     JwtTokenService,
     AuthCoreService,
     SnsAuthCallback,

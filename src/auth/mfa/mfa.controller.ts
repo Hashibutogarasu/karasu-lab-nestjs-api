@@ -126,8 +126,6 @@ export class MfaController {
 
     await this.mfaService.verifyToken(userId, code);
 
-    const sessionData = await this.authService.createSession(userId);
-
     const tokenResult = await this.jwtTokenService.generateJWTToken({
       userId,
       expirationHours: 1,
@@ -155,7 +153,6 @@ export class MfaController {
       expires_in: 60 * 60,
       refresh_token: refreshResult.token,
       refresh_expires_in: 60 * 60 * 24 * 30,
-      session_id: sessionData.sessionId,
       profile: tokenResult.profile,
     });
   }

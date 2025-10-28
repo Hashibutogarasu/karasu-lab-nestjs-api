@@ -12,6 +12,7 @@ import { BaseService } from '../../impl/base-service';
 import { AppConfigService } from '../../app-config/app-config.service';
 import { JWTState } from '@prisma/client';
 import { AppErrorCodes } from '../../types/error-codes';
+import { CommonJWTPayload } from '../../oauth/oauth.dto';
 
 @Injectable()
 export class JwtTokenService extends BaseService {
@@ -120,7 +121,7 @@ export class JwtTokenService extends BaseService {
       }
 
       // トークンを検証
-      const decoded = verify(token, jwtSecret) as JWTPayload;
+      const decoded = verify(token, jwtSecret) as JwtPayload;
 
       // JWT State が無効化されていないかチェック
       if (decoded.jti) {
@@ -165,7 +166,7 @@ export class JwtTokenService extends BaseService {
     }
   }
 
-  encodePayload(payload: JWTPayload): string {
+  encodePayload(payload: CommonJWTPayload): string {
     const jwtSecret = this.config.get('jwtSecret');
     if (!jwtSecret) {
       throw AppErrorCodes.INTERNAL_SERVER_ERROR;

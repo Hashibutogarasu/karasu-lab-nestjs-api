@@ -90,10 +90,6 @@ describe('MFA e2e flow', () => {
           roles: [],
         },
       }),
-      createSession: jest.fn().mockResolvedValue({
-        sessionId: 'sess_test',
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      }),
     });
     const mockUserService = mock<UserService>({
       findUserById: jest.fn().mockResolvedValue({

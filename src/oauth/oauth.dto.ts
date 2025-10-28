@@ -47,13 +47,18 @@ export class OAuthTokenResponseDto extends createZodDto(
 
 export class OAuthTokenRevokeDto extends createZodDto(oAuthTokenRevokeSchema) { }
 
-export const oAuthJWTSchema = z.object({
+export const commonJwtPayloadSchema = z.object({
   iss: z.string(),
   sub: z.string(),
-  aud: z.string(),
   exp: z.number(),
   jti: z.string(),
   iat: z.number(),
+});
+
+export class CommonJWTPayload extends createZodDto(commonJwtPayloadSchema) { }
+
+export const oAuthJWTSchema = commonJwtPayloadSchema.extend({
+  aud: z.string(),
 });
 
 export class OAuthJWT extends createZodDto(oAuthJWTSchema) { }

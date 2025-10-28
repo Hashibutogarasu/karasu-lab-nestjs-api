@@ -8,6 +8,7 @@ import {
   VerifyTokenResponse,
 } from '../../../lib/auth/sns-auth';
 import { IOAuthProvider } from '../../../lib/auth/oauth-provider.interface';
+import { OAuthProviderFactory } from '../../../lib/auth/oauth-provider.factory';
 import { UtilityService } from '../../../data-base/utility/utility.service';
 import * as bcrypt from 'bcrypt';
 import { AuthStateService } from '../../../data-base/query/auth-state/auth-state.service';
@@ -24,6 +25,7 @@ export class AuthCoreService {
     private readonly jwtTokenService: JwtTokenService,
     private readonly extraProfileService: ExtraProfileService,
     private readonly snsAuthCallback: SnsAuthCallback,
+    private readonly oauthProviderFactory: OAuthProviderFactory,
   ) {}
 
   /**
@@ -52,8 +54,9 @@ export class AuthCoreService {
       let codeChallenge: string | undefined;
       let codeChallengeMethod: string | undefined;
 
+      // PKCE 判定はファクトリーに委譲（プロバイダー実装に依存せず判定できるように）
       if (
-        request.provider === 'x' &&
+        this.oauthProviderFactory.isPKCERequired(request.provider) &&
         oauthProvider.generateCodeVerifier &&
         oauthProvider.generateCodeChallenge
       ) {

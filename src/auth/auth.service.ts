@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { AuthResponse } from '../lib/auth/authentication';
 import { WorkflowService } from './sns/workflow/workflow.service';
-import { ManagerService } from './session/manager/manager.service';
 import { UserService } from '../data-base/query/user/user.service';
 import { AuthStateService } from '../data-base/query/auth-state/auth-state.service';
 import { JwtstateService } from '../data-base/query/jwtstate/jwtstate.service';
@@ -15,11 +14,7 @@ import {
   UserResponseDto,
 } from './auth.dto';
 import { DateTimeService } from '../date-time/date-time.service';
-
-interface SessionResponse {
-  sessionId: string;
-  expiresAt: Date;
-}
+import { JwtTokenService } from './jwt-token/jwt-token.service';
 
 interface TokenResponse {
   access_token: string;
@@ -34,9 +29,9 @@ export class AuthService {
     private readonly authStateService: AuthStateService,
     private readonly jwtstateService: JwtstateService,
     private readonly workflowService: WorkflowService,
-    private readonly managerService: ManagerService,
     private readonly dateTimeService: DateTimeService,
-  ) {}
+    private readonly jwtTokenService: JwtTokenService,
+  ) { }
 
   /**
    * ユーザー登録処理
@@ -100,20 +95,6 @@ export class AuthService {
       throw AppErrorCodes.INTERNAL_SERVER_ERROR;
     }
   }
-
-  /**
-   * セッション作成
-   */
-  async createSession(userId: string): Promise<SessionResponse> {
-    const sessionId = this.managerService.createSession(userId);
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24時間後
-
-    return {
-      sessionId,
-      expiresAt,
-    };
-  }
-
   /**
    * ユーザープロフィール取得
    */
@@ -133,29 +114,6 @@ export class AuthService {
       };
     } catch (error) {
       return null;
-    }
-  }
-
-  /**
-   * ログアウト処理
-   */
-  async logout(sessionId: string): Promise<boolean> {
-    try {
-      return this.managerService.deleteSession(sessionId);
-    } catch (error) {
-      return false;
-    }
-  }
-
-  /**
-   * セッションの有効性確認
-   */
-  async validateSession(sessionId: string): Promise<boolean> {
-    try {
-      const session = this.managerService.getSession(sessionId);
-      return session !== null;
-    } catch (error) {
-      return false;
     }
   }
 
@@ -187,21 +145,25 @@ export class AuthService {
   }
 
   /**
-   * 期限切れセッションのクリーンアップ
-   */
-  async cleanupExpiredSessions(): Promise<void> {
-    this.managerService.cleanupExpiredSessions();
-  }
-
-  /**
    * JWTトークン生成
    */
   async generateJwtToken(user: UserResponseDto): Promise<TokenResponse> {
-    const payload = { sub: user.id, username: user.username };
-    const access_token = this.jwtService.sign(payload);
+    const result = await this.jwtTokenService.generateJWTToken({
+      userId: user.id,
+      expirationHours: 24,
+    });
+
+    if (!result.success || !result.token) {
+      throw AppErrorCodes.TOKEN_GENERATION_FAILED;
+    }
+
+    if (!result.expiresAt) {
+      throw AppErrorCodes.TOKEN_GENERATION_FAILED;
+    }
+
     return {
-      access_token,
-      expires_in: 24 * 60 * 60, // 24時間
+      access_token: result.token,
+      expires_in: Math.floor((result.expiresAt.getTime() - Date.now()) / 1000),
     };
   }
 

@@ -1,7 +1,6 @@
 const mockAuthService = {
   register: jest.fn(),
   login: jest.fn(),
-  createSession: jest.fn(),
   getProfile: jest.fn(),
   logout: jest.fn(),
   validateSession: jest.fn(),

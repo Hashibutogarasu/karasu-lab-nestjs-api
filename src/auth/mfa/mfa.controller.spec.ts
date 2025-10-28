@@ -41,12 +41,7 @@ describe('MfaController (verify)', () => {
       userHasOtpEnabled: jest.fn().mockResolvedValue(true),
     });
 
-    mockAuthService = mock<AuthService>({
-      createSession: jest.fn().mockResolvedValue({
-        sessionId: 'session_abc',
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      }),
-    });
+    mockAuthService = mock<AuthService>();
 
     mockTotpService = mock<TotpService>({
       generateSecret: jest.fn().mockReturnValue('SECRET'),
@@ -123,7 +118,6 @@ describe('MfaController (verify)', () => {
         message: 'MFA verification successful',
         access_token: expect.any(String),
         refresh_token: expect.any(String),
-        session_id: 'session_abc',
       }),
     );
   });

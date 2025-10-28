@@ -640,9 +640,6 @@ describe('AuthController - SNS OAuth Authentication', () => {
         success: true,
         token: 'refresh_token_abc123',
       });
-      mockAuthService.createSession.mockResolvedValue({
-        sessionId: 'session_id_abc123',
-      } as any);
     });
 
     it('should verify token and return JWT successfully', async () => {
@@ -677,7 +674,6 @@ describe('AuthController - SNS OAuth Authentication', () => {
         profile: expectedResult.profile,
         access_token: expectedResult.token,
         refresh_token: 'refresh_token_abc123',
-        session_id: 'session_id_abc123',
       });
     });
 
@@ -753,9 +749,6 @@ describe('AuthController - SNS OAuth Authentication', () => {
       mockAuthCoreService.verifyAndCreateToken = jest
         .fn()
         .mockResolvedValueOnce(successResult);
-      mockAuthService.createSession.mockResolvedValueOnce({
-        sessionId: 'session_id_abc123',
-      } as any);
 
       await controller.verifyToken(validVerifyDto, mockResponse);
 
@@ -1510,9 +1503,6 @@ describe('AuthController - SNS OAuth Authentication', () => {
       mockAuthCoreService.verifyAndCreateToken = jest
         .fn()
         .mockResolvedValue(verifyResult);
-      mockAuthService.createSession.mockResolvedValue({
-        sessionId: 'session_id_abc123',
-      } as any);
 
       const verifyDto = {
         stateCode: 'state_abc123',

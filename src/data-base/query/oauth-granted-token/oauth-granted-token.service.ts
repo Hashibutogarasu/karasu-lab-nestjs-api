@@ -51,15 +51,17 @@ export class OauthGrantedTokenService extends BaseService {
 
     const iat = Math.floor(Date.now() / 1000);
     const exp = Math.floor(new Date(granted.expiryAt).getTime() / 1000);
+    const iss = this.config.get('issuerUrl');
 
     return {
+      iss: iss,
       jti: granted.jti,
       sub: granted.userId,
       provider: granted.clientId,
       aud: granted.clientId,
       iat,
       exp,
-    } as const;
+    };
   }
 
   async encodeGrantedJWT(granted: OAuthGrantedToken): Promise<string> {

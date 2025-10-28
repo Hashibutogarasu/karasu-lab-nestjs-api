@@ -140,8 +140,11 @@ export class OauthService {
 
     const now = Math.floor(Date.now() / 1000);
     const refreshExp = now + 24 * 60 * 60 * 30; // 30 days
+    const iss = this.appConfig.get('issuerUrl');
+
     const refreshPayload = {
       id: granted.jti,
+      iss: iss,
       jti: granted.jti,
       sub: user.id,
       provider: client.id,
@@ -214,9 +217,12 @@ export class OauthService {
 
     const now = Math.floor(Date.now() / 1000);
     const refreshExp = now + 24 * 60 * 60 * 30; // 30 days
+    const iss = this.appConfig.get('issuerUrl');
+
     const refreshPayload = {
       id: granted.jti,
       jti: granted.jti,
+      iss: iss,
       sub: user.id,
       provider: client.id,
       aud: client.id,

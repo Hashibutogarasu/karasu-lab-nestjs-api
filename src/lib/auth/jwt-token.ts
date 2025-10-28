@@ -51,13 +51,3 @@ export class CreateTokenResponse extends createZodDto(
   createTokenResponseSchema,
 ) {}
 
-export const verifyTokenResponseSchema = z.object({
-  success: z.boolean(),
-  payload: jwtPayloadSchema.optional(),
-  error: z.string().optional(),
-  errorDescription: z.string().optional(),
-});
-
-export class VerifyTokenResponse extends createZodDto(
-  verifyTokenResponseSchema,
-) {}

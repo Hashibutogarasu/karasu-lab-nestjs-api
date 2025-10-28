@@ -229,20 +229,11 @@ describe('AuthController', () => {
         user: mockUser,
       };
 
-      const mockSessionData = {
-        sessionId: 'session_abc123',
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      };
-
       mockAuthService.login = jest.fn().mockResolvedValue(mockLoginResponse);
-      mockAuthService.createSession = jest
-        .fn()
-        .mockResolvedValue(mockSessionData);
 
       await controller.login(validLoginDto, mockResponse, mockRequest);
 
       expect(mockAuthService.login).toHaveBeenCalledWith(validLoginDto);
-      expect(mockAuthService.createSession).toHaveBeenCalledWith('user_123');
       expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
       expect(mockJsonFn).toHaveBeenCalledWith({
         message: 'Login successful',
@@ -252,7 +243,6 @@ describe('AuthController', () => {
         expires_in: 60 * 60,
         refresh_token: expect.any(String),
         refresh_expires_in: 60 * 60 * 24 * 30,
-        session_id: 'session_abc123',
       });
     });
 
@@ -262,15 +252,7 @@ describe('AuthController', () => {
         user: mockUser,
       };
 
-      const mockSessionData = {
-        sessionId: 'session_abc123',
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      };
-
       mockAuthService.login = jest.fn().mockResolvedValue(mockLoginResponse);
-      mockAuthService.createSession = jest
-        .fn()
-        .mockResolvedValue(mockSessionData);
 
       // Mock mfaService on the controller instance to report MFA required.
       (controller as any).mfaService = {
@@ -300,15 +282,7 @@ describe('AuthController', () => {
         user: mockUser,
       };
 
-      const mockSessionData = {
-        sessionId: 'session_def456',
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      };
-
       mockAuthService.login = jest.fn().mockResolvedValue(mockLoginResponse);
-      mockAuthService.createSession = jest
-        .fn()
-        .mockResolvedValue(mockSessionData);
 
       await controller.login(loginWithEmail, mockResponse, mockRequest);
 
@@ -322,7 +296,6 @@ describe('AuthController', () => {
         expires_in: 60 * 60,
         refresh_token: expect.any(String),
         refresh_expires_in: 60 * 60 * 24 * 30,
-        session_id: 'session_def456',
       });
     });
 
@@ -358,26 +331,6 @@ describe('AuthController', () => {
       mockAuthService.login = jest
         .fn()
         .mockRejectedValue(new Error('Database connection failed'));
-
-      await expect(
-        controller.login(validLoginDto, mockResponse, mockRequest),
-      ).rejects.toThrow(AppErrorCodes.INTERNAL_SERVER_ERROR);
-    });
-
-    it('should handle session creation failure', async () => {
-      const mockLoginResponse = {
-        success: true,
-        user: {
-          id: 'user_123',
-          username: 'testuser',
-          email: 'test@example.com',
-        },
-      };
-
-      mockAuthService.login = jest.fn().mockResolvedValue(mockLoginResponse);
-      mockAuthService.createSession = jest
-        .fn()
-        .mockRejectedValue(new Error('Session creation failed'));
 
       await expect(
         controller.login(validLoginDto, mockResponse, mockRequest),
@@ -445,80 +398,6 @@ describe('AuthController', () => {
       await controller.getProfile(mockRequest, mockResponse, mockUser as any);
 
       expect(mockAuthService.getProfile).toHaveBeenCalledWith(mockUser.id);
-    });
-  });
-
-  describe('logout (POST /auth/logout)', () => {
-    const validSessionId = 'session_valid_123';
-
-    it('should logout user successfully', async () => {
-      mockRequest.headers = { 'x-session-id': validSessionId };
-      mockAuthService.logout = jest.fn().mockResolvedValue(true);
-
-      await controller.logout(mockRequest, mockResponse);
-
-      expect(mockAuthService.logout).toHaveBeenCalledWith(validSessionId);
-      expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
-      expect(mockJsonFn).toHaveBeenCalledWith({
-        message: 'Logout successful',
-      });
-    });
-
-    it('should handle logout without session ID', async () => {
-      mockRequest.headers = {}; // No session ID
-
-      await controller.logout(mockRequest, mockResponse);
-
-      expect(mockAuthService.logout).not.toHaveBeenCalled();
-      expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
-      expect(mockJsonFn).toHaveBeenCalledWith({
-        message: 'Logout successful',
-      });
-    });
-
-    it('should handle logout with invalid session', async () => {
-      mockRequest.headers = { 'x-session-id': 'invalid_session' };
-      mockAuthService.logout = jest.fn().mockResolvedValue(false);
-
-      await controller.logout(mockRequest, mockResponse);
-
-      expect(mockAuthService.logout).toHaveBeenCalledWith('invalid_session');
-      expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
-      expect(mockJsonFn).toHaveBeenCalledWith({
-        message: 'Logout successful',
-      });
-    });
-
-    it('should handle server errors during logout', async () => {
-      mockRequest.headers = { 'x-session-id': validSessionId };
-      mockAuthService.logout = jest
-        .fn()
-        .mockRejectedValue(new Error('Database error'));
-
-      await expect(
-        controller.logout(mockRequest, mockResponse),
-      ).rejects.toThrow(AppErrorCodes.INTERNAL_SERVER_ERROR);
-    });
-
-    it('should handle empty session ID gracefully', async () => {
-      mockRequest.headers = { 'x-session-id': '' };
-
-      await controller.logout(mockRequest, mockResponse);
-
-      expect(mockAuthService.logout).not.toHaveBeenCalled();
-      expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
-    });
-
-    it('should handle session cleanup', async () => {
-      mockRequest.headers = { 'x-session-id': validSessionId };
-      mockAuthService.logout = jest.fn().mockResolvedValue(true);
-
-      await controller.logout(mockRequest, mockResponse);
-
-      expect(mockAuthService.logout).toHaveBeenCalledWith(validSessionId);
-      expect(mockJsonFn).toHaveBeenCalledWith({
-        message: 'Logout successful',
-      });
     });
   });
 
@@ -603,22 +482,6 @@ describe('AuthController', () => {
       );
       expect(mockAuthService.getProfile).toHaveBeenCalledWith(mockProfile.id);
       expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
-    });
-
-    it('should handle multiple logout attempts', async () => {
-      const sessionId = 'session_to_logout';
-      mockRequest.headers = { 'x-session-id': sessionId };
-
-      mockAuthService.logout = jest.fn().mockResolvedValue(true);
-
-      // First logout
-      await controller.logout(mockRequest, mockResponse);
-
-      // Second logout (should still succeed)
-      await controller.logout(mockRequest, mockResponse);
-
-      expect(mockAuthService.logout).toHaveBeenCalledTimes(2);
-      expect(mockStatusFn).toHaveBeenCalledTimes(2);
     });
   });
 });
