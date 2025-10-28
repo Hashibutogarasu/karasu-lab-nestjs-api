@@ -1,3 +1,10 @@
+## [1.3.1](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.3.0...v1.3.1) (2025-10-28)
+
+
+### Bug Fixes
+
+* change available-scopes endpoint to POST method ([ee846e5](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/ee846e5024ee39f9fb410a9ecab21ae87f431223))
+
 # [1.3.0](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.2.0...v1.3.0) (2025-10-28)
 
 
