@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.2.0...v1.3.0) (2025-10-28)
+
+
+### Features
+
+* add client secret regeneration and response DTOs ([ae4268a](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/ae4268ab77e20c4cc1530e66f9b5d070f1d41680))
+
 # [1.2.0](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.1.0...v1.2.0) (2025-10-28)
 
 
