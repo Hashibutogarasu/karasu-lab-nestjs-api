@@ -16,11 +16,6 @@ import {
 import { DateTimeService } from '../date-time/date-time.service';
 import { JwtTokenService } from './jwt-token/jwt-token.service';
 
-interface TokenResponse {
-  access_token: string;
-  expires_in: number;
-}
-
 @Injectable()
 export class AuthService {
   constructor(
@@ -31,7 +26,7 @@ export class AuthService {
     private readonly workflowService: WorkflowService,
     private readonly dateTimeService: DateTimeService,
     private readonly jwtTokenService: JwtTokenService,
-  ) { }
+  ) {}
 
   /**
    * ユーザー登録処理
@@ -142,29 +137,6 @@ export class AuthService {
    */
   validateEmail(email: string): boolean {
     return this.workflowService.validateEmailFormat(email);
-  }
-
-  /**
-   * JWTトークン生成
-   */
-  async generateJwtToken(user: UserResponseDto): Promise<TokenResponse> {
-    const result = await this.jwtTokenService.generateJWTToken({
-      userId: user.id,
-      expirationHours: 24,
-    });
-
-    if (!result.success || !result.token) {
-      throw AppErrorCodes.TOKEN_GENERATION_FAILED;
-    }
-
-    if (!result.expiresAt) {
-      throw AppErrorCodes.TOKEN_GENERATION_FAILED;
-    }
-
-    return {
-      access_token: result.token,
-      expires_in: Math.floor((result.expiresAt.getTime() - Date.now()) / 1000),
-    };
   }
 
   /**

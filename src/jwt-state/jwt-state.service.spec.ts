@@ -65,21 +65,15 @@ describe('JwtStateService', () => {
         },
       });
     mockUtilityService = mock<UtilityService>();
+
     mockJwtTokenService = mock<JwtTokenService>({
       generateJWTToken: jest.fn().mockResolvedValue({
         success: true,
-        jwtId: sampleJWTState.id,
-        token: 'mock_token',
-        profile: {
-          sub: mockUser.id,
-          name: mockUser.username,
-          email: mockUser.email,
-          providers: mockUser.providers,
-        },
-        user: {
-          roles: [],
-        },
+        jti: sampleJWTState.id,
+        accessToken: 'mock_token',
+        refreshToken: 'mock_refresh_token',
         expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        userId: mockUser.id,
       }),
     });
 
@@ -102,15 +96,11 @@ describe('JwtStateService', () => {
 
   describe('JWT state lifecycle', () => {
     it('createJWT should generate token and return expected payload', async () => {
-      const dto = { userId: mockUser.id };
+      const dto = { userId: mockUser.id, expirationHours: 1 };
       const res = await mockJwtStateService.createJWT(dto);
-      expect(mockJwtTokenService.generateJWTToken).toHaveBeenCalledWith({
-        userId: dto.userId,
-      });
-      expect(res).toHaveProperty('jwtId', sampleJWTState.id);
-      expect(res).toHaveProperty('token', 'mock_token');
-      expect(res).toHaveProperty('profile');
-      expect(res).toHaveProperty('user');
+      expect(mockJwtTokenService.generateJWTToken).toHaveBeenCalledWith(dto);
+      expect(res).toHaveProperty('jti', sampleJWTState.id);
+      expect(res).toHaveProperty('accessToken', 'mock_token');
       expect(res).toHaveProperty('expiresAt');
     });
 

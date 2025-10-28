@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable, Inject } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import { JWTState, PrismaClient, User } from '@prisma/client';
 import { DataBaseService } from '../../data-base.service';
@@ -24,34 +24,47 @@ export class JwtstateService {
 
     const tokenResult = await jwtTokenService.generateJWTToken({
       userId: createJwtStateDto.userId,
+      expirationHours: 1,
     });
 
     if (!tokenResult.success) {
-      throw new HttpException(
-        tokenResult.errorDescription || 'Failed to generate JWT token',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw AppErrorCodes.JWT_CREATION_FAILED;
     }
 
     return {
-      jwtId: tokenResult.jwtId,
-      token: tokenResult.token,
-      profile: tokenResult.profile,
-      user: tokenResult.user,
+      jti: tokenResult.jti,
+      accessToken: tokenResult.accessToken,
       expiresAt: tokenResult.expiresAt,
+      userId: tokenResult.userId,
     };
   }
 
   async createJWTState(
     userId: string,
+    iat: number,
+    exp: number,
     params?: { id?: string; revoked?: boolean },
   ) {
+    const expiresAt = new Date(exp * 1000);
     return this.prisma.jWTState.create({
       data: {
         ...params,
+        expiresAt,
         userId,
       },
     });
+  }
+
+  async cleanupExpiredJWTStates(): Promise<number> {
+    const now = new Date();
+    const result = await this.prisma.jWTState.deleteMany({
+      where: {
+        expiresAt: {
+          lt: now,
+        },
+      },
+    });
+    return result.count;
   }
 
   async getAllJWTState(params?: { userId: string }): Promise<JWTState[]> {

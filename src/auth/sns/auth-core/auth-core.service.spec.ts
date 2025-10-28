@@ -8,7 +8,6 @@ import { UtilityService } from '../../../data-base/utility/utility.service';
 import { AuthStateService } from '../../../data-base/query/auth-state/auth-state.service';
 import { UserService } from '../../../data-base/query/user/user.service';
 import { ExtraProfileService } from '../../../data-base/query/extra-profile/extra-profile.service';
-import { SnsAuthCallback } from '../../../lib/auth/sns-auth';
 import { OAuthProviderFactory } from '../../../lib/auth/oauth-provider.factory';
 import { GoogleOAuthProvider } from '../../../lib/auth/google-oauth.provider';
 import { DiscordOAuthProvider } from '../../../lib/auth/discord-oauth.provider';
@@ -24,7 +23,6 @@ describe('CoreService', () => {
     const mockExtraProfileService = mock<ExtraProfileService>();
     const mockJwtTokenService = mock<JwtTokenService>();
     const mockJwtStateService = mock<JwtstateService>();
-    const mockSnsAuthCallback = mock<SnsAuthCallback>();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -35,7 +33,6 @@ describe('CoreService', () => {
         { provide: ExtraProfileService, useValue: mockExtraProfileService },
         { provide: JwtTokenService, useValue: mockJwtTokenService },
         { provide: JwtstateService, useValue: mockJwtStateService },
-        { provide: SnsAuthCallback, useValue: mockSnsAuthCallback },
         OAuthProviderFactory,
         GoogleOAuthProvider,
         DiscordOAuthProvider,

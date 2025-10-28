@@ -13,7 +13,7 @@ export const oAuthAuthorizeQuerySchema = z.object({
 
 export class OAuthAuthorizeQuery extends createZodDto(
   oAuthAuthorizeQuerySchema,
-) { }
+) {}
 
 export const oAuthTokenBodySchema = z.object({
   grant_type: z.string(),
@@ -25,7 +25,7 @@ export const oAuthTokenBodySchema = z.object({
   code_verifier: z.string().optional(),
 });
 
-export class OAuthTokenBodyDto extends createZodDto(oAuthTokenBodySchema) { }
+export class OAuthTokenBodyDto extends createZodDto(oAuthTokenBodySchema) {}
 
 export const oAuthTokenRevokeSchema = z.object({
   token: z.string(),
@@ -43,25 +43,27 @@ export const oAuthTokenResponseSchema = z.object({
 
 export class OAuthTokenResponseDto extends createZodDto(
   oAuthTokenResponseSchema,
-) { }
+) {}
 
-export class OAuthTokenRevokeDto extends createZodDto(oAuthTokenRevokeSchema) { }
+export class OAuthTokenRevokeDto extends createZodDto(oAuthTokenRevokeSchema) {}
 
-export const commonJwtPayloadSchema = z.object({
-  iss: z.string(),
-  sub: z.string(),
-  exp: z.number(),
-  jti: z.string(),
-  iat: z.number(),
-});
+export const commonJwtPayloadSchema = z
+  .object({
+    iss: z.string(),
+    sub: z.string(),
+    exp: z.number(),
+    jti: z.string(),
+    iat: z.number(),
+  })
+  .partial();
 
-export class CommonJWTPayload extends createZodDto(commonJwtPayloadSchema) { }
+export class CommonJWTPayload extends createZodDto(commonJwtPayloadSchema) {}
 
 export const oAuthJWTSchema = commonJwtPayloadSchema.extend({
   aud: z.string(),
 });
 
-export class OAuthJWT extends createZodDto(oAuthJWTSchema) { }
+export class OAuthJWT extends createZodDto(oAuthJWTSchema) {}
 
 export const openIdConnectUserProfileSchema = z.object({
   sub: z.string(),
@@ -81,4 +83,4 @@ export const openIdConnectUserProfileSchema = z.object({
 
 export class OpenIdConnectUserProfile extends createZodDto(
   openIdConnectUserProfileSchema,
-) { }
+) {}

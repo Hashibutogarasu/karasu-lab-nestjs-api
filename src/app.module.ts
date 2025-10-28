@@ -44,6 +44,7 @@ import { GitHubModule } from './git-hub/git-hub.module';
 import { PermissionModule } from './permission/permission.module';
 import { DateTimeModule } from './date-time/date-time.module';
 import { DateTimeService } from './date-time/date-time.service';
+import { JwtStateCronService } from './data-base/query/jwtstate/jwt-state-cron.service';
 
 @Module({
   imports: [
@@ -133,6 +134,7 @@ import { DateTimeService } from './date-time/date-time.service';
     ExtraProfileService,
     PendingEmailChangeProcessService,
     DateTimeService,
+    JwtStateCronService,
   ],
   exports: [AppService],
 })

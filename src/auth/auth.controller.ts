@@ -256,21 +256,13 @@ export class AuthController {
 
       await this.checkForMfa(res, { userId: result.user?.id });
 
-      const refreshTokenResult =
-        await this.jwtTokenService.generateRefreshToken(result.user!.id, {
-          jwtStateId: tokenResult.jwtId,
-        });
-      if (!refreshTokenResult.success) {
-        throw AppErrorCodes.TOKEN_GENERATION_FAILED;
-      }
-
       res.status(HttpStatus.OK).json({
         message: 'Login successful',
-        jwtId: tokenResult.jwtId,
-        access_token: tokenResult.token,
+        jti: tokenResult.jti,
+        access_token: tokenResult.accessToken,
         token_type: 'Bearer',
         expires_in: 60 * 60,
-        refresh_token: refreshTokenResult.token,
+        refresh_token: tokenResult.refreshToken,
         refresh_expires_in: 60 * 60 * 24 * 30,
       });
     } catch (error) {
@@ -307,7 +299,7 @@ export class AuthController {
       }
 
       const verify = await this.jwtTokenService.verifyJWTToken(refreshToken);
-      if (!verify.success || !verify.payload) {
+      if (!verify.success || !verify.payload || !verify.payload.sub) {
         throw AppErrorCodes.INVALID_TOKEN;
       }
 
@@ -322,8 +314,8 @@ export class AuthController {
 
       res.status(HttpStatus.OK).json({
         message: 'Token refreshed successfully',
-        jwtId: tokenResult.jwtId,
-        access_token: tokenResult.token,
+        jwtId: tokenResult.jti,
+        access_token: tokenResult.accessToken,
         token_type: 'Bearer',
         expires_in: 60 * 60,
       });
@@ -456,43 +448,13 @@ export class AuthController {
     let authState: AuthState | null = null;
     try {
       authState = await this.authService.getAuthState(state);
-      const defaultCallbackUrl =
-        authState?.callbackUrl || this.DEFAULT_CALLBACK_URL;
 
       if (error) {
-        const finalCallbackUrl = queryCallbackUrl || defaultCallbackUrl;
-        const errorRedirect = this.snsAuthCoreService.buildErrorRedirect(
-          finalCallbackUrl,
-          error,
-        );
-        return res.redirect(errorRedirect);
+        throw AppErrorCodes.INVALID_REQUEST;
       }
 
-      if (!code || !state) {
-        const finalCallbackUrl = queryCallbackUrl || defaultCallbackUrl;
-        const errorRedirect = this.snsAuthCoreService.buildErrorRedirect(
-          finalCallbackUrl,
-          'invalid_request',
-        );
-        return res.redirect(errorRedirect);
-      }
-
-      if (!authState) {
-        const finalCallbackUrl = queryCallbackUrl || this.DEFAULT_CALLBACK_URL;
-        const errorRedirect = this.snsAuthCoreService.buildErrorRedirect(
-          finalCallbackUrl,
-          'invalid_state',
-        );
-        return res.redirect(errorRedirect);
-      }
-
-      if (authState.provider !== provider) {
-        const finalCallbackUrl = queryCallbackUrl || authState.callbackUrl;
-        const errorRedirect = this.snsAuthCoreService.buildErrorRedirect(
-          finalCallbackUrl,
-          'provider_mismatch',
-        );
-        return res.redirect(errorRedirect);
+      if (!code || !state || !authState || authState.provider !== provider) {
+        throw AppErrorCodes.INVALID_REQUEST;
       }
 
       const oauthProvider = this.oauthProviderFactory.getProvider(provider);
@@ -526,13 +488,7 @@ export class AuthController {
       }
 
       if (!processResult.success) {
-        const errorType = processResult.error || 'authentication_failed';
-        const finalCallbackUrl = queryCallbackUrl || authState.callbackUrl;
-        const errorRedirect = this.snsAuthCoreService.buildErrorRedirect(
-          finalCallbackUrl,
-          errorType,
-        );
-        return res.redirect(errorRedirect);
+        throw AppErrorCodes.INTERNAL_SERVER_ERROR;
       }
 
       const finalCallbackUrl = queryCallbackUrl || authState.callbackUrl;
@@ -546,14 +502,7 @@ export class AuthController {
 
       return res.redirect(callbackUrl.toString());
     } catch (error) {
-      console.error('OAuth callback error:', error);
-      const fallbackUrl =
-        queryCallbackUrl || authState?.callbackUrl || this.DEFAULT_CALLBACK_URL;
-      const errorRedirect = this.snsAuthCoreService.buildErrorRedirect(
-        fallbackUrl,
-        'server_error',
-      );
-      res.redirect(errorRedirect);
+      throw AppErrorCodes.INTERNAL_SERVER_ERROR;
     }
   }
 
@@ -576,35 +525,13 @@ export class AuthController {
       const tokenResult =
         await this.snsAuthCoreService.verifyAndCreateToken(verifyTokenDto);
 
-      if (!tokenResult.success) {
-        throw AppErrorCodes.INVALID_TOKEN;
-      }
-
-      if (!tokenResult.profile?.sub) {
-        throw AppErrorCodes.INVALID_TOKEN;
-      }
-
-      // Check if user has MFA enabled; if so, return temporary MFA token for OTP verification
-      await this.checkForMfa(res, { userId: tokenResult.profile.sub });
-
-      const refreshTokenResult =
-        await this.jwtTokenService.generateRefreshToken(
-          tokenResult.profile.sub,
-          { jwtStateId: tokenResult.jwtId },
-        );
-
-      if (!refreshTokenResult.success) {
-        throw AppErrorCodes.TOKEN_GENERATION_FAILED.setCustomMessage(
-          refreshTokenResult.error?.toString() ?? 'Unknown error',
-        );
-      }
+      await this.checkForMfa(res, { userId: tokenResult.userId });
 
       res.status(HttpStatus.OK).json({
         message: 'Token verified successfully',
-        jwtId: tokenResult.jwtId,
-        profile: tokenResult.profile,
-        access_token: tokenResult.token,
-        refresh_token: refreshTokenResult.token,
+        jti: tokenResult.jti,
+        access_token: tokenResult.accessToken,
+        refresh_token: tokenResult.refreshToken,
       });
     } catch (error) {
       if (error instanceof AppErrorCode) {
@@ -632,7 +559,7 @@ export class AuthController {
 
       return res.status(HttpStatus.OK).json({
         mfaRequired: true,
-        mfaToken: temp.token,
+        mfaToken: temp.accessToken,
         expiresAt: temp.expiresAt,
       });
     }

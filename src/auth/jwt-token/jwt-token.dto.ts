@@ -1,6 +1,6 @@
-import z from "zod";
-import { commonJwtPayloadSchema } from "../../oauth/oauth.dto";
-import { createZodDto } from "nestjs-zod";
+import z from 'zod';
+import { commonJwtPayloadSchema } from '../../oauth/oauth.dto';
+import { createZodDto } from 'nestjs-zod';
 
 export const verifyTokenResponseSchema = z.object({
   success: z.boolean(),
@@ -11,4 +11,4 @@ export const verifyTokenResponseSchema = z.object({
 
 export class VerifyTokenResponse extends createZodDto(
   verifyTokenResponseSchema,
-) { }
+) {}

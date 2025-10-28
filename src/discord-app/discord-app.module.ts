@@ -16,10 +16,6 @@ import { DiscordAppCronService } from './discord-app-cron.service';
     }),
   ],
   controllers: [DiscordAppController],
-  providers: [
-    DiscordAppService,
-    AppCommands,
-    DiscordAppCronService,
-  ],
+  providers: [DiscordAppService, AppCommands, DiscordAppCronService],
 })
 export class DiscordAppModule {}

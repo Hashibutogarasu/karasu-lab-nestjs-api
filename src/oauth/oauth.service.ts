@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import {
   OAuthAuthorizeQuery,
+  OAuthJWT,
   OAuthTokenBodyDto,
   OAuthTokenResponseDto,
   OAuthTokenRevokeDto,
@@ -28,7 +29,7 @@ export class OauthService {
     private readonly userService: UserService,
     private readonly jwtTokenService: JwtTokenService,
     private readonly appConfig: AppConfigService,
-  ) { }
+  ) {}
 
   async authorize(params: OAuthAuthorizeQuery, user: PublicUser) {
     if (params.response_type !== 'code') {
@@ -186,8 +187,6 @@ export class OauthService {
 
     const payload = verify.payload;
 
-    if (payload.provider !== client.id) throw AppErrorCodes.UNAUTHORIZED_CLIENT;
-
     const jti = payload.jti;
     if (!jti) throw AppErrorCodes.INVALID_GRANT;
 
@@ -254,7 +253,7 @@ export class OauthService {
     if (body.token) {
       const verify = await this.jwtTokenService.verifyJWTToken(body.token);
       if (verify.success && verify.payload) {
-        const payload = verify.payload;
+        const payload = verify.payload as OAuthJWT;
         if (payload.aud && payload.aud !== clientId) {
           throw AppErrorCodes.UNAUTHORIZED_CLIENT;
         }

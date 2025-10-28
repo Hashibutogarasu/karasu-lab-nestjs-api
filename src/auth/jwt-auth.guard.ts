@@ -23,7 +23,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
     try {
       const result = await this.jwtTokenService.verifyJWTToken(token);
-      if (!result.success || !result.payload) {
+      if (!result.success || !result.payload || !result.payload.sub) {
         throw AppErrorCodes.INVALID_TOKEN;
       }
 

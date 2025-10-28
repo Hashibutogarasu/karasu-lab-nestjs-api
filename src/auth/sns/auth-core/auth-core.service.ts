@@ -2,10 +2,8 @@ import { Injectable } from '@nestjs/common';
 import {
   AuthStateRequest,
   AuthStateResponse,
-  SnsAuthCallback,
   SnsProfile,
   VerifyTokenRequest,
-  VerifyTokenResponse,
 } from '../../../lib/auth/sns-auth';
 import { IOAuthProvider } from '../../../lib/auth/oauth-provider.interface';
 import { OAuthProviderFactory } from '../../../lib/auth/oauth-provider.factory';
@@ -15,6 +13,8 @@ import { AuthStateService } from '../../../data-base/query/auth-state/auth-state
 import { UserService } from '../../../data-base/query/user/user.service';
 import { JwtTokenService } from '../../jwt-token/jwt-token.service';
 import { ExtraProfileService } from '../../../data-base/query/extra-profile/extra-profile.service';
+import { ExternalProviderAuthResult } from './auth.core.dto';
+import { AppErrorCodes } from '../../../types/error-codes';
 
 @Injectable()
 export class AuthCoreService {
@@ -24,7 +24,6 @@ export class AuthCoreService {
     private readonly userService: UserService,
     private readonly jwtTokenService: JwtTokenService,
     private readonly extraProfileService: ExtraProfileService,
-    private readonly snsAuthCallback: SnsAuthCallback,
     private readonly oauthProviderFactory: OAuthProviderFactory,
   ) {}
 
@@ -224,7 +223,7 @@ export class AuthCoreService {
    */
   async verifyAndCreateToken(
     request: VerifyTokenRequest,
-  ): Promise<VerifyTokenResponse> {
+  ): Promise<ExternalProviderAuthResult> {
     try {
       // ステートコードとワンタイムトークンを検証
       const authState = await this.authStateService.findAuthState(
@@ -236,21 +235,11 @@ export class AuthCoreService {
         authState.expiresAt < new Date() ||
         authState.oneTimeToken !== request.oneTimeToken
       ) {
-        return {
-          success: false,
-          error: 'invalid_token',
-          errorDescription: 'Invalid or expired authentication token',
-        };
+        throw AppErrorCodes.INVALID_AUTH_STATE;
       }
 
-      // 認証ステートにユーザーIDが保存されているかチェック
       if (!authState.userId) {
-        return {
-          success: false,
-          error: 'invalid_state',
-          errorDescription:
-            'Authentication state does not contain user information',
-        };
+        throw AppErrorCodes.INVALID_AUTH_STATE;
       }
 
       // ステートを消費（使用済みにする）
@@ -259,64 +248,49 @@ export class AuthCoreService {
       // ユーザー情報を取得
       const user = await this.userService.findUserById(authState.userId);
       if (!user) {
-        return {
-          success: false,
-          error: 'user_not_found',
-          errorDescription:
-            'User associated with authentication state not found',
-        };
+        throw AppErrorCodes.USER_NOT_FOUND;
       }
 
       // JWTトークンを生成
-      const tokenResult = await this.jwtTokenService.generateJWTToken({
+      const token = await this.jwtTokenService.generateJWTToken({
         userId: user.id,
         provider: authState.provider,
         expirationHours: 1,
       });
 
-      if (!tokenResult.success) {
-        return {
-          success: false,
-          error: tokenResult.error || 'token_generation_failed',
-          errorDescription:
-            tokenResult.errorDescription || 'Failed to generate JWT token',
-        };
+      if (!token.success) {
+        throw AppErrorCodes.TOKEN_GENERATION_FAILED;
       }
 
       return {
-        success: true,
-        jwtId: tokenResult.jwtId,
-        profile: {
-          sub: user.id,
-          name: user.username,
-          email: user.email,
-          roles: user.roles,
-          provider: authState.provider,
-          providers: user.providers || [authState.provider],
-        },
-        user: {
-          roles: user.roles,
-        },
-        token: tokenResult.token,
+        jti: token.jti,
+        accessToken: token.accessToken,
+        refreshToken: token.refreshToken,
+        userId: user.id,
       };
     } catch (error) {
-      return {
-        success: false,
-        error: 'server_error',
-        errorDescription: 'Failed to verify authentication token',
-      };
+      throw AppErrorCodes.INTERNAL_SERVER_ERROR;
     }
   }
 
   /**
-   * エラーレスポンス用のリダイレクト
+   * コールバック処理の結果をフロントエンドにリダイレクト
    */
-  buildErrorRedirect(callbackUrl: string, error: string): string {
-    return this.snsAuthCallback.buildCallbackRedirect(
-      callbackUrl,
-      '',
-      '',
-      error,
-    );
+  buildCallbackRedirect(
+    callbackUrl: string,
+    stateCode: string,
+    oneTimeToken: string,
+    error?: string,
+  ): string {
+    const url = new URL(callbackUrl);
+
+    if (error) {
+      url.searchParams.set('error', error);
+    } else {
+      url.searchParams.set('state', stateCode);
+      url.searchParams.set('token', oneTimeToken);
+    }
+
+    return url.toString();
   }
 }

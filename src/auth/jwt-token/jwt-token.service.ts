@@ -1,10 +1,5 @@
 import { Injectable, Inject, forwardRef } from '@nestjs/common';
-import {
-  CreateTokenRequest,
-  CreateTokenResponse,
-  JWTPayload,
-  VerifyTokenResponse,
-} from '../../lib';
+import { CreateTokenRequest, CreateTokenResponse } from '../../lib';
 import { decode, JwtPayload, sign, verify } from 'jsonwebtoken';
 import { UserService } from '../../data-base/query/user/user.service';
 import { JwtstateService } from '../../data-base/query/jwtstate/jwtstate.service';
@@ -13,6 +8,7 @@ import { AppConfigService } from '../../app-config/app-config.service';
 import { JWTState } from '@prisma/client';
 import { AppErrorCodes } from '../../types/error-codes';
 import { CommonJWTPayload } from '../../oauth/oauth.dto';
+import { VerifyTokenResponse } from './jwt-token.dto';
 
 @Injectable()
 export class JwtTokenService extends BaseService {
@@ -34,43 +30,38 @@ export class JwtTokenService extends BaseService {
     try {
       const jwtSecret = this.config.get('jwtSecret');
       if (!jwtSecret) {
-        return {
-          success: false,
-          error: 'server_configuration_error',
-          errorDescription: 'JWT secret is not configured',
-        };
+        throw AppErrorCodes.INTERNAL_SERVER_ERROR;
       }
 
       const user = await this.userService.findUserById(request.userId);
       if (!user) {
-        return {
-          success: false,
-          error: 'user_not_found',
-          errorDescription: 'User not found',
-        };
+        throw AppErrorCodes.USER_NOT_FOUND;
       }
 
       let jwtState: JWTState;
+
+      const expirationHours = request.expirationHours || 1;
+      const iat = Math.floor(Date.now() / 1000);
+      const exp = iat + expirationHours * 60 * 60;
+
       if (request.jwtStateId) {
         const existing = await this.jwtStateService.getJWTStateById(
           request.jwtStateId,
         );
         if (!existing) {
-          return {
-            success: false,
-            error: 'invalid_jwt_state',
-            errorDescription: 'Provided JWT state does not exist',
-          };
+          throw AppErrorCodes.JWT_STATE_NOT_FOUND;
         }
+
         jwtState = existing;
       } else {
-        jwtState = await this.jwtStateService.createJWTState(user.id);
+        jwtState = await this.jwtStateService.createJWTState(user.id, iat, exp);
       }
 
-      const expirationHours = request.expirationHours || 1;
-      const iat = Math.floor(Date.now() / 1000);
-      const exp = iat + expirationHours * 60 * 60;
-      const expiresAt = new Date(exp * 1000);
+      const expiresAt = jwtState.expiresAt;
+
+      if (!expiresAt) {
+        throw AppErrorCodes.INVALID_EXPIRES_AT_OPTION;
+      }
 
       const payload: JwtPayload = {
         id: jwtState.id,
@@ -81,26 +72,38 @@ export class JwtTokenService extends BaseService {
       };
       const token = sign(payload, jwtSecret);
 
-      await this.jwtStateService.updateJWTState(jwtState.id, {
-        tokenHint: `${token.slice(-8)}`,
-      });
+      try {
+        const refreshExpirationHours = 24 * 30; // default 30 days
 
-      return {
-        success: true,
-        jwtId: jwtState.id,
-        token,
-        profile: {
+        const refreshIat = iat;
+        const refreshExp = refreshIat + refreshExpirationHours * 60 * 60;
+
+        const refreshState = await this.jwtStateService.createJWTState(
+          user.id,
+          refreshIat,
+          refreshExp,
+        );
+
+        const refreshPayload: JwtPayload = {
+          id: refreshState.id,
           sub: user.id,
-          name: user.username,
-          email: user.email,
-          provider: request.provider,
-          providers: user.providers || [],
-        },
-        user: {
-          roles: user.roles,
-        },
-        expiresAt,
-      };
+          iat: refreshIat,
+          exp: refreshExp,
+        };
+
+        const refreshToken = sign(refreshPayload, jwtSecret);
+
+        return {
+          success: true,
+          jti: jwtState.id,
+          accessToken: token,
+          refreshToken,
+          expiresAt,
+          userId: request.userId,
+        };
+      } catch (err) {
+        throw AppErrorCodes.INTERNAL_SERVER_ERROR;
+      }
     } catch (error) {
       throw AppErrorCodes.INTERNAL_SERVER_ERROR;
     }
@@ -113,11 +116,7 @@ export class JwtTokenService extends BaseService {
     try {
       const jwtSecret = process.env.JWT_SECRET;
       if (!jwtSecret) {
-        return {
-          success: false,
-          error: 'server_configuration_error',
-          errorDescription: 'JWT secret is not configured',
-        };
+        throw AppErrorCodes.INTERNAL_SERVER_ERROR;
       }
 
       // トークンを検証
@@ -129,11 +128,7 @@ export class JwtTokenService extends BaseService {
           decoded.jti,
         );
         if (!jwtState || jwtState.revoked) {
-          return {
-            success: false,
-            error: 'token_revoked',
-            errorDescription: 'JWT token has been revoked',
-          };
+          throw AppErrorCodes.TOKEN_GENERATION_FAILED;
         }
       }
 
@@ -142,27 +137,7 @@ export class JwtTokenService extends BaseService {
         payload: decoded,
       };
     } catch (error) {
-      if (error instanceof Error) {
-        if (error.name === 'TokenExpiredError') {
-          return {
-            success: false,
-            error: 'token_expired',
-            errorDescription: 'JWT token has expired',
-          };
-        } else if (error.name === 'JsonWebTokenError') {
-          return {
-            success: false,
-            error: 'invalid_token',
-            errorDescription: 'Invalid JWT token',
-          };
-        }
-      }
-
-      return {
-        success: false,
-        error: 'verification_error',
-        errorDescription: 'Failed to verify JWT token',
-      };
+      throw AppErrorCodes.INTERNAL_SERVER_ERROR;
     }
   }
 
@@ -177,9 +152,9 @@ export class JwtTokenService extends BaseService {
   /**
    * JWTトークンをデコード
    */
-  decodeJWTToken(token: string): JWTPayload | null {
+  decodeJWTToken(token: string): JwtPayload | null {
     try {
-      const decoded = decode(token) as JWTPayload;
+      const decoded = decode(token) as JwtPayload;
       return decoded;
     } catch (error) {
       return null;
@@ -210,20 +185,5 @@ export class JwtTokenService extends BaseService {
 
     const now = Math.floor(Date.now() / 1000);
     return Math.max(0, decoded.exp - now);
-  }
-
-  /**
-   * リフレッシュトークンを生成（長期間有効）
-   * jwtStateIdがあれば、再利用可能です。
-   */
-  async generateRefreshToken(
-    userId: string,
-    options?: { jwtStateId?: string },
-  ): Promise<CreateTokenResponse> {
-    return this.generateJWTToken({
-      userId,
-      expirationHours: 24 * 30, // 30日間有効
-      jwtStateId: options?.jwtStateId,
-    });
   }
 }

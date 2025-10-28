@@ -169,6 +169,20 @@ export const AppErrorCodes = {
   ),
 
   // Auth Errors
+  INVALID_EXPIRES_AT_OPTION: new AppErrorCode(
+    z.object({
+      name: z.string().default('InvalidExpiresAtOption'),
+      code: z.number().default(400),
+      customMessage: z.string().default('Invalid expiresAt option'),
+    }),
+  ),
+  INVALID_AUTH_STATE: new AppErrorCode(
+    z.object({
+      name: z.string().default('InvalidAuthState'),
+      code: z.number().default(400),
+      customMessage: z.string().default('Invalid authentication state'),
+    }),
+  ),
   PROVIDER_NOT_FOUND: new AppErrorCode(
     z.object({
       name: z.string().default('ProviderNotFound'),
@@ -234,6 +248,13 @@ export const AppErrorCodes = {
       name: z.string().default('TokenGenerationFailed'),
       code: z.number().default(500),
       customMessage: z.string().default('Failed to generate token'),
+    }),
+  ),
+  TOKEN_EXPIRED: new AppErrorCode(
+    z.object({
+      name: z.string().default('TokenExpired'),
+      code: z.number().default(401),
+      customMessage: z.string().default('Token has expired'),
     }),
   ),
   MISSING_SESSION: new AppErrorCode(
@@ -737,6 +758,13 @@ export const AppErrorCodes = {
       name: z.string().default('JwtStateNotFound'),
       code: z.number().default(404),
       customMessage: z.string().default('JWT state not found'),
+    }),
+  ),
+  JWT_CREATION_FAILED: new AppErrorCode(
+    z.object({
+      name: z.string().default('JwtCreationFailed'),
+      code: z.number().default(500),
+      customMessage: z.string().default('Failed to create JWT'),
     }),
   ),
 };

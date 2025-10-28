@@ -4,11 +4,6 @@ export type {
   AuthResponse,
 } from './auth/authentication';
 
-export type {
-  JWTPayload,
-  CreateTokenRequest,
-  CreateTokenResponse,
-  VerifyTokenResponse,
-} from './auth/jwt-token';
+export type { CreateTokenRequest, CreateTokenResponse } from './auth/jwt-token';
 
 export * from './database/query';

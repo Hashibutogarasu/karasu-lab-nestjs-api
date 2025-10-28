@@ -398,8 +398,6 @@ describe('OAuth e2e (PKCE) flow', () => {
     expect(tokRes.body).toHaveProperty('code', 'InvalidGrant');
   });
 
-
-
   it("general-client grants 'user:read' to general user's auth", async () => {
     const authRes = await request(app.getHttpServer())
       .get('/oauth/authorize')

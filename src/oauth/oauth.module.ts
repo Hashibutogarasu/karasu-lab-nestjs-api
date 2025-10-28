@@ -11,9 +11,7 @@ import { OauthGrantedTokenService } from '../data-base/query/oauth-granted-token
 import { AuthorizationCodeService } from '../data-base/query/authorization-code/authorization-code.service';
 
 @Module({
-  imports: [
-    DataBaseModule,
-  ],
+  imports: [DataBaseModule],
   providers: [
     OauthService,
     PermissionService,

@@ -42,7 +42,7 @@ export class MfaController {
     private readonly authService: AuthService,
     private readonly totp: TotpService,
     private readonly jwtTokenService: JwtTokenService,
-  ) {}
+  ) { }
 
   @ApiCreatedResponse({ type: MfaSetupResponseDto })
   @Post('setup')
@@ -131,29 +131,18 @@ export class MfaController {
       expirationHours: 1,
       jwtStateId,
     });
-    if (!tokenResult.success || !tokenResult.token) {
-      throw AppErrorCodes.TOKEN_GENERATION_FAILED;
-    }
-
-    const refreshResult = await this.jwtTokenService.generateRefreshToken(
-      userId,
-      {
-        jwtStateId: tokenResult.jwtId,
-      },
-    );
-    if (!refreshResult.success || !refreshResult.token) {
+    if (!tokenResult.success || !tokenResult.accessToken || !tokenResult.refreshToken) {
       throw AppErrorCodes.TOKEN_GENERATION_FAILED;
     }
 
     res.status(HttpStatus.OK).json({
       message: 'MFA verification successful',
-      jwtId: tokenResult.jwtId,
-      access_token: tokenResult.token,
+      jti: tokenResult.jti,
+      access_token: tokenResult.accessToken,
       token_type: 'Bearer',
       expires_in: 60 * 60,
-      refresh_token: refreshResult.token,
+      refresh_token: tokenResult.refreshToken,
       refresh_expires_in: 60 * 60 * 24 * 30,
-      profile: tokenResult.profile,
     });
   }
 }

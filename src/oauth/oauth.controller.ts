@@ -40,7 +40,7 @@ import { AuthorizedScopes } from './authorized-scopes/authorized-scopes.decorato
 @Controller('oauth')
 @UsePipes(ZodValidationPipe)
 export class OauthController {
-  constructor(private readonly oauthService: OauthService) { }
+  constructor(private readonly oauthService: OauthService) {}
 
   @ApiBadRequestResponse(AppErrorCodes.INVALID_REDIRECT_URI.apiResponse)
   @ApiInternalServerErrorResponse(

@@ -192,13 +192,13 @@ model PasswordReset {
 }
 
 model JWTState {
-  id        String  @id @default(cuid())
-  userId    String  @map("user_id")
-  revoked   Boolean @default(false)
-  tokenHint String  @default("")
+  id      String  @id @default(cuid())
+  userId  String  @map("user_id")
+  revoked Boolean @default(false)
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at")
+  expiresAt DateTime? @map("expires_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

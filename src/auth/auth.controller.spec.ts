@@ -43,8 +43,9 @@ describe('AuthController', () => {
     const mockJwtTokenService = mock<JwtTokenService>({
       generateJWTToken: jest.fn().mockResolvedValue({
         success: true,
-        jwtId: 'jwt_state_123',
-        token: 'mock_jwt_token_abc123',
+        jti: 'jwt_state_123',
+        accessToken: 'mock_jwt_token_abc123',
+        refreshToken: 'mock_refresh_token_abc123',
         profile: {
           sub: 'user_123',
           name: 'testuser',
@@ -55,21 +56,7 @@ describe('AuthController', () => {
           role: 'user',
         },
         expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-      }),
-      generateRefreshToken: jest.fn().mockResolvedValue({
-        success: true,
-        jwtId: 'jwt_state_refresh_123',
-        token: 'mock_refresh_token_abc123',
-        profile: {
-          sub: 'user_123',
-          name: 'testuser',
-          email: 'test@example.com',
-          providers: [],
-        },
-        user: {
-          role: 'user',
-        },
-        expiresAt: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000),
+        userId: 'user_123',
       }),
     });
 
@@ -100,7 +87,15 @@ describe('AuthController', () => {
     const mockUtilityService = mock<UtilityService>();
     const mockRoleService = mock<RoleService>();
     const mockAuthStateService = mock<AuthStateService>();
-    const mockAuthCoreService = mock<AuthCoreService>();
+    const mockAuthCoreService = mock<AuthCoreService>({
+      verifyAndCreateToken: jest.fn().mockResolvedValue({
+        success: true,
+        jti: 'jwt_id_abc123',
+        accessToken: 'access_token_abc123',
+        refreshToken: 'refresh_token_abc123',
+        userId: 'user_123',
+      }),
+    });
     const mockMFaService = mock<MfaService>();
 
     const module: TestingModule = await getGlobalModule({
@@ -237,7 +232,7 @@ describe('AuthController', () => {
       expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
       expect(mockJsonFn).toHaveBeenCalledWith({
         message: 'Login successful',
-        jwtId: 'jwt_state_123',
+        jti: 'jwt_state_123',
         access_token: 'mock_jwt_token_abc123',
         token_type: 'Bearer',
         expires_in: 60 * 60,
@@ -290,7 +285,7 @@ describe('AuthController', () => {
       expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
       expect(mockJsonFn).toHaveBeenCalledWith({
         message: 'Login successful',
-        jwtId: 'jwt_state_123',
+        jti: 'jwt_state_123',
         access_token: 'mock_jwt_token_abc123',
         token_type: 'Bearer',
         expires_in: 60 * 60,

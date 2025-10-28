@@ -18,7 +18,6 @@ import { TotpService } from '../totp/totp.service';
 import { WorkflowService } from './sns/workflow/workflow.service';
 import { JwtTokenService } from './jwt-token/jwt-token.service';
 import { AuthCoreService } from './sns/auth-core/auth-core.service';
-import { SnsAuthCallback } from '../lib/auth/sns-auth';
 import { DateTimeService } from '../date-time/date-time.service';
 
 @Module({
@@ -49,7 +48,6 @@ import { DateTimeService } from '../date-time/date-time.service';
     WorkflowService,
     JwtTokenService,
     AuthCoreService,
-    SnsAuthCallback,
     DateTimeService,
   ],
   exports: [
@@ -58,7 +56,6 @@ import { DateTimeService } from '../date-time/date-time.service';
     JwtAuthGuard,
     OAuthProviderFactory,
     JwtTokenService,
-    SnsAuthCallback,
   ],
 })
 export class AuthModule {}
