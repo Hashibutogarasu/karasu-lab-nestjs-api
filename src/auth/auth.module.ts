@@ -6,6 +6,8 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { EncryptionModule } from '../encryption/encryption.module';
+import { AppConfigModule } from '../app-config/app-config.module';
+import { AppConfigService } from '../app-config/app-config.service';
 import { MfaModule } from '../mfa/mfa.module';
 import { JwtStateModule } from '../jwt-state/jwt-state.module';
 import { DataBaseModule } from '../data-base/data-base.module';
@@ -19,17 +21,10 @@ import { WorkflowService } from './sns/workflow/workflow.service';
 import { JwtTokenService } from './jwt-token/jwt-token.service';
 import { AuthCoreService } from './sns/auth-core/auth-core.service';
 import { DateTimeService } from '../date-time/date-time.service';
+import { EncryptionService } from '../encryption/encryption.service';
 
 @Module({
   imports: [
-    EncryptionModule.forRoot({
-      privateKey: process.env.ENCRYPTION_PRIVATE_KEY!,
-      publicKey: process.env.ENCRYPTION_PUBLIC_KEY!,
-    }),
-    JwtModule.register({
-      secret: process.env.JWT_SECRET!,
-      signOptions: { expiresIn: '24h' },
-    }),
     MfaModule,
     forwardRef(() => JwtStateModule),
     forwardRef(() => DataBaseModule),
@@ -52,10 +47,9 @@ import { DateTimeService } from '../date-time/date-time.service';
   ],
   exports: [
     AuthService,
-    JwtModule,
     JwtAuthGuard,
     OAuthProviderFactory,
     JwtTokenService,
   ],
 })
-export class AuthModule {}
+export class AuthModule { }

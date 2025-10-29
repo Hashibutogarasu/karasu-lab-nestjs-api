@@ -1,6 +1,8 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, OnModuleInit } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { AppErrorCodes } from '../types/error-codes';
+import { BaseService } from '../impl/base-service';
+import { AppConfigService } from '../app-config/app-config.service';
 
 export type KeyPair = {
   publicKey: string;
@@ -8,59 +10,35 @@ export type KeyPair = {
 };
 
 @Injectable()
-export class EncryptionService {
-  private publicKey: string;
-  private privateKey: string;
+export class EncryptionService extends BaseService implements OnModuleInit {
+  private publicKey!: string;
+  private privateKey!: string;
 
-  // Accept keys via constructor for easier testing; fall back to env if not provided
-  constructor(keys?: Partial<KeyPair>) {
-    this.publicKey = keys?.publicKey ?? process.env.ENCRYPTION_PUBLIC_KEY!;
-    this.privateKey = keys?.privateKey ?? process.env.ENCRYPTION_PRIVATE_KEY!;
+  private rawPublicKey?: string;
+  private rawPrivateKey?: string;
 
-    // Validate keys are present and are valid PEMs by attempting to import
-    try {
-      if (!this.publicKey || !this.privateKey) {
-        throw AppErrorCodes.MISSING_RSA;
-      }
-
-      // Quick validation: create KeyObject
-      crypto.createPublicKey(this.publicKey);
-      crypto.createPrivateKey(this.privateKey);
-    } catch (err) {
-      // Throw a clearer error for invalid configuration
-      // If the caught error is our MISSING_RSA sentinel, rethrow it
-      if (err === AppErrorCodes.MISSING_RSA) {
-        throw err;
-      }
-
-      // Otherwise wrap as INVALID_RSA_KEY with additional message
-      const message = String((err as Error).message || err);
-      throw AppErrorCodes.INVALID_RSA_KEY.setCustomMessage(
-        `Invalid RSA key configuration: ${message}`,
-      );
-    }
+  constructor(appConfigService: AppConfigService, keys?: Partial<KeyPair>) {
+    super(appConfigService);
+    this.rawPublicKey = keys?.publicKey!;
+    this.rawPrivateKey = keys?.privateKey!;
   }
 
-  // Encrypt a utf8 string using AES-256-GCM with RSA-encrypted key and return base64 encoded result
   encrypt(plain: string | null): string {
     if (plain === null || plain === undefined) {
       throw AppErrorCodes.MISSING_PLAIN_TEXT;
     }
 
-    // Generate random AES key and IV
-    const aesKey = crypto.randomBytes(32); // 256-bit key for AES-256
-    const iv = crypto.randomBytes(16); // 128-bit IV for GCM mode
+    const aesKey = crypto.randomBytes(32);
+    const iv = crypto.randomBytes(16);
 
-    // Encrypt data with AES-256-GCM
     const cipher = crypto.createCipheriv('aes-256-gcm', aesKey, iv);
     const aad = Buffer.from('karasu-lab-encryption', 'utf8');
-    cipher.setAAD(aad); // Additional authenticated data
+    cipher.setAAD(aad);
 
     let encrypted = cipher.update(plain, 'utf8');
     encrypted = Buffer.concat([encrypted, cipher.final()]);
     const authTag = cipher.getAuthTag();
 
-    // Encrypt the AES key with RSA
     const pubKeyObj = crypto.createPublicKey(this.publicKey);
     const encryptedAesKey = crypto.publicEncrypt(
       {
@@ -71,8 +49,6 @@ export class EncryptionService {
       aesKey,
     );
 
-    // Combine encrypted AES key, IV, auth tag, and encrypted data
-    // Format: [keyLength(2 bytes)][encryptedAesKey][iv(16 bytes)][authTag(16 bytes)][encryptedData]
     const keyLengthBuffer = Buffer.allocUnsafe(2);
     keyLengthBuffer.writeUInt16BE(encryptedAesKey.length, 0);
 
@@ -99,7 +75,6 @@ export class EncryptionService {
     }
   }
 
-  // Decrypt a base64 encoded ciphertext (AES-256-GCM with RSA-encrypted key) and return utf8 string
   decrypt(cipherBase64: string | null): string {
     if (cipherBase64 === null || cipherBase64 === undefined) {
       throw AppErrorCodes.MISSING_CIPHER_TEXT;
@@ -113,9 +88,6 @@ export class EncryptionService {
     }
 
     try {
-      // Parse the encrypted data format
-      // Format: [keyLength(2 bytes)][encryptedAesKey][iv(16 bytes)][authTag(16 bytes)][encryptedData]
-
       if (buffer.length < 2 + 16 + 16) {
         throw AppErrorCodes.INVALID_BASE64_INPUT;
       }
@@ -130,8 +102,6 @@ export class EncryptionService {
       const iv = buffer.subarray(2 + keyLength, 2 + keyLength + 16);
       const authTag = buffer.subarray(2 + keyLength + 16, 2 + keyLength + 32);
       const encryptedData = buffer.subarray(2 + keyLength + 32);
-
-      // Decrypt the AES key with RSA
       const privKeyObj = crypto.createPrivateKey(this.privateKey);
       const aesKey = crypto.privateDecrypt(
         {
@@ -142,7 +112,6 @@ export class EncryptionService {
         encryptedAesKey,
       );
 
-      // Decrypt data with AES-256-GCM
       const decipher = crypto.createDecipheriv('aes-256-gcm', aesKey, iv);
       const aad = Buffer.from('karasu-lab-encryption', 'utf8');
       decipher.setAAD(aad);
@@ -153,10 +122,49 @@ export class EncryptionService {
 
       return decrypted.toString('utf8');
     } catch (err) {
-      // Expose a categorized decryption error with message
+
       throw AppErrorCodes.DECRYPTION_FAILED.setCustomMessage(
         String((err as Error).message || err),
       );
     }
+  }
+
+  onModuleInit(): void {
+    this.logger.log('Initializing EncryptionService with RSA keys');
+    try {
+      if (!this.rawPublicKey || !this.rawPrivateKey) {
+        throw AppErrorCodes.MISSING_RSA;
+      }
+      try {
+        this.publicKey = Buffer.from(this.rawPublicKey, 'base64').toString('utf8');
+        this.privateKey = Buffer.from(this.rawPrivateKey, 'base64').toString('utf8');
+      } catch (e) {
+        throw AppErrorCodes.INVALID_RSA_KEY.setCustomMessage(
+          'Failed to decode base64-encoded RSA keys',
+        );
+      }
+
+      crypto.createPublicKey(this.publicKey);
+      crypto.createPrivateKey(this.privateKey);
+
+      this.logger.log('Successfully initialized EncryptionService with RSA keys');
+    } catch (err) {
+      if (err === AppErrorCodes.MISSING_RSA) {
+        throw err;
+      }
+
+      const message = String((err as Error).message || err);
+      throw AppErrorCodes.INVALID_RSA_KEY.setCustomMessage(
+        `Invalid RSA key configuration: ${message}`,
+      );
+    }
+  }
+
+  getPrivateKeyPem(): string {
+    return this.privateKey;
+  }
+
+  getPublicKeyPem(): string {
+    return this.publicKey;
   }
 }

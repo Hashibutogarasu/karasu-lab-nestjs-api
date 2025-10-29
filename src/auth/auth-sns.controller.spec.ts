@@ -18,11 +18,14 @@ import { WorkflowService } from './sns/workflow/workflow.service';
 import { MfaService } from '../data-base/query/mfa/mfa.service';
 import { DiscordOAuthProvider } from '../lib/auth/discord-oauth.provider';
 import { GoogleOAuthProvider } from '../lib/auth/google-oauth.provider';
+import * as crypto from 'crypto';
 
 describe('AuthController - SNS OAuth Authentication', () => {
   let controller: AuthController;
   let service: AuthService;
   let _savedBaseUrl: string | undefined;
+  let _savedEncryptionPrivate: string | undefined;
+  let _savedEncryptionPublic: string | undefined;
 
   // Mock Response object
   const mockStatusFn = jest.fn();
@@ -84,8 +87,19 @@ describe('AuthController - SNS OAuth Authentication', () => {
     // Ensure BASE_URL is defined before creating the testing module so controller
     // and providers that read it during initialization get a defined value.
     _savedBaseUrl = process.env.BASE_URL;
+    _savedEncryptionPrivate = process.env.ENCRYPTION_PRIVATE_KEY;
+    _savedEncryptionPublic = process.env.ENCRYPTION_PUBLIC_KEY;
+
     process.env.BASE_URL = process.env.BASE_URL ?? 'http://localhost:3000';
-    process.env.JWT_SECRET = process.env.JWT_SECRET ?? 'test_jwt_secret';
+
+    const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
+      modulusLength: 2048,
+      publicKeyEncoding: { type: 'pkcs1', format: 'pem' },
+      privateKeyEncoding: { type: 'pkcs1', format: 'pem' },
+    });
+
+    process.env.ENCRYPTION_PRIVATE_KEY = Buffer.from(privateKey, 'utf8').toString('base64');
+    process.env.ENCRYPTION_PUBLIC_KEY = Buffer.from(publicKey, 'utf8').toString('base64');
 
     mockJwtTokenService = mock<JwtTokenService>();
     mockAuthStateService = mock<AuthStateService>();
@@ -174,12 +188,14 @@ describe('AuthController - SNS OAuth Authentication', () => {
     mockDiscordProvider.isAvailable.mockReturnValue(true);
 
     // Mock console.error to prevent test output pollution
-    jest.spyOn(console, 'error').mockImplementation(() => {});
+    jest.spyOn(console, 'error').mockImplementation(() => { });
   });
 
   afterEach(() => {
     // restore original BASE_URL
     process.env.BASE_URL = _savedBaseUrl;
+    process.env.ENCRYPTION_PRIVATE_KEY = _savedEncryptionPrivate;
+    process.env.ENCRYPTION_PUBLIC_KEY = _savedEncryptionPublic;
   });
 
   describe('SNS Authentication State Management - POST /auth/state', () => {

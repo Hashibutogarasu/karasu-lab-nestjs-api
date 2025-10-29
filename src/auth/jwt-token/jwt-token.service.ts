@@ -5,6 +5,7 @@ import { UserService } from '../../data-base/query/user/user.service';
 import { JwtstateService } from '../../data-base/query/jwtstate/jwtstate.service';
 import { BaseService } from '../../impl/base-service';
 import { AppConfigService } from '../../app-config/app-config.service';
+import { EncryptionService } from '../../encryption/encryption.service';
 import { JWTState } from '@prisma/client';
 import { AppErrorCodes } from '../../types/error-codes';
 import { CommonJWTPayload } from '../../oauth/oauth.dto';
@@ -16,6 +17,7 @@ export class JwtTokenService extends BaseService {
     private readonly userService: UserService,
     @Inject(forwardRef(() => JwtstateService))
     private readonly jwtStateService: JwtstateService,
+    private readonly encryptionService: EncryptionService,
     configService: AppConfigService,
   ) {
     super(configService);
@@ -28,8 +30,8 @@ export class JwtTokenService extends BaseService {
     request: CreateTokenRequest,
   ): Promise<CreateTokenResponse> {
     try {
-      const jwtSecret = this.config.get('jwtSecret');
-      if (!jwtSecret) {
+      const privateKeyPem = this.encryptionService.getPrivateKeyPem();
+      if (!privateKeyPem) {
         throw AppErrorCodes.INTERNAL_SERVER_ERROR;
       }
 
@@ -70,7 +72,7 @@ export class JwtTokenService extends BaseService {
         iat,
         exp,
       };
-      const token = sign(payload, jwtSecret);
+      const token = sign(payload, privateKeyPem, { algorithm: 'RS256' });
 
       try {
         const refreshExpirationHours = 24 * 30; // default 30 days
@@ -91,7 +93,7 @@ export class JwtTokenService extends BaseService {
           exp: refreshExp,
         };
 
-        const refreshToken = sign(refreshPayload, jwtSecret);
+        const refreshToken = sign(refreshPayload, privateKeyPem, { algorithm: 'RS256' });
 
         return {
           success: true,
@@ -114,13 +116,13 @@ export class JwtTokenService extends BaseService {
    */
   async verifyJWTToken(token: string): Promise<VerifyTokenResponse> {
     try {
-      const jwtSecret = process.env.JWT_SECRET;
-      if (!jwtSecret) {
+      // Verify using the RSA public key from EncryptionService (RS256)
+      const publicKeyPem = this.encryptionService.getPublicKeyPem();
+      if (!publicKeyPem) {
         throw AppErrorCodes.INTERNAL_SERVER_ERROR;
       }
 
-      // トークンを検証
-      const decoded = verify(token, jwtSecret) as JwtPayload;
+      const decoded = verify(token, publicKeyPem, { algorithms: ['RS256'] }) as JwtPayload;
 
       // JWT State が無効化されていないかチェック
       if (decoded.jti) {
@@ -142,11 +144,16 @@ export class JwtTokenService extends BaseService {
   }
 
   encodePayload(payload: CommonJWTPayload): string {
-    const jwtSecret = this.config.get('jwtSecret');
-    if (!jwtSecret) {
+    try {
+      const privateKeyPem = this.encryptionService.getPrivateKeyPem();
+      if (!privateKeyPem) {
+        throw AppErrorCodes.INTERNAL_SERVER_ERROR;
+      }
+
+      return sign(payload, privateKeyPem, { algorithm: 'RS256' });
+    } catch (err) {
       throw AppErrorCodes.INTERNAL_SERVER_ERROR;
     }
-    return sign(payload, jwtSecret);
   }
 
   /**

@@ -194,7 +194,7 @@ describe('OAuth e2e (PKCE) flow', () => {
       userId: 'owner-test-client',
       secret: 'secret',
       redirectUris: ['https://app.test/callback'],
-      permissionBitMask: BigInt(3),
+      permissionBitMask: 3,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -205,7 +205,7 @@ describe('OAuth e2e (PKCE) flow', () => {
       userId: 'owner-client-general',
       secret: 'secret',
       redirectUris: ['https://app.test/callback'],
-      permissionBitMask: BigInt(1),
+      permissionBitMask: 1,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -216,7 +216,7 @@ describe('OAuth e2e (PKCE) flow', () => {
       userId: 'owner-client-admin',
       secret: 'secret',
       redirectUris: ['https://app.test/callback'],
-      permissionBitMask: BigInt((1 << 0) | (1 << 3)),
+      permissionBitMask: (1 << 0) | (1 << 3),
       createdAt: new Date(),
       updatedAt: new Date(),
     };

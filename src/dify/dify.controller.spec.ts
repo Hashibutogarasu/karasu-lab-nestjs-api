@@ -9,7 +9,6 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import {
   ExecutionContext,
   ForbiddenException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { createMock } from '@golevelup/ts-jest';
 import type { Response } from 'express';
@@ -247,8 +246,8 @@ describe('DifyController', () => {
         on: jest.fn(),
       };
 
-      mockStream = new Readable({ read() {} });
-      mockParsedStream = new Readable({ objectMode: true, read() {} });
+      mockStream = new Readable({ read() { } });
+      mockParsedStream = new Readable({ objectMode: true, read() { } });
 
       jest
         .spyOn(difyService, 'sendChatMessageStream')
@@ -337,6 +336,7 @@ describe('DifyController', () => {
         query: 'Hello, how are you?',
         user: '',
         inputs: {},
+        auto_generate_name: true,
       };
 
       try {
@@ -364,6 +364,7 @@ describe('DifyController', () => {
         query: 'Hello, how are you?',
         user: 'will-be-overridden',
         inputs: {},
+        auto_generate_name: true,
       };
 
       // Mock response.write to capture calls
@@ -411,6 +412,7 @@ describe('DifyController', () => {
         query: 'Hello, how are you?',
         user: 'will-be-overridden',
         inputs: {},
+        auto_generate_name: true,
       };
 
       const destroySpy = jest.spyOn(mockParsedStream, 'destroy');

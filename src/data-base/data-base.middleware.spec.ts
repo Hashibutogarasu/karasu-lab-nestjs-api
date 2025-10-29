@@ -15,6 +15,6 @@ describe('DataBaseMiddleware', () => {
         .fn()
         .mockReturnValue({ $connect: jest.fn().mockResolvedValue(undefined) }),
     });
-    expect(new DataBaseMiddleware(mockConfig, mockDb)).toBeDefined();
+    expect(new DataBaseMiddleware(mockDb, mockConfig)).toBeDefined();
   });
 });

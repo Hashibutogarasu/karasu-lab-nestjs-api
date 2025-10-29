@@ -6,6 +6,7 @@ import { JwtstateService } from '../../data-base/query/jwtstate/jwtstate.service
 import { AppConfigService } from '../../app-config/app-config.service';
 import { AppConfigModule } from '../../app-config/app-config.module';
 import { APP_CONFIG } from '../../app-config/app-config.constants';
+import { EncryptionService } from '../../encryption/encryption.service';
 
 describe('JwtTokenService', () => {
   let service: JwtTokenService;
@@ -15,6 +16,7 @@ describe('JwtTokenService', () => {
   beforeEach(async () => {
     mockUserService = mock<UserService>();
     mockJwtStateService = mock<JwtstateService>();
+    const mockEncryptionService = mock<EncryptionService>();
 
     const mockConfigService = mock<AppConfigService>({
       get: jest.fn().mockResolvedValue({}),
@@ -31,6 +33,10 @@ describe('JwtTokenService', () => {
         {
           provide: JwtstateService,
           useValue: mockJwtStateService,
+        },
+        {
+          provide: EncryptionService,
+          useValue: mockEncryptionService,
         },
         {
           provide: APP_CONFIG,

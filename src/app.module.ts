@@ -47,6 +47,8 @@ import { DateTimeService } from './date-time/date-time.service';
 import { JwtStateCronService } from './data-base/query/jwtstate/jwt-state-cron.service';
 import { I18nTranslateModule } from './i18n-translate/i18n-translate.module';
 import { R2Module } from './cloudflare/r2/r2.module';
+import { AppConfigService } from './app-config/app-config.service';
+import { EncryptionService } from './encryption/encryption.service';
 
 @Module({
   imports: [
@@ -55,19 +57,47 @@ import { R2Module } from './cloudflare/r2/r2.module';
     AccountModule,
     ...(process.env.DISCORD_BOT_TOKEN
       ? [
-          {
-            global: true,
-            module: DiscordAppModule,
-          },
-        ]
+        {
+          global: true,
+          module: DiscordAppModule,
+        },
+      ]
       : []),
     MarkdownModule,
     McpServerModule,
     DifyModule,
     JwtStateModule,
-    EncryptionModule.forRoot({
-      privateKey: process.env.ENCRYPTION_PRIVATE_KEY!,
-      publicKey: process.env.ENCRYPTION_PUBLIC_KEY!,
+    EncryptionModule.forRootAsync({
+      imports: [AppConfigModule],
+      useFactory: async (appConfig: AppConfigService) => ({
+        privateKey: appConfig.get('encryptionPrivateKey'),
+        publicKey: appConfig.get('encryptionPublicKey'),
+      }),
+      inject: [AppConfigService],
+      global: true,
+    }),
+    JwtModule.registerAsync({
+      imports: [EncryptionModule],
+      inject: [
+        EncryptionService,
+      ],
+      useFactory: async (encryptionService: EncryptionService) => {
+        let privateKeyPem: string | undefined;
+        try {
+          privateKeyPem = encryptionService.getPrivateKeyPem();
+        } catch (_e) {
+          if (process.env.ENCRYPTION_PRIVATE_KEY) {
+            privateKeyPem = Buffer.from(process.env.ENCRYPTION_PRIVATE_KEY, 'base64').toString('utf8');
+          }
+        }
+
+        return {
+          secret: privateKeyPem,
+          signOptions: { expiresIn: '24h' },
+          verifyOptions: { algorithms: ['RS256'] },
+        };
+      },
+      global: true,
     }),
     DiscordTokenModule,
     RoleModule,
@@ -76,16 +106,16 @@ import { R2Module } from './cloudflare/r2/r2.module';
     MfaModule,
     process.env.REDIS_HOST
       ? CacheModule.register({
-          store: async () =>
-            await redisStore({
-              socket: {
-                host: process.env.REDIS_HOST!,
-                port: process.env.REDIS_PORT!,
-              },
-              ttl: 10,
-            }),
-          isGlobal: true,
-        })
+        store: async () =>
+          await redisStore({
+            socket: {
+              host: process.env.REDIS_HOST!,
+              port: process.env.REDIS_PORT!,
+            },
+            ttl: 10,
+          }),
+        isGlobal: true,
+      })
       : CacheModule.register({ isGlobal: true, ttl: 10 }),
     {
       global: true,

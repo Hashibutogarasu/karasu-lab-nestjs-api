@@ -3,6 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { AuthService } from './auth.service';
 import { AppErrorCodes } from '../types/error-codes';
+import { EncryptionService } from '../encryption/encryption.service';
 
 export interface JwtPayload {
   id: string; // jwt state id
@@ -14,12 +15,24 @@ export interface JwtPayload {
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private authService: AuthService) {
+  private encryptionService: EncryptionService;
+
+  constructor(private authService: AuthService, encryptionService: EncryptionService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET!,
+      secretOrKeyProvider: (_req, rawJwtToken, done) => {
+        try {
+          const key = encryptionService.getPublicKeyPem();
+          done(null, key);
+        } catch (err) {
+          done(err as Error, undefined);
+        }
+      },
+      algorithms: ['RS256'],
     });
+
+    this.encryptionService = encryptionService;
   }
 
   async validate(payload: JwtPayload) {

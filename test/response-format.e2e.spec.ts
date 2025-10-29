@@ -20,6 +20,8 @@ import { PermissionBitcalcService } from '../src/permission-bitcalc/permission-b
 import { AppConfigService } from '../src/app-config/app-config.service';
 import { mock } from 'jest-mock-extended';
 import { AppConfigModule } from '../src/app-config/app-config.module';
+import { EncryptionService } from '../src/encryption/encryption.service';
+import * as crypto from 'crypto';
 
 jest.setTimeout(30000);
 
@@ -30,6 +32,25 @@ describe('Global Response Formatter & NoInterceptor (e2e)', () => {
     const mockConfigService = mock<AppConfigService>({
       get: jest.fn().mockResolvedValue({}),
     });
+
+    const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
+      modulusLength: 2048,
+      publicKeyEncoding: { type: 'pkcs1', format: 'pem' },
+      privateKeyEncoding: { type: 'pkcs1', format: 'pem' },
+    });
+
+    const base64Public = Buffer.from(publicKey, 'utf8').toString('base64');
+    const base64Private = Buffer.from(privateKey, 'utf8').toString('base64');
+
+    const encryptionProvider = {
+      provide: EncryptionService,
+      useFactory: (appConfig: AppConfigService) => {
+        const svc = new EncryptionService(appConfig, { publicKey: base64Public, privateKey: base64Private });
+        svc.onModuleInit();
+        return svc;
+      },
+      inject: [AppConfigService],
+    };
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
@@ -52,6 +73,7 @@ describe('Global Response Formatter & NoInterceptor (e2e)', () => {
         UtilityService,
         RoleService,
         PermissionBitcalcService,
+        encryptionProvider,
         {
           provide: APP_INTERCEPTOR,
           useClass: ResponseFormatterInterceptor,

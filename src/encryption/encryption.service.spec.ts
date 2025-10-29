@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EncryptionService } from './encryption.service';
 import * as crypto from 'crypto';
+import { mock } from 'jest-mock-extended';
+import { AppConfigService } from '../app-config/app-config.service';
 
 describe('EncryptionService', () => {
   // generate temporary RSA keypair for tests
@@ -10,17 +12,27 @@ describe('EncryptionService', () => {
     privateKeyEncoding: { type: 'pkcs1', format: 'pem' },
   });
 
-  const service = new EncryptionService({ publicKey, privateKey });
+  const base64Public = Buffer.from(publicKey, 'utf8').toString('base64');
+  const base64Private = Buffer.from(privateKey, 'utf8').toString('base64');
+
+  const mockAppConfig = mock<AppConfigService>({
+    get: jest.fn().mockImplementation(() => undefined),
+  });
+
+  const service = new EncryptionService(mockAppConfig, { publicKey: base64Public, privateKey: base64Private });
+  service.onModuleInit();
 
   it('should instantiate with valid keys', () => {
     expect(service).toBeDefined();
   });
 
   it('should throw on invalid key instantiation', () => {
-    expect(
-      () =>
-        new EncryptionService({ publicKey: 'invalid', privateKey: 'invalid' }),
-    ).toThrow();
+    const invalidBase = Buffer.from('invalid', 'utf8').toString('base64');
+    const invalidService = new EncryptionService(mockAppConfig, {
+      publicKey: invalidBase,
+      privateKey: invalidBase,
+    });
+    expect(() => invalidService.onModuleInit()).toThrow();
   });
 
   it('should throw when encrypt is called with null', () => {
@@ -32,7 +44,8 @@ describe('EncryptionService', () => {
   });
 
   it('should encrypt and decrypt a string correctly', () => {
-    const service = new EncryptionService({ publicKey, privateKey });
+    const service = new EncryptionService(mockAppConfig, { publicKey: base64Public, privateKey: base64Private });
+    service.onModuleInit();
     const plain = 'hello RSA-OAEP with sha256 🎉';
     const cipher = service.encrypt(plain);
     expect(typeof cipher).toBe('string');
@@ -47,7 +60,8 @@ describe('EncryptionService', () => {
   });
 
   it('should encrypt and decrypt a long string using AES-256-GCM', () => {
-    const service = new EncryptionService({ publicKey, privateKey });
+    const service = new EncryptionService(mockAppConfig, { publicKey: base64Public, privateKey: base64Private });
+    service.onModuleInit();
     // Create a very long string that would exceed RSA limits but should work with AES
     const longString = 'a'.repeat(1000); // 1000 characters, much larger than RSA limits
 
@@ -60,7 +74,8 @@ describe('EncryptionService', () => {
   });
 
   it('should encrypt and decrypt a very long access token string', () => {
-    const service = new EncryptionService({ publicKey, privateKey });
+    const service = new EncryptionService(mockAppConfig, { publicKey: base64Public, privateKey: base64Private });
+    service.onModuleInit();
     // Simulate a very long access token (much longer than RSA limits)
     const longAccessToken =
       'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.' +
@@ -78,8 +93,8 @@ describe('EncryptionService', () => {
   });
 
   it('should handle very large data without size limitations', () => {
-    const service = new EncryptionService({ publicKey, privateKey });
-    // Create a very large string (10KB)
+    const service = new EncryptionService(mockAppConfig, { publicKey: base64Public, privateKey: base64Private });
+    service.onModuleInit();
     const largeString = 'x'.repeat(10240);
 
     const cipher = service.encrypt(largeString);

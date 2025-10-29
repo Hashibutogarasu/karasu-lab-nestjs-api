@@ -9,11 +9,15 @@ import { JwtstateService } from '../jwtstate/jwtstate.service';
 import { UtilityService } from '../../utility/utility.service';
 import { RoleService } from '../role/role.service';
 import { PermissionBitcalcService } from '../../../permission-bitcalc/permission-bitcalc.service';
+import { mock } from 'jest-mock-extended';
+import { EncryptionService } from '../../../encryption/encryption.service';
 
 describe('OauthGrantedTokenService', () => {
   let service: OauthGrantedTokenService;
 
   beforeEach(async () => {
+    const mockEncryptionService = mock<EncryptionService>();
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         OauthGrantedTokenService,
@@ -29,6 +33,10 @@ describe('OauthGrantedTokenService', () => {
         UtilityService,
         RoleService,
         PermissionBitcalcService,
+        {
+          provide: EncryptionService,
+          useValue: mockEncryptionService,
+        }
       ],
     }).compile();
 
