@@ -65,9 +65,6 @@ export class OauthController {
   @ApiPermanentRedirectResponse(AppErrorCodes.UNAUTHORIZED.apiResponse)
   @ApiPermanentRedirectResponse(AppErrorCodes.INVALID_PARAMETERS.apiResponse)
   @ApiFoundResponse({ description: 'Redirect to the provided redirect_uri' })
-  @ApiQuery({
-    type: OAuthAuthorizeQuery,
-  })
   @Get('authorize')
   @UseGuards(JwtAuthGuard)
   @Redirect()

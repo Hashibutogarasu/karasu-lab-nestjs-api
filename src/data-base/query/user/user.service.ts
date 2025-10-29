@@ -8,6 +8,7 @@ import { DataBaseService } from '../../data-base.service';
 import { UtilityService } from '../../utility/utility.service';
 import { RoleDefinitions } from '../../../types/roles';
 import { RoleService } from '../role/role.service';
+import { AppErrorCodes } from '../../../types/error-codes';
 
 @Injectable()
 export class UserService {
@@ -288,6 +289,17 @@ export class UserService {
 
   async findByEmail(email: string) {
     return this.findUserByEmail(email);
+  }
+
+  async getUserRoles(userId: string): Promise<string[]> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { roles: true },
+    });
+    if (!user) {
+      throw AppErrorCodes.USER_NOT_FOUND;
+    }
+    return user.roles.map((role) => role.name);
   }
 
   async updateUserRolesByDefines(userId: string, roleDefinitions: string[]) {

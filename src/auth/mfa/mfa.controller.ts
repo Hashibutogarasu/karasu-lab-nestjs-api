@@ -30,8 +30,8 @@ import {
   ApiBearerAuth,
   ApiCreatedResponse,
   ApiInternalServerErrorResponse,
-  ApiOkResponse,
 } from '@nestjs/swagger';
+import { ApiWrappedOkResponse } from '../../decorators/api-wrapped-ok-response/api-wrapped-ok-response.decorator';
 
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
@@ -42,7 +42,7 @@ export class MfaController {
     private readonly authService: AuthService,
     private readonly totp: TotpService,
     private readonly jwtTokenService: JwtTokenService,
-  ) {}
+  ) { }
 
   @ApiCreatedResponse({ type: MfaSetupResponseDto })
   @Post('setup')
@@ -78,7 +78,7 @@ export class MfaController {
     }
   }
 
-  @ApiOkResponse({ type: MfaGetBackupCodesResponseDto })
+  @ApiWrappedOkResponse({ type: MfaGetBackupCodesResponseDto })
   @Get('backup-codes')
   async getBackupCodes(@AuthUser() user: PublicUser, @Res() res: Response) {
     if (!this.mfaService) throw AppErrorCodes.MFA_NOT_ENABLED;
@@ -96,7 +96,7 @@ export class MfaController {
     return res.status(HttpStatus.OK).json({ message: 'MFA disabled' });
   }
 
-  @ApiOkResponse({ type: MfaVerifyResponseDto })
+  @ApiWrappedOkResponse({ type: MfaVerifyResponseDto })
   @ApiInternalServerErrorResponse(
     AppErrorCodes.TOKEN_GENERATION_FAILED.apiResponse,
   )

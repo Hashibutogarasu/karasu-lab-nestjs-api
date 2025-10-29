@@ -32,10 +32,11 @@ import {
   ApiBody,
   ApiExtraModels,
   ApiNotFoundResponse,
-  ApiOkResponse,
   ApiResponse,
 } from '@nestjs/swagger';
+import { ApiWrappedOkResponse } from '../decorators/api-wrapped-ok-response/api-wrapped-ok-response.decorator';
 import {
+  CanSetPasswordResponseDto,
   ConfirmResetPasswordResponseDto,
   EmailChangeRequestDto,
   EmailChangeVerifyDto,
@@ -44,13 +45,10 @@ import {
   ResetPasswordResponseDto,
 } from './account.dto';
 import { AppErrorCodes } from '../types/error-codes';
-import { createZodDto } from 'nestjs-zod';
-import z from 'zod';
-import { UserSchema } from '../generated/zod';
 
 @Controller('account')
 export class AccountController {
-  constructor(private readonly accountService: AccountService) {}
+  constructor(private readonly accountService: AccountService) { }
 
   /**
    * サインイン済みユーザーのパスワード変更
@@ -58,7 +56,7 @@ export class AccountController {
    */
   @ApiBody({ type: ResetPasswordDto })
   @ApiBearerAuth()
-  @ApiOkResponse({
+  @ApiWrappedOkResponse({
     type: ResetPasswordResponseDto,
   })
   @ApiNotFoundResponse(AppErrorCodes.USER_NOT_FOUND.apiResponse)
@@ -73,7 +71,7 @@ export class AccountController {
    * パスワードリセット用のコード送信（サインインしていない場合）
    * メールアドレスを指定してリセットコードを送信
    */
-  @ApiOkResponse({
+  @ApiWrappedOkResponse({
     type: ForgotPasswordResponseDto,
   })
   @ApiBody({ type: ForgotPasswordDto })
@@ -86,7 +84,7 @@ export class AccountController {
    * リセットコードを使用したパスワード変更
    * 6桁のコードと新しいパスワードを指定
    */
-  @ApiOkResponse({
+  @ApiWrappedOkResponse({
     type: ConfirmResetPasswordResponseDto,
   })
   @ApiBadRequestResponse(AppErrorCodes.INVALID_RESET_CODE.apiResponse)
@@ -96,7 +94,7 @@ export class AccountController {
     return await this.accountService.confirmResetPassword(dto);
   }
 
-  @ApiOkResponse({
+  @ApiWrappedOkResponse({
     type: ProfileResponseDto,
   })
   @ApiBearerAuth()
@@ -110,6 +108,7 @@ export class AccountController {
   @ApiBadRequestResponse(AppErrorCodes.ALREADY_TAKEN_USERNAME.apiResponse)
   @ApiNotFoundResponse(AppErrorCodes.USER_NOT_FOUND.apiResponse)
   @ApiBearerAuth()
+  @ApiBody({ type: UpdateUserNameDto })
   @Put('profile')
   @UseGuards(JwtAuthGuard)
   async updateProfile(
@@ -176,6 +175,9 @@ export class AccountController {
    * パスワード設定可能性チェック
    * JWT認証したユーザーが外部プロバイダーでパスワードを持たないかどうかを判定
    */
+  @ApiWrappedOkResponse({
+    type: CanSetPasswordResponseDto,
+  })
   @ApiBadRequestResponse(AppErrorCodes.USER_NOT_FOUND.apiResponse)
   @Get('can-set-password')
   @UseGuards(JwtAuthGuard)
