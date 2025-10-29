@@ -1,4 +1,9 @@
-import { DynamicModule, Module, Provider, ModuleMetadata } from '@nestjs/common';
+import {
+  DynamicModule,
+  Module,
+  Provider,
+  ModuleMetadata,
+} from '@nestjs/common';
 import { EncryptionService, KeyPair } from './encryption.service';
 import { AppConfigService } from '../app-config/app-config.service';
 
@@ -35,7 +40,9 @@ export class EncryptionModule {
 
   static forRootAsync(options: {
     imports?: ModuleMetadata['imports'];
-    useFactory: (...args: any[]) => Promise<Partial<KeyPair>> | Partial<KeyPair>;
+    useFactory: (
+      ...args: any[]
+    ) => Promise<Partial<KeyPair>> | Partial<KeyPair>;
     inject?: any[];
     global?: boolean;
   }): DynamicModule {

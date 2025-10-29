@@ -19,7 +19,10 @@ describe('EncryptionService', () => {
     get: jest.fn().mockImplementation(() => undefined),
   });
 
-  const service = new EncryptionService(mockAppConfig, { publicKey: base64Public, privateKey: base64Private });
+  const service = new EncryptionService(mockAppConfig, {
+    publicKey: base64Public,
+    privateKey: base64Private,
+  });
   service.onModuleInit();
 
   it('should instantiate with valid keys', () => {
@@ -44,7 +47,10 @@ describe('EncryptionService', () => {
   });
 
   it('should encrypt and decrypt a string correctly', () => {
-    const service = new EncryptionService(mockAppConfig, { publicKey: base64Public, privateKey: base64Private });
+    const service = new EncryptionService(mockAppConfig, {
+      publicKey: base64Public,
+      privateKey: base64Private,
+    });
     service.onModuleInit();
     const plain = 'hello RSA-OAEP with sha256 🎉';
     const cipher = service.encrypt(plain);
@@ -60,7 +66,10 @@ describe('EncryptionService', () => {
   });
 
   it('should encrypt and decrypt a long string using AES-256-GCM', () => {
-    const service = new EncryptionService(mockAppConfig, { publicKey: base64Public, privateKey: base64Private });
+    const service = new EncryptionService(mockAppConfig, {
+      publicKey: base64Public,
+      privateKey: base64Private,
+    });
     service.onModuleInit();
     // Create a very long string that would exceed RSA limits but should work with AES
     const longString = 'a'.repeat(1000); // 1000 characters, much larger than RSA limits
@@ -74,7 +83,10 @@ describe('EncryptionService', () => {
   });
 
   it('should encrypt and decrypt a very long access token string', () => {
-    const service = new EncryptionService(mockAppConfig, { publicKey: base64Public, privateKey: base64Private });
+    const service = new EncryptionService(mockAppConfig, {
+      publicKey: base64Public,
+      privateKey: base64Private,
+    });
     service.onModuleInit();
     // Simulate a very long access token (much longer than RSA limits)
     const longAccessToken =
@@ -93,7 +105,10 @@ describe('EncryptionService', () => {
   });
 
   it('should handle very large data without size limitations', () => {
-    const service = new EncryptionService(mockAppConfig, { publicKey: base64Public, privateKey: base64Private });
+    const service = new EncryptionService(mockAppConfig, {
+      publicKey: base64Public,
+      privateKey: base64Private,
+    });
     service.onModuleInit();
     const largeString = 'x'.repeat(10240);
 

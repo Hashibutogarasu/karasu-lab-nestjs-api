@@ -4,7 +4,7 @@ import { AppErrorCodes } from '../../types/error-codes';
 
 @Injectable()
 export class AccountPictureService {
-  constructor(private readonly r2Service: R2Service) { }
+  constructor(private readonly r2Service: R2Service) {}
 
   async uploadProfilePicture(
     userId: string,

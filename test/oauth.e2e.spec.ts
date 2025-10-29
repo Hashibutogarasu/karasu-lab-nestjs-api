@@ -19,6 +19,7 @@ import { BasicOAuthGuard } from '../src/oauth/basic/basic.guard';
 import { AppErrorCodes } from '../src/types/error-codes';
 import { I18nTranslateService } from '../src/i18n-translate/i18n-translate.service';
 import { mock } from 'jest-mock-extended';
+import { EncryptionService } from '../src/encryption/encryption.service';
 
 describe('OAuth e2e (PKCE) flow', () => {
   let app: INestApplication;
@@ -221,6 +222,8 @@ describe('OAuth e2e (PKCE) flow', () => {
       updatedAt: new Date(),
     };
 
+    const mockEncryptionService = mock<EncryptionService>();
+
     const moduleBuilder = Test.createTestingModule({
       controllers: [OauthController],
       providers: [
@@ -239,6 +242,7 @@ describe('OAuth e2e (PKCE) flow', () => {
           useValue: mockOauthGrantedTokenService,
         },
         { provide: JwtTokenService, useValue: mockJwtTokenService },
+        { provide: EncryptionService, useValue: mockEncryptionService },
         { provide: AppConfigService, useValue: { get: () => ({}) } },
         {
           provide: I18nTranslateService,

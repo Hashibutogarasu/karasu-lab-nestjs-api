@@ -57,11 +57,11 @@ import { EncryptionService } from './encryption/encryption.service';
     AccountModule,
     ...(process.env.DISCORD_BOT_TOKEN
       ? [
-        {
-          global: true,
-          module: DiscordAppModule,
-        },
-      ]
+          {
+            global: true,
+            module: DiscordAppModule,
+          },
+        ]
       : []),
     MarkdownModule,
     McpServerModule,
@@ -78,16 +78,17 @@ import { EncryptionService } from './encryption/encryption.service';
     }),
     JwtModule.registerAsync({
       imports: [EncryptionModule],
-      inject: [
-        EncryptionService,
-      ],
+      inject: [EncryptionService],
       useFactory: async (encryptionService: EncryptionService) => {
         let privateKeyPem: string | undefined;
         try {
           privateKeyPem = encryptionService.getPrivateKeyPem();
         } catch (_e) {
           if (process.env.ENCRYPTION_PRIVATE_KEY) {
-            privateKeyPem = Buffer.from(process.env.ENCRYPTION_PRIVATE_KEY, 'base64').toString('utf8');
+            privateKeyPem = Buffer.from(
+              process.env.ENCRYPTION_PRIVATE_KEY,
+              'base64',
+            ).toString('utf8');
           }
         }
 
@@ -106,16 +107,16 @@ import { EncryptionService } from './encryption/encryption.service';
     MfaModule,
     process.env.REDIS_HOST
       ? CacheModule.register({
-        store: async () =>
-          await redisStore({
-            socket: {
-              host: process.env.REDIS_HOST!,
-              port: process.env.REDIS_PORT!,
-            },
-            ttl: 10,
-          }),
-        isGlobal: true,
-      })
+          store: async () =>
+            await redisStore({
+              socket: {
+                host: process.env.REDIS_HOST!,
+                port: process.env.REDIS_PORT!,
+              },
+              ttl: 10,
+            }),
+          isGlobal: true,
+        })
       : CacheModule.register({ isGlobal: true, ttl: 10 }),
     {
       global: true,

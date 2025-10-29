@@ -13,7 +13,7 @@ import { AuthUser, PublicUser } from '../auth/decorators/auth-user.decorator';
 @Controller('users')
 @UseGuards(JwtAuthGuard)
 export class UsersController {
-  constructor(private readonly userService: UserService) { }
+  constructor(private readonly userService: UserService) {}
 
   @ApiOkResponse({
     type: PublicUser,

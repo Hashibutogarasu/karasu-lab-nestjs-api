@@ -156,3 +156,20 @@ export const deleteOAuthClientSchema = z.object({
 export class DeleteOAuthClientDto extends createZodDto(
   deleteOAuthClientSchema,
 ) {}
+
+export const oAuthJWKsResponseSchema = z.object({
+  keys: z.array(
+    z.object({
+      kty: z.string().default('RSA'),
+      use: z.string().default('sig'),
+      kid: z.string(),
+      alg: z.string().default('RS256'),
+      n: z.string(),
+      e: z.string().default('AQAB'),
+    }),
+  ),
+});
+
+export class OAuthJWKsResponseDto extends createZodDto(
+  oAuthJWKsResponseSchema,
+) {}

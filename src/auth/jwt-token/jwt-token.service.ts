@@ -93,7 +93,9 @@ export class JwtTokenService extends BaseService {
           exp: refreshExp,
         };
 
-        const refreshToken = sign(refreshPayload, privateKeyPem, { algorithm: 'RS256' });
+        const refreshToken = sign(refreshPayload, privateKeyPem, {
+          algorithm: 'RS256',
+        });
 
         return {
           success: true,
@@ -122,7 +124,9 @@ export class JwtTokenService extends BaseService {
         throw AppErrorCodes.INTERNAL_SERVER_ERROR;
       }
 
-      const decoded = verify(token, publicKeyPem, { algorithms: ['RS256'] }) as JwtPayload;
+      const decoded = verify(token, publicKeyPem, {
+        algorithms: ['RS256'],
+      }) as JwtPayload;
 
       // JWT State が無効化されていないかチェック
       if (decoded.jti) {

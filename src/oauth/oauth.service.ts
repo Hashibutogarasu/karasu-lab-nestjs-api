@@ -26,6 +26,8 @@ import { JwtTokenService } from '../auth/jwt-token/jwt-token.service';
 import { OAuthClient } from '@prisma/client';
 import { I18nTranslateService } from '../i18n-translate/i18n-translate.service';
 import { PermissionType } from '../types/permission';
+import { EncryptionService } from '../encryption/encryption.service';
+import { createHash, createPublicKey } from 'crypto';
 
 @Injectable()
 export class OauthService {
@@ -39,6 +41,7 @@ export class OauthService {
     private readonly jwtTokenService: JwtTokenService,
     private readonly appConfig: AppConfigService,
     private readonly i18nService: I18nTranslateService,
+    private readonly encryptionService: EncryptionService,
   ) {}
 
   async authorize(params: OAuthAuthorizeQuery, user: PublicUser) {
@@ -366,5 +369,43 @@ export class OauthService {
       scopes,
       translations,
     };
+  }
+
+  async getJwks() {
+    const pubPem = this.encryptionService.getPublicKeyPem();
+    if (!pubPem) {
+      throw AppErrorCodes.INTERNAL_SERVER_ERROR;
+    }
+
+    try {
+      const pubKeyObj = createPublicKey(pubPem);
+      const jwkAny: any = pubKeyObj.export({ format: 'jwk' });
+      const n = jwkAny.n as string;
+      const e = jwkAny.e as string;
+
+      if (!n || !e) {
+        throw AppErrorCodes.INTERNAL_SERVER_ERROR;
+      }
+
+      const sha = createHash('sha256').update(pubPem).digest();
+      const kid = sha
+        .toString('base64')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+
+      const jwk = {
+        kty: jwkAny.kty || 'RSA',
+        use: 'sig',
+        kid,
+        alg: 'RS256',
+        n,
+        e,
+      } as const;
+
+      return { keys: [jwk] } as any;
+    } catch (err) {
+      throw AppErrorCodes.INTERNAL_SERVER_ERROR;
+    }
   }
 }

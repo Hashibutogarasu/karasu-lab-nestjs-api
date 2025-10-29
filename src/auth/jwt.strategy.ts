@@ -17,7 +17,10 @@ export interface JwtPayload {
 export class JwtStrategy extends PassportStrategy(Strategy) {
   private encryptionService: EncryptionService;
 
-  constructor(private authService: AuthService, encryptionService: EncryptionService) {
+  constructor(
+    private authService: AuthService,
+    encryptionService: EncryptionService,
+  ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,

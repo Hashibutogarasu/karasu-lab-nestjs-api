@@ -106,16 +106,20 @@ describe('R2Service', () => {
       return (async () => {
         const key = '/path/to/obj name.txt';
 
-        const signed = 'https://test-account.r2.cloudflarestorage.com/test-bucket/path/to/obj%20name.txt?sig=abc';
+        const signed =
+          'https://test-account.r2.cloudflarestorage.com/test-bucket/path/to/obj%20name.txt?sig=abc';
         service.getSignedUrl = jest.fn().mockResolvedValueOnce(signed);
 
         const url = await service.getObjectUrl(key);
 
         expect(service.getSignedUrl).toHaveBeenCalledTimes(1);
-        const passedCommand = (service.getSignedUrl as jest.Mock).mock.calls[0][1];
+        const passedCommand = (service.getSignedUrl as jest.Mock).mock
+          .calls[0][1];
         expect(passedCommand?.constructor?.name).toBe('Number');
 
-        expect(url).toBe('https://cdn.example.com/test-bucket/path/to/obj%20name.txt?sig=abc');
+        expect(url).toBe(
+          'https://cdn.example.com/test-bucket/path/to/obj%20name.txt?sig=abc',
+        );
       })();
     });
   });

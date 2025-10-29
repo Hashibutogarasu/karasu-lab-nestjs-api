@@ -44,7 +44,9 @@ import { BasicOAuthGuard } from './basic/basic.guard';
 import BasicAuthOauthClient from './basic-auth-oauth-client/basic-auth-oauth-client.decorator';
 import type { OAuthClient } from '@prisma/client';
 import { AuthorizedScopes } from './authorized-scopes/authorized-scopes.decorator';
+import { NoInterceptor } from '../interceptors/no-interceptor.decorator';
 
+@NoInterceptor()
 @Controller('oauth')
 @UsePipes(ZodValidationPipe)
 export class OauthController {
@@ -201,5 +203,11 @@ export class OauthController {
     @Body() body: DeleteOAuthClientDto,
   ) {
     return this.oauthService.deleteClient(body, user);
+  }
+
+  @Get('jwks.json')
+  @Header('Cache-Control', 'public, max-age=3600, must-revalidate')
+  async getJwks() {
+    return this.oauthService.getJwks();
   }
 }

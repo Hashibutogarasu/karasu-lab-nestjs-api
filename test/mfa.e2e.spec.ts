@@ -4,6 +4,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { JwtAuthGuard } from '../src/auth/jwt-auth.guard';
 import { JwtService } from '@nestjs/jwt';
+import { JwtStrategy } from '../src/auth/jwt.strategy';
 import { TotpService } from '../src/totp/totp.service';
 import { AppErrorCodes } from '../src/types/error-codes';
 import { MfaModule } from '../src/mfa/mfa.module';
@@ -14,8 +15,8 @@ import { AuthService } from '../src/auth/auth.service';
 import { MfaService } from '../src/data-base/query/mfa/mfa.service';
 import { UserService } from '../src/data-base/query/user/user.service';
 import { DataBaseService } from '../src/data-base/data-base.service';
+import { ExternalProviderAccessTokenService } from '../src/data-base/query/external-provider-access-token/external-provider-access-token.service';
 import { AuthModule } from '../src/auth/auth.module';
-import { DataBaseModule } from '../src/data-base/data-base.module';
 import prisma from '../src/lib/database/query';
 import { JwtTokenService } from '../src/auth/jwt-token/jwt-token.service';
 import { AppConfigService } from '../src/app-config/app-config.service';
@@ -130,17 +131,31 @@ describe('MFA e2e flow', () => {
       get: jest.fn().mockResolvedValue({}),
     });
 
+    const mockExternalProviderAccessTokenService =
+      mock<ExternalProviderAccessTokenService>();
+
+    const mockNestJwtService = mock<JwtService>();
+
     const moduleBuilder = Test.createTestingModule({
       imports: [
         CacheModule.register({ isGlobal: true, ttl: 10 }),
         AuthModule,
-        DataBaseModule,
         MfaModule,
         {
           module: AppConfigModule,
           global: true,
         },
         DateTimeModule,
+      ],
+      providers: [
+        {
+          provide: EncryptionService,
+          useValue: mockEncryptionService,
+        },
+        {
+          provide: JwtService,
+          useValue: mockNestJwtService,
+        },
       ],
     })
       .overrideProvider(AppConfigService)
@@ -173,6 +188,11 @@ describe('MFA e2e flow', () => {
     moduleBuilder
       .overrideProvider(JwtTokenService)
       .useValue(mockJwtTokenService);
+    moduleBuilder
+      .overrideProvider(ExternalProviderAccessTokenService)
+      .useValue(mockExternalProviderAccessTokenService);
+    // JwtStrategy depends on EncryptionService in AuthModule; tests mock JwtAuthGuard so we can stub JwtStrategy
+    moduleBuilder.overrideProvider(JwtStrategy).useValue({});
 
     const moduleFixture: TestingModule = await moduleBuilder.compile();
 

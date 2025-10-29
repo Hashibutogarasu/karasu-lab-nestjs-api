@@ -45,11 +45,6 @@ import { EncryptionService } from '../encryption/encryption.service';
     AuthCoreService,
     DateTimeService,
   ],
-  exports: [
-    AuthService,
-    JwtAuthGuard,
-    OAuthProviderFactory,
-    JwtTokenService,
-  ],
+  exports: [AuthService, JwtAuthGuard, OAuthProviderFactory, JwtTokenService],
 })
-export class AuthModule { }
+export class AuthModule {}

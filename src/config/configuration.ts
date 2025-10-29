@@ -51,7 +51,7 @@ export const configSchema = z.object({
   CLOUDFLARE_R2_CUSTOM_DOMAIN: z.string().optional(),
 });
 
-export class Configuration extends createZodDto(configSchema) { }
+export class Configuration extends createZodDto(configSchema) {}
 
 export default (env: Configuration) => ({
   port: env.PORT,

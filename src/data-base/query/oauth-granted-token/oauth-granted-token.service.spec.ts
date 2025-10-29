@@ -36,7 +36,7 @@ describe('OauthGrantedTokenService', () => {
         {
           provide: EncryptionService,
           useValue: mockEncryptionService,
-        }
+        },
       ],
     }).compile();
 

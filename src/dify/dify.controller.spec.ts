@@ -6,10 +6,7 @@ import { DifyService } from './dify.service';
 import { DomainModule, DomainService, DomainGuard } from '../lib/domain';
 import { AuthService } from '../auth/auth.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import {
-  ExecutionContext,
-  ForbiddenException,
-} from '@nestjs/common';
+import { ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { createMock } from '@golevelup/ts-jest';
 import type { Response } from 'express';
 import { Readable } from 'stream';
@@ -246,8 +243,8 @@ describe('DifyController', () => {
         on: jest.fn(),
       };
 
-      mockStream = new Readable({ read() { } });
-      mockParsedStream = new Readable({ objectMode: true, read() { } });
+      mockStream = new Readable({ read() {} });
+      mockParsedStream = new Readable({ objectMode: true, read() {} });
 
       jest
         .spyOn(difyService, 'sendChatMessageStream')

@@ -80,7 +80,7 @@ export class DifyService {
       }
 
       // ReadableStreamを手動でNode.js Readableに変換
-      const nodeStream = new Readable({ read() { } });
+      const nodeStream = new Readable({ read() {} });
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
 
@@ -124,7 +124,7 @@ export class DifyService {
   parseSSEStream(stream: Readable): Readable {
     const parsedStream = new Readable({
       objectMode: true,
-      read() { },
+      read() {},
     });
 
     let buffer = '';

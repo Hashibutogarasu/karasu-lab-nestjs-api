@@ -45,7 +45,10 @@ describe('Global Response Formatter & NoInterceptor (e2e)', () => {
     const encryptionProvider = {
       provide: EncryptionService,
       useFactory: (appConfig: AppConfigService) => {
-        const svc = new EncryptionService(appConfig, { publicKey: base64Public, privateKey: base64Private });
+        const svc = new EncryptionService(appConfig, {
+          publicKey: base64Public,
+          privateKey: base64Private,
+        });
         svc.onModuleInit();
         return svc;
       },

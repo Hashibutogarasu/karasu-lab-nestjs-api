@@ -122,7 +122,6 @@ export class EncryptionService extends BaseService implements OnModuleInit {
 
       return decrypted.toString('utf8');
     } catch (err) {
-
       throw AppErrorCodes.DECRYPTION_FAILED.setCustomMessage(
         String((err as Error).message || err),
       );
@@ -136,8 +135,12 @@ export class EncryptionService extends BaseService implements OnModuleInit {
         throw AppErrorCodes.MISSING_RSA;
       }
       try {
-        this.publicKey = Buffer.from(this.rawPublicKey, 'base64').toString('utf8');
-        this.privateKey = Buffer.from(this.rawPrivateKey, 'base64').toString('utf8');
+        this.publicKey = Buffer.from(this.rawPublicKey, 'base64').toString(
+          'utf8',
+        );
+        this.privateKey = Buffer.from(this.rawPrivateKey, 'base64').toString(
+          'utf8',
+        );
       } catch (e) {
         throw AppErrorCodes.INVALID_RSA_KEY.setCustomMessage(
           'Failed to decode base64-encoded RSA keys',
@@ -147,7 +150,9 @@ export class EncryptionService extends BaseService implements OnModuleInit {
       crypto.createPublicKey(this.publicKey);
       crypto.createPrivateKey(this.privateKey);
 
-      this.logger.log('Successfully initialized EncryptionService with RSA keys');
+      this.logger.log(
+        'Successfully initialized EncryptionService with RSA keys',
+      );
     } catch (err) {
       if (err === AppErrorCodes.MISSING_RSA) {
         throw err;

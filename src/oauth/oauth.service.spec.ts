@@ -15,6 +15,7 @@ import { RoleService } from '../data-base/query/role/role.service';
 import { AuthorizationCodeService } from '../data-base/query/authorization-code/authorization-code.service';
 import { I18nTranslateService } from '../i18n-translate/i18n-translate.service';
 import { mock } from 'jest-mock-extended';
+import { EncryptionService } from '../encryption/encryption.service';
 
 describe('OauthService', () => {
   let service: OauthService;
@@ -36,6 +37,7 @@ describe('OauthService', () => {
     const mockJwtTokenService = mock<JwtTokenService>();
     const mockAppConfigService = mock<AppConfigService>();
     const mockI18nTranslateService = mock<I18nTranslateService>();
+    const mockEncryptionService = mock<EncryptionService>();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -75,6 +77,10 @@ describe('OauthService', () => {
         {
           provide: I18nTranslateService,
           useValue: mockI18nTranslateService,
+        },
+        {
+          provide: EncryptionService,
+          useValue: mockEncryptionService,
         },
         {
           provide: APP_CONFIG,

@@ -98,8 +98,13 @@ describe('AuthController - SNS OAuth Authentication', () => {
       privateKeyEncoding: { type: 'pkcs1', format: 'pem' },
     });
 
-    process.env.ENCRYPTION_PRIVATE_KEY = Buffer.from(privateKey, 'utf8').toString('base64');
-    process.env.ENCRYPTION_PUBLIC_KEY = Buffer.from(publicKey, 'utf8').toString('base64');
+    process.env.ENCRYPTION_PRIVATE_KEY = Buffer.from(
+      privateKey,
+      'utf8',
+    ).toString('base64');
+    process.env.ENCRYPTION_PUBLIC_KEY = Buffer.from(publicKey, 'utf8').toString(
+      'base64',
+    );
 
     mockJwtTokenService = mock<JwtTokenService>();
     mockAuthStateService = mock<AuthStateService>();
@@ -188,7 +193,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
     mockDiscordProvider.isAvailable.mockReturnValue(true);
 
     // Mock console.error to prevent test output pollution
-    jest.spyOn(console, 'error').mockImplementation(() => { });
+    jest.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   afterEach(() => {
