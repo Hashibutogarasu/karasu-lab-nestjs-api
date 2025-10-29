@@ -22,7 +22,6 @@ describe('JwtStateService', () => {
     id: 'jwt_state_1',
     userId: mockUser.id,
     revoked: false,
-    tokenHint: 'hint',
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -109,7 +108,9 @@ describe('JwtStateService', () => {
         userId: mockUser.id,
       });
       const res = await mockJwtStateService.findAll(mockUser);
-      expect(res).toEqual([sampleJWTState]);
+      expect(res).toEqual({
+        states: [sampleJWTState]
+      });
     });
 
     it('findOne should return single JWT state when exists', async () => {

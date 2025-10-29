@@ -36,6 +36,7 @@ import {
 } from '@nestjs/swagger';
 import { ApiWrappedOkResponse } from '../decorators/api-wrapped-ok-response/api-wrapped-ok-response.decorator';
 import {
+  CanSetPasswordResponseDto,
   ConfirmResetPasswordResponseDto,
   EmailChangeRequestDto,
   EmailChangeVerifyDto,
@@ -107,6 +108,7 @@ export class AccountController {
   @ApiBadRequestResponse(AppErrorCodes.ALREADY_TAKEN_USERNAME.apiResponse)
   @ApiNotFoundResponse(AppErrorCodes.USER_NOT_FOUND.apiResponse)
   @ApiBearerAuth()
+  @ApiBody({ type: UpdateUserNameDto })
   @Put('profile')
   @UseGuards(JwtAuthGuard)
   async updateProfile(
@@ -173,6 +175,9 @@ export class AccountController {
    * パスワード設定可能性チェック
    * JWT認証したユーザーが外部プロバイダーでパスワードを持たないかどうかを判定
    */
+  @ApiWrappedOkResponse({
+    type: CanSetPasswordResponseDto,
+  })
   @ApiBadRequestResponse(AppErrorCodes.USER_NOT_FOUND.apiResponse)
   @Get('can-set-password')
   @UseGuards(JwtAuthGuard)

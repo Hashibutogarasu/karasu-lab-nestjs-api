@@ -399,7 +399,6 @@ describe('AuthController', () => {
   describe('Error Handling and Security', () => {
     it('should handle concurrent session requests', async () => {
       const sessionId = 'session_concurrent';
-      mockRequest.headers = { 'x-session-id': sessionId };
 
       const mockUserProfile = {
         id: 'user_123',
@@ -454,7 +453,6 @@ describe('AuthController', () => {
   describe('Session Management', () => {
     it('should handle session expiration gracefully', async () => {
       const expiredSessionId = 'session_expired';
-      mockRequest.headers = { 'x-session-id': expiredSessionId };
 
       mockAuthService.getProfile = jest.fn().mockResolvedValue(null);
 
@@ -465,7 +463,6 @@ describe('AuthController', () => {
 
     it('should handle session validation during profile access', async () => {
       const sessionId = 'session_valid';
-      mockRequest.headers = { 'x-session-id': sessionId };
 
       const mockProfile = { ...mockUser };
       mockAuthService.getProfile = jest.fn().mockResolvedValue(mockProfile);

@@ -2,9 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import { JWTState, PrismaClient, User } from '@prisma/client';
 import { DataBaseService } from '../../data-base.service';
-import { CreateJwtStateDto, UpdateJwtStateDto } from './jwt-state.dto';
+import { CreateJwtStateDto, UpdateJwtStateDto } from '../../../jwt-state/jwt-state.dto';
 import { JwtTokenService } from '../../../auth/jwt-token/jwt-token.service';
 import { AppErrorCodes } from '../../../types/error-codes';
+import { PublicUser } from '../../../auth/decorators/auth-user.decorator';
 
 @Injectable()
 export class JwtstateService {
@@ -126,18 +127,20 @@ export class JwtstateService {
     return jwtState ? jwtState.revoked : true;
   }
 
-  findAll(user: User) {
-    return this.getAllJWTState({ userId: user.id });
+  async findAll(user: PublicUser) {
+    return {
+      states: await this.getAllJWTState({ userId: user.id })
+    };
   }
 
-  findOne(id: string, user: User) {
+  findOne(id: string, user: PublicUser) {
     return this.getJWTStateById(id, { userId: user.id });
   }
 
   async update(
     id: string,
     updateJwtStateDto: UpdateJwtStateDto,
-    user: User,
+    user: PublicUser,
     isAdmin: boolean,
   ) {
     const state = await this.getJWTStateById(id);

@@ -24,7 +24,7 @@ import {
 import { AppErrorCode, AppErrorCodes } from '../types/error-codes';
 import { NoInterceptor } from '../interceptors/no-interceptor.decorator';
 import { JwtAuthGuard } from './jwt-auth.guard';
-import { AuthUser, publicUserSchema } from './decorators/auth-user.decorator';
+import { AuthUser } from './decorators/auth-user.decorator';
 import { PublicUser } from './decorators/auth-user.decorator';
 import { AuthStateService } from '../data-base/query/auth-state/auth-state.service';
 import { AuthCoreService } from './sns/auth-core/auth-core.service';
@@ -33,8 +33,10 @@ import { ExternalProviderAccessTokenService } from '../data-base/query/external-
 import { JwtTokenService } from './jwt-token/jwt-token.service';
 import {
   AuthProvidersDto,
+  authProvidersSchema,
   AuthStateDto,
   authStateSchema,
+  AuthVerifyResponseDto,
   LoginDto,
   LoginResponseDto,
   loginSchema,
@@ -73,7 +75,7 @@ export class AuthController {
     private readonly snsAuthCoreService: AuthCoreService,
     private readonly jwtTokenService: JwtTokenService,
     private readonly mfaService: MfaService,
-  ) {}
+  ) { }
 
   private async getCodeChallengeFromState(stateCode?: string) {
     if (!stateCode) return undefined;
@@ -95,6 +97,7 @@ export class AuthController {
   @ApiInternalServerErrorResponse(
     AppErrorCodes.INTERNAL_SERVER_ERROR.apiResponse,
   )
+  @UsePipes(new ZodValidationPipe(authProvidersSchema))
   @Get('providers')
   async getProviders(@Res() res: Response): Promise<void> {
     const available: IOAuthProvider[] = [];
@@ -372,6 +375,10 @@ export class AuthController {
    * SNS認証ステート作成エンドポイント
    * POST /auth/state
    */
+
+  @ApiOkResponse({
+    type: AuthStateDto,
+  })
   @ApiBody({ type: AuthStateDto })
   @UsePipes(new ZodValidationPipe(authStateSchema))
   @Post('state')
@@ -509,6 +516,9 @@ export class AuthController {
    * SNS認証トークン検証エンドポイント
    * POST /auth/verify
    */
+  @ApiOkResponse({
+    type: AuthVerifyResponseDto
+  })
   @ApiBody({ type: VerifyTokenDto })
   @UsePipes(new ZodValidationPipe(verifyTokenSchema))
   @Post('verify')

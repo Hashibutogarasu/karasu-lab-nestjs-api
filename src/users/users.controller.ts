@@ -10,6 +10,7 @@ import { UserService } from '../data-base/query/user/user.service';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { ApiWrappedOkResponse } from '../decorators/api-wrapped-ok-response/api-wrapped-ok-response.decorator';
 import { AuthUser, PublicUser } from '../auth/decorators/auth-user.decorator';
+import { GetRolesResponseDto } from './users.dto';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
@@ -23,6 +24,16 @@ export class UsersController {
   @Get('me')
   async getMe(@AuthUser() user: PublicUser): Promise<PublicUser> {
     return user;
+  }
+
+  @ApiWrappedOkResponse({
+    type: GetRolesResponseDto
+  })
+  @ApiBearerAuth()
+  @Get('me/roles')
+  async getMyRoles(@AuthUser() user: PublicUser): Promise<GetRolesResponseDto> {
+    const roles = await this.userService.getUserRoles(user.id);
+    return { roles };
   }
 
   /**

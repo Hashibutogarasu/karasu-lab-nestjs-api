@@ -6,42 +6,43 @@ import {
   ApiProperty,
 } from '@nestjs/swagger';
 
-// Minimal wrapper DTO used only for Swagger schema generation
-class _ApiWrappedOkDto {
+class _ApiWrappedOkDto<T = unknown> {
   @ApiProperty({ example: true })
   success!: boolean;
 
   @ApiProperty({ example: 'OK' })
   message!: string;
 
-  // `data` will be replaced by an allOf merge with the concrete type when provided
+
   @ApiProperty({ type: Object as any, nullable: true, additionalProperties: true })
-  data?: unknown;
+  data?: T;
 }
 
 const META_KEY = 'api-wrapped-ok-response';
 
 export const ApiWrappedOkResponse = (meta?: { type?: Type<unknown>; description?: string } | unknown) => {
   const decorators: any[] = [SetMetadata(META_KEY, meta)];
-
-  // If caller provided a `type`, register it and produce a composed schema for Swagger
   const providedType = (meta && typeof meta === 'object' && (meta as any).type) || undefined;
 
   if (providedType) {
+    class _RuntimeApiWrappedOkDto extends _ApiWrappedOkDto<any> {
+      @ApiProperty({ type: providedType as any, nullable: true })
+      declare data?: any;
+    }
+
+    try {
+      const typeName = (providedType && (providedType as any).name) || 'Data';
+      const uniqueName = `Wrapped${typeName}`;
+      Object.defineProperty(_RuntimeApiWrappedOkDto, 'name', { value: uniqueName });
+    } catch (e) {
+      // ignore errors
+    }
+
     decorators.push(
-      ApiExtraModels(_ApiWrappedOkDto, providedType as Type<unknown>),
+      ApiExtraModels(_RuntimeApiWrappedOkDto, providedType as Type<unknown>),
       ApiOkResponse({
         description: (meta as any).description,
-        schema: {
-          allOf: [
-            { $ref: getSchemaPath(_ApiWrappedOkDto) },
-            {
-              properties: {
-                data: { $ref: getSchemaPath(providedType as Type<unknown>) },
-              },
-            },
-          ],
-        },
+        schema: { $ref: getSchemaPath(_RuntimeApiWrappedOkDto) },
       }),
     );
   } else {
