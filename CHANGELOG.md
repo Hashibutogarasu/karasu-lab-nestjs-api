@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.7.0...v1.8.0) (2025-10-29)
+
+
+### Features
+
+* add JWKS endpoint for OAuth public key discovery ([af28a85](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/af28a85ec493b6ed6e3ec3d9feaea07b051c454e))
+
 # [1.7.0](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.6.0...v1.7.0) (2025-10-29)
 
 
