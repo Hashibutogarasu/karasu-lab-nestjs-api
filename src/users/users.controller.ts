@@ -7,15 +7,16 @@ import { GoogleUser } from '../types/google-user';
 import { Permission } from '../auth/decorators/permission.decorator';
 import { PermissionType } from '../types/permission';
 import { UserService } from '../data-base/query/user/user.service';
-import { ApiBearerAuth, ApiOkResponse } from '@nestjs/swagger';
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiWrappedOkResponse } from '../decorators/api-wrapped-ok-response/api-wrapped-ok-response.decorator';
 import { AuthUser, PublicUser } from '../auth/decorators/auth-user.decorator';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
 export class UsersController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService) { }
 
-  @ApiOkResponse({
+  @ApiWrappedOkResponse({
     type: PublicUser,
   })
   @ApiBearerAuth()
@@ -29,7 +30,7 @@ export class UsersController {
    * Discord プロフィール情報を取得
    * JWT認証が必要で、かつDiscordプロフィールが存在する必要がある
    */
-  @ApiOkResponse({
+  @ApiWrappedOkResponse({
     type: DiscordUser,
   })
   @ApiBearerAuth()
@@ -45,7 +46,7 @@ export class UsersController {
    * Google プロフィール情報を取得
    * JWT認証が必要で、かつGoogleプロフィールが存在する必要がある
    */
-  @ApiOkResponse({
+  @ApiWrappedOkResponse({
     type: GoogleUser,
   })
   @ApiBearerAuth()
