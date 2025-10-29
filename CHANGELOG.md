@@ -1,3 +1,10 @@
+# [1.9.0](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.8.0...v1.9.0) (2025-10-29)
+
+
+### Features
+
+* add id_token support for OpenID Connect flow ([4f4a352](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/4f4a3526d877e372646017b584dbb40a4dfce18e))
+
 # [1.8.0](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.7.0...v1.8.0) (2025-10-29)
 
 
