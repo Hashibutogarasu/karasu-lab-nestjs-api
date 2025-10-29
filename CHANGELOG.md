@@ -1,3 +1,10 @@
+# [1.11.0](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.10.0...v1.11.0) (2025-10-29)
+
+
+### Features
+
+* improve JWT state API, enhance DTOs, and add user roles endpoint ([65e0f8e](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/65e0f8ecab43ba97ea07422b3d7c1e40e0c0d541))
+
 # [1.10.0](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.9.0...v1.10.0) (2025-10-29)
 
 
