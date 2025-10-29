@@ -1,3 +1,15 @@
+# [1.10.0](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.9.0...v1.10.0) (2025-10-29)
+
+
+### Bug Fixes
+
+* remove unsupported scopes from OpenID provider config ([11521dd](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/11521ddcd3d214e0670f68f5030f9a2aefdc5585))
+
+
+### Features
+
+* add OpenID Connect id_token support to OAuth flow ([89d71f6](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/89d71f6de1ce331659e1609ca3a575d9f6f62448))
+
 # [1.9.0](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.8.0...v1.9.0) (2025-10-29)
 
 
