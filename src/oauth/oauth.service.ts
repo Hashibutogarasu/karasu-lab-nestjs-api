@@ -5,6 +5,7 @@ import {
   DeleteOAuthClientDto,
   GetAvailableScopesRequestDto,
   GetAvailableScopesResponseDto,
+  idTokenPayloadSchema,
   OAuthAuthorizeQuery,
   OAuthJWT,
   OAuthTokenBodyDto,
@@ -185,8 +186,32 @@ export class OauthService {
     } as OAuthTokenResponseDto;
   }
 
-  async generateIdToken(user: PublicUser, client: OAuthClient): Promise<string | null> {
-    return null;
+  async generateIdToken(
+    user: PublicUser,
+    client: OAuthClient,
+  ): Promise<string | null> {
+    const iss = this.appConfig.get('issuerUrl');
+    if (!iss) {
+      throw AppErrorCodes.INTERNAL_SERVER_ERROR;
+    }
+
+    const now = Math.floor(Date.now() / 1000);
+    const exp = now + 60 * 60; // 1 hour
+
+    const payload = {
+      iss: iss,
+      sub: user.id,
+      aud: client.id,
+      iat: now,
+      exp: exp,
+    } as const;
+    const parsed = idTokenPayloadSchema.parse(payload);
+    try {
+      const token = this.jwtTokenService.encodePayload(parsed);
+      return token;
+    } catch (err) {
+      throw AppErrorCodes.INTERNAL_SERVER_ERROR;
+    }
   }
 
   async refreshToken(

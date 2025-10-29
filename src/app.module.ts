@@ -49,6 +49,7 @@ import { I18nTranslateModule } from './i18n-translate/i18n-translate.module';
 import { R2Module } from './cloudflare/r2/r2.module';
 import { AppConfigService } from './app-config/app-config.service';
 import { EncryptionService } from './encryption/encryption.service';
+import { WellKnownModule } from './well-known/well-known.module';
 
 @Module({
   imports: [
@@ -146,6 +147,7 @@ import { EncryptionService } from './encryption/encryption.service';
       module: I18nTranslateModule,
     },
     R2Module,
+    WellKnownModule,
   ],
   controllers: [AppController],
   providers: [

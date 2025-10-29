@@ -117,6 +117,20 @@ describe('OAuth e2e (PKCE) flow', () => {
             : `access:${payload.id}`;
         return token;
       }
+      if (payload && payload.sub && payload.aud) {
+        const header = Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT' }))
+          .toString('base64')
+          .replace(/=+$/, '')
+          .replace(/\+/g, '-')
+          .replace(/\//g, '_');
+        const body = Buffer.from(JSON.stringify(payload))
+          .toString('base64')
+          .replace(/=+$/, '')
+          .replace(/\+/g, '-')
+          .replace(/\//g, '_');
+        return `${header}.${body}.signature`;
+      }
+
       return 'tok_unknown';
     }),
     verifyJWTToken: jest.fn().mockImplementation(async (token: string) => {
@@ -174,9 +188,6 @@ describe('OAuth e2e (PKCE) flow', () => {
     deleteByUserAndClient: jest
       .fn()
       .mockImplementation(async (userId: string, clientId: string) => {
-        // Delete all grants for the given clientId regardless of the userId.
-        // This simulates invalidating all authorizations for that client when
-        // the owner rotates the secret or deletes the client.
         let count = 0;
         for (const k of Object.keys(grants)) {
           if (grants[k].clientId === clientId) {
@@ -243,7 +254,12 @@ describe('OAuth e2e (PKCE) flow', () => {
         },
         { provide: JwtTokenService, useValue: mockJwtTokenService },
         { provide: EncryptionService, useValue: mockEncryptionService },
-        { provide: AppConfigService, useValue: { get: () => ({}) } },
+        {
+          provide: AppConfigService,
+          useValue: {
+            get: (k?: string) => (k === 'issuerUrl' ? 'https://api.test' : {}),
+          },
+        },
         {
           provide: I18nTranslateService,
           useValue: {
@@ -842,6 +858,45 @@ describe('OAuth e2e (PKCE) flow', () => {
 
     expect([200, 201]).toContain(tokRes.status);
     expect(tokRes.body.scope).toMatch(/openid/);
+    expect(typeof tokRes.body.id_token).toBe('string');
+    expect(tokRes.body.id_token.split('.').length).toBe(3);
+  });
+
+  it('does not return id_token when openid scope is not requested', async () => {
+    const authRes = await request(app.getHttpServer())
+      .get('/oauth/authorize')
+      .set('Authorization', 'Bearer user:no_openid')
+      .query({
+        response_type: 'code',
+        client_id: 'test-client',
+        redirect_uri: 'https://app.test/callback',
+        scope: 'user:read',
+        state: 's',
+        code_challenge: 'c',
+        code_challenge_method: 'S256',
+      });
+
+    expect(authRes.status).toBe(302);
+    const code = new URL(authRes.headers.location).searchParams.get('code')!;
+
+    const tokRes = await request(app.getHttpServer())
+      .post('/oauth/token')
+      .set(
+        'Authorization',
+        'Basic ' + Buffer.from('test-client:secret').toString('base64'),
+      )
+      .type('form')
+      .send({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: 'https://app.test/callback',
+        code_verifier: 'v',
+      });
+
+    expect([200, 201]).toContain(tokRes.status);
+    expect(tokRes.body.scope).not.toMatch(/openid/);
+    // When openid is not requested, id_token is returned as null
+    expect(tokRes.body.id_token).toBeNull();
   });
 
   it('grants profile scope and returns it in token response', async () => {
