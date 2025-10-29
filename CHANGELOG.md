@@ -1,3 +1,10 @@
+# [1.7.0](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.6.0...v1.7.0) (2025-10-29)
+
+
+### Features
+
+* migrate JWT to RSA keys with EncryptionService integration ([5d2aa7e](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/5d2aa7e0ae9cdd9dd3ed7e14476048266e7a474d))
+
 # [1.6.0](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.5.0...v1.6.0) (2025-10-28)
 
 
