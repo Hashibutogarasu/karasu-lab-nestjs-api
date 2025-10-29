@@ -1,3 +1,10 @@
+## [1.11.1](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.11.0...v1.11.1) (2025-10-29)
+
+
+### Bug Fixes
+
+* unify DTO formatting and response structure in auth ([1817b01](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/1817b01bf49ccf4dedc7852e9d4ee4bd9e8e7509))
+
 # [1.11.0](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.10.0...v1.11.0) (2025-10-29)
 
 
