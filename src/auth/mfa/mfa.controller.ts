@@ -42,7 +42,7 @@ export class MfaController {
     private readonly authService: AuthService,
     private readonly totp: TotpService,
     private readonly jwtTokenService: JwtTokenService,
-  ) { }
+  ) {}
 
   @ApiCreatedResponse({ type: MfaSetupResponseDto })
   @Post('setup')

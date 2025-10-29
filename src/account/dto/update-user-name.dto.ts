@@ -5,4 +5,4 @@ export const updateUserNameSchema = z.object({
   username: z.string(),
 });
 
-export class UpdateUserNameDto extends createZodDto(updateUserNameSchema) { }
+export class UpdateUserNameDto extends createZodDto(updateUserNameSchema) {}

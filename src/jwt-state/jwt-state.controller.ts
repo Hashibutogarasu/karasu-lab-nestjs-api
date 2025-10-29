@@ -13,7 +13,14 @@ import * as client from '@prisma/client';
 import { JwtstateService } from '../data-base/query/jwtstate/jwtstate.service';
 import { IsAdmin } from '../auth/decorators/is-admin.decorator';
 import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
-import { CreateJwtStateResponseDto, JwtStateDeleteDto, JwtStateFindAllResponseDto, JwtStateFindDto, UpdateJwtStateDto, UpdateJWTStateResponseDto } from './jwt-state.dto';
+import {
+  CreateJwtStateResponseDto,
+  JwtStateDeleteDto,
+  JwtStateFindAllResponseDto,
+  JwtStateFindDto,
+  UpdateJwtStateDto,
+  UpdateJWTStateResponseDto,
+} from './jwt-state.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiWrappedOkResponse } from '../decorators/api-wrapped-ok-response/api-wrapped-ok-response.decorator';
 
@@ -21,7 +28,7 @@ import { ApiWrappedOkResponse } from '../decorators/api-wrapped-ok-response/api-
 @UseGuards(JwtAuthGuard)
 @Controller('jwt-state')
 export class JwtStateController {
-  constructor(private readonly jwtStateService: JwtstateService) { }
+  constructor(private readonly jwtStateService: JwtstateService) {}
 
   @ApiWrappedOkResponse({
     type: CreateJwtStateResponseDto,

@@ -15,7 +15,7 @@ import { GetRolesResponseDto } from './users.dto';
 @Controller('users')
 @UseGuards(JwtAuthGuard)
 export class UsersController {
-  constructor(private readonly userService: UserService) { }
+  constructor(private readonly userService: UserService) {}
 
   @ApiWrappedOkResponse({
     type: PublicUser,
@@ -27,7 +27,7 @@ export class UsersController {
   }
 
   @ApiWrappedOkResponse({
-    type: GetRolesResponseDto
+    type: GetRolesResponseDto,
   })
   @ApiBearerAuth()
   @Get('me/roles')

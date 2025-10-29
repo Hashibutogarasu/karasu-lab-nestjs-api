@@ -73,9 +73,13 @@ describe('JwtStateController', () => {
     });
 
     it("should throw if a non-admin user tries to remove another user's JWTState", async () => {
-      jwtStateService.remove.mockRejectedValue(new Error('You can remove only your jwt state'));
+      jwtStateService.remove.mockRejectedValue(
+        new Error('You can remove only your jwt state'),
+      );
       // isAdmin: false
-      await expect(controller.remove({ id: 'jwt2' }, user, false)).rejects.toThrow('You can remove only your jwt state');
+      await expect(
+        controller.remove({ id: 'jwt2' }, user, false),
+      ).rejects.toThrow('You can remove only your jwt state');
     });
 
     it("should allow an admin to remove any user's JWTState", async () => {

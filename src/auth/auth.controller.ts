@@ -35,6 +35,7 @@ import {
   AuthProvidersDto,
   authProvidersSchema,
   AuthStateDto,
+  AuthStateResponseDto,
   authStateSchema,
   AuthVerifyResponseDto,
   LoginDto,
@@ -75,7 +76,7 @@ export class AuthController {
     private readonly snsAuthCoreService: AuthCoreService,
     private readonly jwtTokenService: JwtTokenService,
     private readonly mfaService: MfaService,
-  ) { }
+  ) {}
 
   private async getCodeChallengeFromState(stateCode?: string) {
     if (!stateCode) return undefined;
@@ -375,9 +376,8 @@ export class AuthController {
    * SNS認証ステート作成エンドポイント
    * POST /auth/state
    */
-
   @ApiOkResponse({
-    type: AuthStateDto,
+    type: AuthStateResponseDto,
   })
   @ApiBody({ type: AuthStateDto })
   @UsePipes(new ZodValidationPipe(authStateSchema))
@@ -388,17 +388,10 @@ export class AuthController {
     @Req() req: Request,
   ): Promise<void> {
     try {
-      // 入力検証
-      if (!authStateDto.provider || !authStateDto.callbackUrl) {
-        throw AppErrorCodes.INVALID_REQUEST;
-      }
-
-      // プロバイダーを取得
       const oauthProvider = this.oauthProviderFactory.getProvider(
         authStateDto.provider,
       );
 
-      // 認証ステートを作成
       const result = await this.snsAuthCoreService.createAuthenticationState(
         authStateDto,
         oauthProvider,
@@ -408,12 +401,10 @@ export class AuthController {
         throw AppErrorCodes.INTERNAL_SERVER_ERROR;
       }
 
-      // Use explicit BASE_URL if set, otherwise fall back to BASE_URL or the current request host.
       const baseUrl =
         process.env.BASE_URL! || `${req.protocol}://${req.headers.host}`;
       const backendCallbackUri = `${baseUrl.replace(/\/$/, '')}/auth/callback/${authStateDto.provider}`;
 
-      // AuthStateからcode_challengeを取得(X用)
       const codeChallenge = await this.getCodeChallengeFromState(
         result.stateCode,
       );
@@ -426,8 +417,8 @@ export class AuthController {
 
       res.status(HttpStatus.OK).json({
         message: 'Authentication state created successfully',
-        state_code: result.stateCode,
-        redirect_url: redirectUrl,
+        code: result.stateCode,
+        redirectUrl: redirectUrl,
       });
     } catch (error) {
       if (error instanceof AppErrorCode) {
@@ -517,7 +508,7 @@ export class AuthController {
    * POST /auth/verify
    */
   @ApiOkResponse({
-    type: AuthVerifyResponseDto
+    type: AuthVerifyResponseDto,
   })
   @ApiBody({ type: VerifyTokenDto })
   @UsePipes(new ZodValidationPipe(verifyTokenSchema))

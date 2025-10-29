@@ -253,8 +253,8 @@ describe('AuthController - SNS OAuth Authentication', () => {
       expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
       expect(mockJsonFn).toHaveBeenCalledWith({
         message: 'Authentication state created successfully',
-        state_code: expectedResult.stateCode,
-        redirect_url: expectedRedirectUrl,
+        code: expectedResult.stateCode,
+        redirectUrl: expectedRedirectUrl,
       });
     });
 
@@ -266,7 +266,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
 
       await expect(
         controller.createAuthState(invalidDto, mockResponse, mockRequest),
-      ).rejects.toThrow(AppErrorCodes.INVALID_REQUEST);
+      ).rejects.toThrow(AppErrorCodes.PROVIDER_NOT_FOUND);
     });
 
     it('should handle missing callback URL parameter', async () => {
@@ -277,7 +277,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
 
       await expect(
         controller.createAuthState(invalidDto, mockResponse, mockRequest),
-      ).rejects.toThrow(AppErrorCodes.INVALID_REQUEST);
+      ).rejects.toThrow(AppErrorCodes.INTERNAL_SERVER_ERROR);
     });
 
     it('should handle authentication state creation failure', async () => {

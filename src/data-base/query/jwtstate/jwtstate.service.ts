@@ -2,7 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import { JWTState, PrismaClient, User } from '@prisma/client';
 import { DataBaseService } from '../../data-base.service';
-import { CreateJwtStateDto, UpdateJwtStateDto } from '../../../jwt-state/jwt-state.dto';
+import {
+  CreateJwtStateDto,
+  UpdateJwtStateDto,
+} from '../../../jwt-state/jwt-state.dto';
 import { JwtTokenService } from '../../../auth/jwt-token/jwt-token.service';
 import { AppErrorCodes } from '../../../types/error-codes';
 import { PublicUser } from '../../../auth/decorators/auth-user.decorator';
@@ -129,7 +132,7 @@ export class JwtstateService {
 
   async findAll(user: PublicUser) {
     return {
-      states: await this.getAllJWTState({ userId: user.id })
+      states: await this.getAllJWTState({ userId: user.id }),
     };
   }
 

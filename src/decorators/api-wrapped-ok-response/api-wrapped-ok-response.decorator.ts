@@ -13,16 +13,22 @@ class _ApiWrappedOkDto<T = unknown> {
   @ApiProperty({ example: 'OK' })
   message!: string;
 
-
-  @ApiProperty({ type: Object as any, nullable: true, additionalProperties: true })
+  @ApiProperty({
+    type: Object as any,
+    nullable: true,
+    additionalProperties: true,
+  })
   data?: T;
 }
 
 const META_KEY = 'api-wrapped-ok-response';
 
-export const ApiWrappedOkResponse = (meta?: { type?: Type<unknown>; description?: string } | unknown) => {
+export const ApiWrappedOkResponse = (
+  meta?: { type?: Type<unknown>; description?: string } | unknown,
+) => {
   const decorators: any[] = [SetMetadata(META_KEY, meta)];
-  const providedType = (meta && typeof meta === 'object' && (meta as any).type) || undefined;
+  const providedType =
+    (meta && typeof meta === 'object' && (meta as any).type) || undefined;
 
   if (providedType) {
     class _RuntimeApiWrappedOkDto extends _ApiWrappedOkDto<any> {
@@ -33,7 +39,9 @@ export const ApiWrappedOkResponse = (meta?: { type?: Type<unknown>; description?
     try {
       const typeName = (providedType && (providedType as any).name) || 'Data';
       const uniqueName = `Wrapped${typeName}`;
-      Object.defineProperty(_RuntimeApiWrappedOkDto, 'name', { value: uniqueName });
+      Object.defineProperty(_RuntimeApiWrappedOkDto, 'name', {
+        value: uniqueName,
+      });
     } catch (e) {
       // ignore errors
     }

@@ -109,7 +109,7 @@ describe('JwtStateService', () => {
       });
       const res = await mockJwtStateService.findAll(mockUser);
       expect(res).toEqual({
-        states: [sampleJWTState]
+        states: [sampleJWTState],
       });
     });
 

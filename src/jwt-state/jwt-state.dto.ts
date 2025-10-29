@@ -8,9 +8,9 @@ const createJwtStateSchema = z.object({
   revoked: z.boolean().optional(),
 });
 
-export class CreateJwtStateDto extends createZodDto(createJwtStateSchema) { }
+export class CreateJwtStateDto extends createZodDto(createJwtStateSchema) {}
 
-export class UpdateJwtStateDto extends PartialType(CreateJwtStateDto) { }
+export class UpdateJwtStateDto extends PartialType(CreateJwtStateDto) {}
 
 export const createJwtStateResponseSchema = createJwtStateSchema.extend({
   jti: z.string(),
@@ -21,7 +21,7 @@ export const createJwtStateResponseSchema = createJwtStateSchema.extend({
 
 export class CreateJwtStateResponseDto extends createZodDto(
   createJwtStateResponseSchema,
-) { }
+) {}
 
 export const jwtStateFindSchema = z.object({
   id: z.cuid(),
@@ -32,13 +32,13 @@ export const jwtStateFindSchema = z.object({
   expiresAt: z.string().nullable(),
 });
 
-export class JwtStateFindDto extends createZodDto(jwtStateFindSchema) { }
+export class JwtStateFindDto extends createZodDto(jwtStateFindSchema) {}
 
 export const jwtStateDeleteSchema = z.object({
   id: z.string(),
 });
 
-export class JwtStateDeleteDto extends createZodDto(jwtStateDeleteSchema) { }
+export class JwtStateDeleteDto extends createZodDto(jwtStateDeleteSchema) {}
 
 export const jwtStateFindAllResponseSchema = z.object({
   states: z.array(jwtStateFindSchema),
@@ -46,6 +46,8 @@ export const jwtStateFindAllResponseSchema = z.object({
 
 export class JwtStateFindAllResponseDto extends createZodDto(
   jwtStateFindAllResponseSchema,
-) { }
+) {}
 
-export class UpdateJWTStateResponseDto extends createZodDto(jwtStateFindSchema) { }
+export class UpdateJWTStateResponseDto extends createZodDto(
+  jwtStateFindSchema,
+) {}
