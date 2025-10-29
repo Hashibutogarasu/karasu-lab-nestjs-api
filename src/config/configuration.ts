@@ -22,7 +22,6 @@ export const configSchema = z.object({
   PORT: transformStringToNumber(3000),
   BASE_URL: z.string().optional().default('http://localhost:3000'),
   ISSUER_URL: z.string().optional().default('http://localhost:3000'),
-  JWT_SECRET: z.string().optional().default('change_me'),
   REDIS_HOST: z.string().optional().default('localhost'),
   REDIS_PORT: transformStringToNumber(6379),
   DATABASE_URL: z.string().optional(),
@@ -52,13 +51,12 @@ export const configSchema = z.object({
   CLOUDFLARE_R2_CUSTOM_DOMAIN: z.string().optional(),
 });
 
-export class Configuration extends createZodDto(configSchema) {}
+export class Configuration extends createZodDto(configSchema) { }
 
 export default (env: Configuration) => ({
   port: env.PORT,
   baseUrl: env.BASE_URL,
   issuerUrl: env.ISSUER_URL ?? env.BASE_URL,
-  jwtSecret: env.JWT_SECRET,
   redisHost: env.REDIS_HOST,
   redisPort: env.REDIS_PORT,
   databaseUrl: env.DATABASE_URL,
