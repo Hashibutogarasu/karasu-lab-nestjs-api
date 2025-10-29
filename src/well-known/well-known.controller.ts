@@ -25,7 +25,7 @@ export class WellKnownController {
       token_endpoint,
       userinfo_endpoint,
       jwks_uri,
-      scopes_supported: ['openid', 'profile', 'email', 'address', 'phone'],
+      scopes_supported: ['openid', 'profile', 'email'],
       response_types_supported: ['code'],
       token_endpoint_auth_methods_supported: [
         'client_secret_basic',
