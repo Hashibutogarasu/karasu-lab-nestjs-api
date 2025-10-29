@@ -18,6 +18,7 @@ import {
   DeleteOAuthClientDto,
   GetAvailableScopesRequestDto,
   OAuthAuthorizeQuery,
+  OAuthJWKsResponseDto,
   OAuthTokenBodyDto,
   OAuthTokenResponseDto,
   OAuthTokenRevokeDto,
@@ -50,7 +51,7 @@ import { NoInterceptor } from '../interceptors/no-interceptor.decorator';
 @Controller('oauth')
 @UsePipes(ZodValidationPipe)
 export class OauthController {
-  constructor(private readonly oauthService: OauthService) {}
+  constructor(private readonly oauthService: OauthService) { }
 
   @ApiBadRequestResponse(AppErrorCodes.INVALID_REDIRECT_URI.apiResponse)
   @ApiInternalServerErrorResponse(
@@ -205,6 +206,9 @@ export class OauthController {
     return this.oauthService.deleteClient(body, user);
   }
 
+  @ApiOkResponse({
+    type: OAuthJWKsResponseDto,
+  })
   @Get('jwks.json')
   @Header('Cache-Control', 'public, max-age=3600, must-revalidate')
   async getJwks() {

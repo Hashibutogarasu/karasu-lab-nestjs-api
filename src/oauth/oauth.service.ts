@@ -167,13 +167,26 @@ export class OauthService {
 
     const finalScopes = Array.from(new Set([...scopesOut, ...oidcScopes]));
 
+    // TODO: generate id_token if 'openid' scope is present
+
+    let id_token: string | null = null;
+
+    if (finalScopes.includes('openid')) {
+      id_token = await this.generateIdToken(user, client);
+    }
+
     return {
       access_token: accessToken,
       token_type: 'Bearer',
       expires_in,
       refresh_token: refreshToken,
       scope: finalScopes.join(' '),
+      id_token,
     } as OAuthTokenResponseDto;
+  }
+
+  async generateIdToken(user: PublicUser, client: OAuthClient): Promise<string | null> {
+    return null;
   }
 
   async refreshToken(
