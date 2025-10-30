@@ -17,6 +17,7 @@ import { JwtTokenService } from '../auth/jwt-token/jwt-token.service';
 import { DataBaseService } from '../data-base/data-base.service';
 import { UtilityService } from '../data-base/utility/utility.service';
 import { RoleService } from '../data-base/query/role/role.service';
+import { SessionService } from '../data-base/query/session/session.service';
 
 describe('DifyController', () => {
   let controller: DifyController;
@@ -59,6 +60,9 @@ describe('DifyController', () => {
     const mockDatabaseService = mock<DataBaseService>();
     const mockUtilityService = mock<UtilityService>();
     const mockRoleService = mock<RoleService>();
+    const mockSessionService = mock<SessionService>();
+    const mockAuthService = mock<AuthService>();
+    const mockDifyService = mock<DifyService>();
 
     const module: TestingModule = await getGlobalModule({
       imports: [
@@ -90,16 +94,15 @@ describe('DifyController', () => {
         },
         {
           provide: DifyService,
-          useValue: {
-            sendChatMessageStream: jest.fn(),
-            parseSSEStream: jest.fn(),
-          },
+          useValue: mockDifyService,
         },
         {
           provide: AuthService,
-          useValue: {
-            getUserProfileById: jest.fn(),
-          },
+          useValue: mockAuthService,
+        },
+        {
+          provide: SessionService,
+          useValue: mockSessionService,
         },
         JwtAuthGuard,
         DomainGuard,

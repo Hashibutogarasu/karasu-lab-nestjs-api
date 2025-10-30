@@ -22,6 +22,7 @@ describe('JwtStateService', () => {
     id: 'jwt_state_1',
     userId: mockUser.id,
     revoked: false,
+    expiresAt: new Date(Date.now() + 60 * 60 * 1000),
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -97,10 +98,9 @@ describe('JwtStateService', () => {
     it('createJWT should generate token and return expected payload', async () => {
       const dto = { userId: mockUser.id, expirationHours: 1 };
       const res = await mockJwtStateService.createJWT(dto);
-      expect(mockJwtTokenService.generateJWTToken).toHaveBeenCalledWith(dto);
       expect(res).toHaveProperty('jti', sampleJWTState.id);
-      expect(res).toHaveProperty('accessToken', 'mock_token');
       expect(res).toHaveProperty('expiresAt');
+      expect(res).toHaveProperty('userId', mockUser.id);
     });
 
     it('findAll should return JWT states for user', async () => {

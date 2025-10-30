@@ -3,6 +3,7 @@ import { PictureController } from './picture.controller';
 import { mock } from 'jest-mock-extended';
 import { AccountPictureService } from './picture.service';
 import { JwtTokenService } from '../../auth/jwt-token/jwt-token.service';
+import { SessionService } from '../../data-base/query/session/session.service';
 
 describe('PictureController', () => {
   let controller: PictureController;
@@ -10,6 +11,7 @@ describe('PictureController', () => {
   beforeEach(async () => {
     const mockAccountPictureService = mock<AccountPictureService>();
     const mockJwtTokenService = mock<JwtTokenService>();
+    const mockSessionService = mock<SessionService>();
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [PictureController],
@@ -21,6 +23,10 @@ describe('PictureController', () => {
         {
           provide: JwtTokenService,
           useValue: mockJwtTokenService,
+        },
+        {
+          provide: SessionService,
+          useValue: mockSessionService,
         },
       ],
     }).compile();

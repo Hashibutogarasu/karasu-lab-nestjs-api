@@ -19,6 +19,9 @@ class _ApiWrappedOkDto<T = unknown> {
     additionalProperties: true,
   })
   data?: T;
+
+  @ApiProperty({ example: 'session-id-12345', required: false })
+  sessionId?: string;
 }
 
 const META_KEY = 'api-wrapped-ok-response';

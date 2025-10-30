@@ -21,7 +21,7 @@ export const discordProfileSchema = z.object({
   public_flags: z.number().optional(),
 });
 
-export class DiscordProfile extends createZodDto(discordProfileSchema) { }
+export class DiscordProfile extends createZodDto(discordProfileSchema) {}
 
 export const discordTokenResponseSchema = z.object({
   access_token: z.string(),
@@ -33,7 +33,7 @@ export const discordTokenResponseSchema = z.object({
 
 export class DiscordTokenResponse extends createZodDto(
   discordTokenResponseSchema,
-) { }
+) {}
 
 /**
  * Discordの認可コードをアクセストークンに交換

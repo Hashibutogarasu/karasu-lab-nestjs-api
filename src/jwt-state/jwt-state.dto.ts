@@ -6,6 +6,7 @@ const createJwtStateSchema = z.object({
   id: z.string().optional(),
   userId: z.string(),
   revoked: z.boolean().optional(),
+  sessionId: z.string().optional(),
 });
 
 export class CreateJwtStateDto extends createZodDto(createJwtStateSchema) {}
@@ -14,7 +15,7 @@ export class UpdateJwtStateDto extends PartialType(CreateJwtStateDto) {}
 
 export const createJwtStateResponseSchema = createJwtStateSchema.extend({
   jti: z.string(),
-  accessToken: z.string(),
+  accessToken: z.string().optional(),
   expiresAt: z.number(),
   userId: z.string(),
 });

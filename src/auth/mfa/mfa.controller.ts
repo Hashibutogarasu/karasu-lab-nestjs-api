@@ -19,6 +19,7 @@ import { AppErrorCodes } from '../../types/error-codes';
 import { TotpService } from '../../totp/totp.service';
 import { MfaService } from '../../data-base/query/mfa/mfa.service';
 import { JwtTokenService } from '../jwt-token/jwt-token.service';
+import { SessionService } from '../../data-base/query/session/session.service';
 import {
   MfaGetBackupCodesResponseDto,
   MfaSetupResponseDto,
@@ -42,6 +43,7 @@ export class MfaController {
     private readonly authService: AuthService,
     private readonly totp: TotpService,
     private readonly jwtTokenService: JwtTokenService,
+    private readonly sessionService: SessionService,
   ) {}
 
   @ApiCreatedResponse({ type: MfaSetupResponseDto })
@@ -139,6 +141,11 @@ export class MfaController {
       throw AppErrorCodes.TOKEN_GENERATION_FAILED;
     }
 
+    const { id } = await this.sessionService.create({
+      userId,
+      jti: tokenResult.jti,
+    });
+
     res.status(HttpStatus.OK).json({
       message: 'MFA verification successful',
       jti: tokenResult.jti,
@@ -147,6 +154,7 @@ export class MfaController {
       expires_in: 60 * 60,
       refresh_token: tokenResult.refreshToken,
       refresh_expires_in: 60 * 60 * 24 * 30,
+      sessionId: id,
     });
   }
 }

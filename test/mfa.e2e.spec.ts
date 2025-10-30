@@ -121,6 +121,7 @@ describe('MFA e2e flow', () => {
         },
         user: { roles: [] },
         expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        sessionId: 'sessionId_test',
       }),
       verifyJWTToken: jest
         .fn()
@@ -193,6 +194,15 @@ describe('MFA e2e flow', () => {
       .useValue(mockExternalProviderAccessTokenService);
     // JwtStrategy depends on EncryptionService in AuthModule; tests mock JwtAuthGuard so we can stub JwtStrategy
     moduleBuilder.overrideProvider(JwtStrategy).useValue({});
+    // Ensure SessionService.create is available and returns a session id (new behavior)
+    moduleBuilder
+      .overrideProvider(
+        require('../src/data-base/query/session/session.service')
+          .SessionService,
+      )
+      .useValue({
+        create: jest.fn().mockResolvedValue({ id: 'sessionId_test' }),
+      });
 
     const moduleFixture: TestingModule = await moduleBuilder.compile();
 

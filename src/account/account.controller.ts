@@ -49,7 +49,7 @@ import { AppErrorCodes } from '../types/error-codes';
 
 @Controller('account')
 export class AccountController {
-  constructor(private readonly accountService: AccountService) { }
+  constructor(private readonly accountService: AccountService) {}
 
   /**
    * サインイン済みユーザーのパスワード変更
@@ -203,6 +203,8 @@ export class AccountController {
     @Res() res: Response,
   ) {
     await this.accountService.unlinkProvider(user.id, body.provider);
-    return res.status(HttpStatus.OK).json({ message: 'Provider unlinked successfully' });
+    return res
+      .status(HttpStatus.OK)
+      .json({ message: 'Provider unlinked successfully' });
   }
 }

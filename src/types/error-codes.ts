@@ -26,7 +26,7 @@ const getErrorSchema = ({
     customMessage: z.string().default(customMessage ?? 'An error occurred'),
   });
 
-export class ErrorDto extends createZodDto(getErrorSchema()) { }
+export class ErrorDto extends createZodDto(getErrorSchema()) {}
 
 /**
  * @example
@@ -61,10 +61,10 @@ export class AppErrorCode extends Error {
     });
 
     const className = `Error${this.name}Dto`;
-    const ZodDtoClass = class extends createZodDto(this.zodSchema) { };
+    const ZodDtoClass = class extends createZodDto(this.zodSchema) {};
     try {
       Object.defineProperty(ZodDtoClass, 'name', { value: className });
-    } catch (e) { }
+    } catch (e) {}
     this.zodDtoClass = ZodDtoClass;
   }
 
@@ -187,7 +187,9 @@ export const AppErrorCodes = {
     z.object({
       name: z.string().default('AuthStateCreationFailed'),
       code: z.number().default(500),
-      customMessage: z.string().default('Failed to create authentication state'),
+      customMessage: z
+        .string()
+        .default('Failed to create authentication state'),
     }),
   ),
   PROVIDER_NOT_FOUND: new AppErrorCode(
@@ -554,28 +556,36 @@ export const AppErrorCodes = {
     z.object({
       name: z.string().default('ExternalProviderLinkVerifyCreateFailed'),
       code: z.number().default(500),
-      customMessage: z.string().default('Failed to create external provider link verification record'),
+      customMessage: z
+        .string()
+        .default('Failed to create external provider link verification record'),
     }),
   ),
   EXTERNAL_PROVIDER_LINK_VERIFY_DELETE_FAILED: new AppErrorCode(
     z.object({
       name: z.string().default('ExternalProviderLinkVerifyDeleteFailed'),
       code: z.number().default(500),
-      customMessage: z.string().default('Failed to delete external provider link verification record'),
+      customMessage: z
+        .string()
+        .default('Failed to delete external provider link verification record'),
     }),
   ),
   EXTERNAL_PROVIDER_LINK_VERIFY_VERIFY_FAILED: new AppErrorCode(
     z.object({
       name: z.string().default('ExternalProviderLinkVerifyVerifyFailed'),
       code: z.number().default(500),
-      customMessage: z.string().default('Failed to verify external provider link verification record'),
+      customMessage: z
+        .string()
+        .default('Failed to verify external provider link verification record'),
     }),
   ),
   PROVIDER_MUST_HAVE_ONE: new AppErrorCode(
     z.object({
       name: z.string().default('ProviderMustHaveOne'),
       code: z.number().default(400),
-      customMessage: z.string().default('Provider must have at least one linked account'),
+      customMessage: z
+        .string()
+        .default('Provider must have at least one linked account'),
     }),
   ),
 

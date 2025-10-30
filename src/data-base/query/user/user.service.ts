@@ -9,6 +9,7 @@ import { UtilityService } from '../../utility/utility.service';
 import { RoleDefinitions } from '../../../types/roles';
 import { RoleService } from '../role/role.service';
 import { AppErrorCodes } from '../../../types/error-codes';
+import { UsersMeResponseDto } from '../../../users/users.dto';
 
 @Injectable()
 export class UserService {
@@ -77,7 +78,7 @@ export class UserService {
   async updateUserNameById(userId: string, username: string) {
     const existingUser = await this.findUserByUsername(username);
     if (existingUser && existingUser.id !== userId) {
-      throw new Error('Username already taken');
+      throw AppErrorCodes.ALREADY_TAKEN_USERNAME;
     }
     return this.prisma.user.update({
       where: { id: userId },
@@ -241,7 +242,7 @@ export class UserService {
     });
 
     if (!user) {
-      throw new Error('User not found');
+      throw AppErrorCodes.USER_NOT_FOUND;
     }
 
     if (user.providers.includes(provider)) {
@@ -268,7 +269,7 @@ export class UserService {
     });
 
     if (!user) {
-      throw new Error('User not found');
+      throw AppErrorCodes.USER_NOT_FOUND;
     }
 
     if (!user.providers || !user.providers.includes(provider)) {

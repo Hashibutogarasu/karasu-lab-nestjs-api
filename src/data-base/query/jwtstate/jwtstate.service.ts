@@ -9,6 +9,7 @@ import {
 import { JwtTokenService } from '../../../auth/jwt-token/jwt-token.service';
 import { AppErrorCodes } from '../../../types/error-codes';
 import { PublicUser } from '../../../auth/decorators/auth-user.decorator';
+import cuid from 'cuid';
 
 @Injectable()
 export class JwtstateService {
@@ -22,24 +23,25 @@ export class JwtstateService {
   }
 
   async createJWT(createJwtStateDto: CreateJwtStateDto) {
-    const jwtTokenService = this.moduleRef.get(JwtTokenService, {
-      strict: false,
-    });
+    const iat = Math.floor(Date.now() / 1000);
+    const exp = iat + 1 * 60 * 60;
 
-    const tokenResult = await jwtTokenService.generateJWTToken({
-      userId: createJwtStateDto.userId,
-      expirationHours: 1,
-    });
+    const id = createJwtStateDto.id || cuid();
 
-    if (!tokenResult.success) {
-      throw AppErrorCodes.JWT_CREATION_FAILED;
-    }
+    const state = await this.createJWTState(
+      createJwtStateDto.userId,
+      iat,
+      exp,
+      {
+        id,
+        revoked: createJwtStateDto.revoked,
+      },
+    );
 
     return {
-      jti: tokenResult.jti,
-      accessToken: tokenResult.accessToken,
-      expiresAt: tokenResult.expiresAt,
-      userId: tokenResult.userId,
+      jti: state.id,
+      expiresAt: Math.floor(state.expiresAt!.getTime() / 1000),
+      userId: state.userId,
     };
   }
 
@@ -144,7 +146,7 @@ export class JwtstateService {
     id: string,
     updateJwtStateDto: UpdateJwtStateDto,
     user: PublicUser,
-    isAdmin: boolean,
+    isAdmin: boolean = false,
   ) {
     const state = await this.getJWTStateById(id);
 

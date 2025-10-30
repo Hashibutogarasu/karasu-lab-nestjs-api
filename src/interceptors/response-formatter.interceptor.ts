@@ -11,15 +11,15 @@ import { NO_INTERCEPTOR_KEY } from './no-interceptor.decorator';
 import z from 'zod';
 import { createGlobalResponseSchema } from '../app-global-response';
 
-const messageObjectSchema = z.object({ message: z.any() }).passthrough();
-
 @Injectable()
 export class ResponseFormatterInterceptor implements NestInterceptor {
-  constructor(private readonly reflector: Reflector) {}
+  constructor(private readonly reflector: Reflector) { }
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const handler = context.getHandler();
     const cls = context.getClass();
+
+    const req = context.switchToHttp().getRequest();
 
     const disabledOnHandler = this.reflector.get<boolean>(
       NO_INTERCEPTOR_KEY,
@@ -43,9 +43,9 @@ export class ResponseFormatterInterceptor implements NestInterceptor {
 
         const defaultMessage = 'OK';
 
-        const msgObjParse = messageObjectSchema.safeParse(value);
-        if (msgObjParse.success) {
-          const { message: msg, ...rest } = msgObjParse.data as Record<
+        const msgData = z.object({ message: z.any() }).loose().safeParse(value);
+        if (msgData.success) {
+          const { message: msg, ...rest } = msgData.data as Record<
             string,
             unknown
           >;
@@ -54,6 +54,7 @@ export class ResponseFormatterInterceptor implements NestInterceptor {
             success: true,
             message,
             data: rest,
+            sessionId: req.sessionId,
           };
         }
 
@@ -61,6 +62,7 @@ export class ResponseFormatterInterceptor implements NestInterceptor {
           success: true,
           message: defaultMessage,
           data: value,
+          sessionId: req.sessionId,
         };
       }),
     );

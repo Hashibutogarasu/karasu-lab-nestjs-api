@@ -17,6 +17,7 @@ import { DateTimeService } from '../date-time/date-time.service';
 import { OauthClientService } from './query/oauth-client/oauth-client.service';
 import { OauthGrantedTokenService } from './query/oauth-granted-token/oauth-granted-token.service';
 import { ExternalProviderLinkVerifyService } from './query/external-provider-link-verify/external-provider-link-verify.service';
+import { SessionService } from './query/session/session.service';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { ExternalProviderLinkVerifyService } from './query/external-provider-lin
     OauthClientService,
     OauthGrantedTokenService,
     ExternalProviderLinkVerifyService,
+    SessionService,
   ],
   exports: [
     UtilityService,
@@ -52,6 +54,7 @@ import { ExternalProviderLinkVerifyService } from './query/external-provider-lin
     UserService,
     ExtraProfileService,
     ExternalProviderLinkVerifyService,
+    SessionService,
   ],
 })
 export class DataBaseModule {

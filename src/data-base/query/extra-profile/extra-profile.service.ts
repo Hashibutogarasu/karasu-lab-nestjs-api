@@ -49,6 +49,7 @@ export class ExtraProfileService {
           providerId,
           provider,
         },
+        linkingVerified: true,
       },
       include: {
         user: true,
@@ -80,7 +81,7 @@ export class ExtraProfileService {
       where: {
         userId,
         provider,
-      }
+      },
     });
 
     if (!extraProfile) {
@@ -95,6 +96,12 @@ export class ExtraProfileService {
         },
         userId,
       },
+    });
+  }
+
+  async getPublicUserWithExtraProfiles(userId: string) {
+    return await this.prisma.extraProfile.findMany({
+      where: { userId, linkingVerified: true },
     });
   }
 }

@@ -5,7 +5,7 @@ export const createTokenRequestSchema = z.object({
   userId: z.string().uuid(),
   provider: z.string().optional(),
   expirationHours: z.number().nullable().optional().default(1),
-  jwtStateId: z.string().uuid().optional(),
+  jwtStateId: z.string().optional(),
 });
 
 export class CreateTokenRequest extends createZodDto(
@@ -21,6 +21,7 @@ export const jwtTokenProfileSchema = z.object({
 });
 
 export const createTokenResponseSchema = z.object({
+  id: z.string().optional(),
   success: z.boolean(),
   jti: z.cuid(),
   accessToken: z.string(),

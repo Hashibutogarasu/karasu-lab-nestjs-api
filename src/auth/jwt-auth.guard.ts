@@ -4,12 +4,14 @@ import { Request } from 'express';
 import { AppErrorCodes } from '../types/error-codes';
 import { UserService } from '../data-base/query/user/user.service';
 import { JwtTokenService } from './jwt-token/jwt-token.service';
+import { SessionService } from '../data-base/query/session/session.service';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
   constructor(
     private readonly userService: UserService,
     private readonly jwtTokenService: JwtTokenService,
+    private readonly sessionService: SessionService,
   ) {
     super();
   }
@@ -23,7 +25,12 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
     try {
       const result = await this.jwtTokenService.verifyJWTToken(token);
-      if (!result.success || !result.payload || !result.payload.sub) {
+      if (
+        !result.success ||
+        !result.payload ||
+        !result.payload.sub ||
+        !result.payload.jti
+      ) {
         throw AppErrorCodes.INVALID_TOKEN;
       }
 
@@ -31,8 +38,16 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         throw AppErrorCodes.USER_NOT_FOUND;
       }
 
-      request.user = { id: result.payload.sub };
-      return super.canActivate(context) as Promise<boolean>;
+      const user = await this.userService.findById(result.payload.sub);
+      const session = await this.sessionService.findByJti(result.payload.jti);
+
+      if (!session) {
+        throw AppErrorCodes.INVALID_SESSION;
+      }
+
+      request.user = user;
+      request.sessionId = session.id;
+      return true;
     } catch (err) {
       throw AppErrorCodes.INVALID_TOKEN;
     }

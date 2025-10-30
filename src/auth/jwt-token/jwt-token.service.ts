@@ -10,6 +10,7 @@ import { JWTState } from '@prisma/client';
 import { AppErrorCodes } from '../../types/error-codes';
 import { CommonJWTPayload } from '../../oauth/oauth.dto';
 import { VerifyTokenResponse } from './jwt-token.dto';
+import { PublicUser } from '../decorators/auth-user.decorator';
 
 @Injectable()
 export class JwtTokenService extends BaseService {
@@ -66,7 +67,7 @@ export class JwtTokenService extends BaseService {
       }
 
       const payload: JwtPayload = {
-        id: jwtState.id,
+        jti: jwtState.id,
         sub: user.id,
         provider: request.provider,
         iat,
@@ -99,7 +100,7 @@ export class JwtTokenService extends BaseService {
 
         return {
           success: true,
-          jti: jwtState.id,
+          jti: payload.jti!,
           accessToken: token,
           refreshToken,
           expiresAt,
@@ -111,6 +112,20 @@ export class JwtTokenService extends BaseService {
     } catch (error) {
       throw AppErrorCodes.INTERNAL_SERVER_ERROR;
     }
+  }
+
+  async updateJWTTokenSessionId(
+    tokenId: string,
+    user: PublicUser,
+    sessionId: string,
+  ) {
+    return await this.jwtStateService.update(
+      tokenId,
+      {
+        sessionId,
+      },
+      user,
+    );
   }
 
   /**

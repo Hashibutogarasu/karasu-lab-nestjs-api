@@ -20,6 +20,7 @@ import { AppErrorCodes } from '../src/types/error-codes';
 import { I18nTranslateService } from '../src/i18n-translate/i18n-translate.service';
 import { mock } from 'jest-mock-extended';
 import { EncryptionService } from '../src/encryption/encryption.service';
+import { SessionService } from '../src/data-base/query/session/session.service';
 
 describe('OAuth e2e (PKCE) flow', () => {
   let app: INestApplication;
@@ -235,6 +236,8 @@ describe('OAuth e2e (PKCE) flow', () => {
 
     const mockEncryptionService = mock<EncryptionService>();
 
+    const mockSessionService = mock<SessionService>();
+
     const moduleBuilder = Test.createTestingModule({
       controllers: [OauthController],
       providers: [
@@ -254,6 +257,10 @@ describe('OAuth e2e (PKCE) flow', () => {
         },
         { provide: JwtTokenService, useValue: mockJwtTokenService },
         { provide: EncryptionService, useValue: mockEncryptionService },
+        {
+          provide: SessionService,
+          useValue: mockSessionService,
+        },
         {
           provide: AppConfigService,
           useValue: {

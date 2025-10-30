@@ -23,4 +23,5 @@ export interface AuthStateResponse {
 export interface VerifyTokenRequest {
   stateCode: string;
   oneTimeToken: string;
+  jwtStateId?: string;
 }

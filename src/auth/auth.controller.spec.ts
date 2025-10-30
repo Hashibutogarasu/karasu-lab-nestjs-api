@@ -32,6 +32,7 @@ import { MfaService } from '../data-base/query/mfa/mfa.service';
 import { APP_PIPE } from '@nestjs/core';
 import { ZodValidationPipe } from '../zod-validation-type';
 import { ExternalProviderLinkVerifyService } from '../data-base/query/external-provider-link-verify/external-provider-link-verify.service';
+import { SessionService } from '../data-base/query/session/session.service';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -99,8 +100,12 @@ describe('AuthController', () => {
       }),
     });
     const mockMFaService = mock<MfaService>();
-    const mockExternalProviderLinkVerifyService = mock<ExternalProviderLinkVerifyService>();
+    const mockExternalProviderLinkVerifyService =
+      mock<ExternalProviderLinkVerifyService>();
     const mockUserService = mock<UserService>();
+    const mockSessionService = mock<SessionService>({
+      create: jest.fn().mockResolvedValue({ id: 'session_1' }),
+    });
 
     const module: TestingModule = await getGlobalModule({
       controllers: [AuthController],
@@ -151,7 +156,11 @@ describe('AuthController', () => {
         },
         {
           provide: ExternalProviderLinkVerifyService,
-          useValue: mockExternalProviderLinkVerifyService
+          useValue: mockExternalProviderLinkVerifyService,
+        },
+        {
+          provide: SessionService,
+          useValue: mockSessionService,
         },
         {
           provide: APP_PIPE,
@@ -249,7 +258,9 @@ describe('AuthController', () => {
         token_type: 'Bearer',
         expires_in: 60 * 60,
         refresh_token: expect.any(String),
+        sessionId: expect.any(String),
         refresh_expires_in: 60 * 60 * 24 * 30,
+        provider: 'email',
       });
     });
 
@@ -302,7 +313,9 @@ describe('AuthController', () => {
         token_type: 'Bearer',
         expires_in: 60 * 60,
         refresh_token: expect.any(String),
+        sessionId: expect.any(String),
         refresh_expires_in: 60 * 60 * 24 * 30,
+        provider: 'email',
       });
     });
 

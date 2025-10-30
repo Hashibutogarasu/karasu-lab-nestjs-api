@@ -18,6 +18,7 @@ import { JwtAuthGuard } from '../src/auth/jwt-auth.guard';
 import { mock } from 'jest-mock-extended';
 import { MfaService } from '../src/data-base/query/mfa/mfa.service';
 import { AppErrorCodes } from '../src/types/error-codes';
+import { SessionService } from '../src/data-base/query/session/session.service';
 
 jest.setTimeout(20000);
 
@@ -34,8 +35,13 @@ describe('Auth e2e (SNS link flows)', () => {
 
     // simple provider behavior
     mockGoogleProvider.getProvider.mockReturnValue('google');
-    mockGoogleProvider.processOAuth.mockResolvedValue({ snsProfile: {} as any, accessToken: 'at' });
-    mockGoogleProvider.getAuthorizationUrl.mockReturnValue('https://accounts.google.com/auth?');
+    mockGoogleProvider.processOAuth.mockResolvedValue({
+      snsProfile: {} as any,
+      accessToken: 'at',
+    });
+    mockGoogleProvider.getAuthorizationUrl.mockReturnValue(
+      'https://accounts.google.com/auth?',
+    );
 
     mockOAuthFactory.getProvider.mockImplementation((p: string) => {
       if (p === 'google') return mockGoogleProvider;
@@ -43,14 +49,19 @@ describe('Auth e2e (SNS link flows)', () => {
     });
 
     const mockAuthStateService = mock<AuthStateService>();
-    const mockExternalProviderAccessTokenService = mock<ExternalProviderAccessTokenService>();
+    const mockExternalProviderAccessTokenService =
+      mock<ExternalProviderAccessTokenService>();
     const mockJwtTokenService = mock<JwtTokenService>();
-    const mockExternalProviderLinkVerifyService = mock<ExternalProviderLinkVerifyService>();
+    const mockExternalProviderLinkVerifyService =
+      mock<ExternalProviderLinkVerifyService>();
     const mockDatabaseService = mock<DataBaseService>();
     const mockUtilityService = mock<UtilityService>();
     const mockRoleService = mock<RoleService>();
     const mockUserService = mock<UserService>();
     const mockMfaService = mock<MfaService>();
+    const mockSessionService = mock<SessionService>();
+    // New behavior: SessionService.create should return a session id for the tests
+    mockSessionService.create.mockResolvedValue({ id: 'session_1' } as any);
 
     const moduleBuilder = Test.createTestingModule({
       controllers: [AuthController],
@@ -59,14 +70,21 @@ describe('Auth e2e (SNS link flows)', () => {
         { provide: OAuthProviderFactory, useValue: mockOAuthFactory },
         { provide: AuthCoreService, useValue: mockAuthCoreService },
         { provide: AuthStateService, useValue: mockAuthStateService },
-        { provide: ExternalProviderAccessTokenService, useValue: mockExternalProviderAccessTokenService },
+        {
+          provide: ExternalProviderAccessTokenService,
+          useValue: mockExternalProviderAccessTokenService,
+        },
         { provide: JwtTokenService, useValue: mockJwtTokenService },
-        { provide: ExternalProviderLinkVerifyService, useValue: mockExternalProviderLinkVerifyService },
+        {
+          provide: ExternalProviderLinkVerifyService,
+          useValue: mockExternalProviderLinkVerifyService,
+        },
         { provide: DataBaseService, useValue: mockDatabaseService },
         { provide: UtilityService, useValue: mockUtilityService },
         { provide: RoleService, useValue: mockRoleService },
         { provide: UserService, useValue: mockUserService },
         { provide: MfaService, useValue: mockMfaService },
+        { provide: SessionService, useValue: mockSessionService },
       ],
     })
       // Override JWT guard to inject a user for link/verify route when needed
@@ -114,11 +132,22 @@ describe('Auth e2e (SNS link flows)', () => {
       expiresAt: new Date(Date.now() + 15 * 60 * 1000),
     } as any);
 
-    const snsProfile = { providerId: 'google_new_1', provider: 'google', email: 'new1@example.com' };
-    mockGoogleProvider.processOAuth.mockResolvedValue({ snsProfile: snsProfile as any, accessToken: 'access1' });
+    const snsProfile = {
+      providerId: 'google_new_1',
+      provider: 'google',
+      email: 'new1@example.com',
+    };
+    mockGoogleProvider.processOAuth.mockResolvedValue({
+      snsProfile: snsProfile as any,
+      accessToken: 'access1',
+    });
 
     // Auth core creates a new user
-    mockAuthCoreService.processSnsProfile.mockResolvedValue({ success: true, userId: 'new_user_1', oneTimeToken });
+    mockAuthCoreService.processSnsProfile.mockResolvedValue({
+      success: true,
+      userId: 'new_user_1',
+      oneTimeToken,
+    });
 
     // When verifying, core returns final jwt tokens
     mockAuthCoreService.verifyAndCreateToken.mockResolvedValue({
@@ -143,7 +172,12 @@ describe('Auth e2e (SNS link flows)', () => {
       .send({ stateCode, oneTimeToken })
       .expect(200);
 
-    expect(verifyRes.body).toMatchObject({ message: 'Token verified successfully', jti: 'jti1', access_token: 'jwt_access_1' });
+    expect(verifyRes.body).toMatchObject({
+      message: 'Token verified successfully',
+      jti: 'jti1',
+      access_token: 'jwt_access_1',
+      sessionId: 'session_1',
+    });
   });
 
   it('first-time SNS login does NOT issue JWT automatically (verify step required)', async () => {
@@ -160,11 +194,21 @@ describe('Auth e2e (SNS link flows)', () => {
       expiresAt: new Date(Date.now() + 15 * 60 * 1000),
     } as any);
 
-    const snsProfile = { providerId: 'google_new_no_auto', provider: 'google', email: 'noauto@example.com' };
-    mockGoogleProvider.processOAuth.mockResolvedValue({ snsProfile: snsProfile as any, accessToken: 'access_no_auto' });
+    const snsProfile = {
+      providerId: 'google_new_no_auto',
+      provider: 'google',
+      email: 'noauto@example.com',
+    };
+    mockGoogleProvider.processOAuth.mockResolvedValue({
+      snsProfile: snsProfile as any,
+      accessToken: 'access_no_auto',
+    });
 
     // processSnsProfile creates the user and returns a oneTimeToken, but DOES NOT create JWTs
-    mockAuthCoreService.processSnsProfile.mockResolvedValue({ userId: 'new_no_auto_user', oneTimeToken });
+    mockAuthCoreService.processSnsProfile.mockResolvedValue({
+      userId: 'new_no_auto_user',
+      oneTimeToken,
+    });
 
     // spy on verifyAndCreateToken to ensure it's NOT called during callback
     mockAuthCoreService.verifyAndCreateToken.mockResolvedValue({
@@ -192,7 +236,12 @@ describe('Auth e2e (SNS link flows)', () => {
       .expect(200);
 
     expect(mockAuthCoreService.verifyAndCreateToken).toHaveBeenCalledTimes(1);
-    expect(verifyRes.body).toMatchObject({ message: 'Token verified successfully', jti: 'jti_no_auto', access_token: 'jwt_access_no_auto' });
+    expect(verifyRes.body).toMatchObject({
+      message: 'Token verified successfully',
+      jti: 'jti_no_auto',
+      access_token: 'jwt_access_no_auto',
+      sessionId: 'session_1',
+    });
   });
 
   it('returns error when provider flow results in processing failure (e.g., provider not linked)', async () => {
@@ -208,11 +257,21 @@ describe('Auth e2e (SNS link flows)', () => {
       expiresAt: new Date(Date.now() + 15 * 60 * 1000),
     } as any);
 
-    const snsProfile = { providerId: 'google_err', provider: 'google', email: 'err@example.com' };
-    mockGoogleProvider.processOAuth.mockResolvedValue({ snsProfile: snsProfile as any, accessToken: 'access_err' });
+    const snsProfile = {
+      providerId: 'google_err',
+      provider: 'google',
+      email: 'err@example.com',
+    };
+    mockGoogleProvider.processOAuth.mockResolvedValue({
+      snsProfile: snsProfile as any,
+      accessToken: 'access_err',
+    });
 
     // Simulate processing failure (e.g., provider not linked / error)
-    mockAuthCoreService.processSnsProfile.mockResolvedValue({ success: false, error: 'user_not_linked' });
+    mockAuthCoreService.processSnsProfile.mockResolvedValue({
+      success: false,
+      error: 'user_not_linked',
+    });
 
     await request(app.getHttpServer())
       .get('/auth/callback/google')
@@ -234,14 +293,27 @@ describe('Auth e2e (SNS link flows)', () => {
       expiresAt: new Date(Date.now() + 15 * 60 * 1000),
     } as any);
 
-    const snsProfile = { providerId: 'google_link_1', provider: 'google', email: 'link1@example.com' };
-    mockGoogleProvider.processOAuth.mockResolvedValue({ snsProfile: snsProfile as any, accessToken: 'access_link' });
+    const snsProfile = {
+      providerId: 'google_link_1',
+      provider: 'google',
+      email: 'link1@example.com',
+    };
+    mockGoogleProvider.processOAuth.mockResolvedValue({
+      snsProfile: snsProfile as any,
+      accessToken: 'access_link',
+    });
 
     // processSnsProfile returns existing user
-    mockAuthCoreService.processSnsProfile.mockResolvedValue({ success: true, userId: 'existing_user_link', oneTimeToken });
+    mockAuthCoreService.processSnsProfile.mockResolvedValue({
+      success: true,
+      userId: 'existing_user_link',
+      oneTimeToken,
+    });
 
     // AuthService should create verify code for users with password (simulate)
-    mockAuthService.createExternalProviderLinkVerificationIfNeeded.mockResolvedValue('verifycode_e2e_1');
+    mockAuthService.createExternalProviderLinkVerificationIfNeeded.mockResolvedValue(
+      'verifycode_e2e_1',
+    );
 
     const res = await request(app.getHttpServer())
       .get('/auth/callback/google')
@@ -267,13 +339,26 @@ describe('Auth e2e (SNS link flows)', () => {
       expiresAt: new Date(Date.now() + 15 * 60 * 1000),
     } as any);
 
-    const snsProfile = { providerId: 'google_link_2', provider: 'google', email: 'link2@example.com' };
-    mockGoogleProvider.processOAuth.mockResolvedValue({ snsProfile: snsProfile as any, accessToken: 'access_link2' });
+    const snsProfile = {
+      providerId: 'google_link_2',
+      provider: 'google',
+      email: 'link2@example.com',
+    };
+    mockGoogleProvider.processOAuth.mockResolvedValue({
+      snsProfile: snsProfile as any,
+      accessToken: 'access_link2',
+    });
 
-    mockAuthCoreService.processSnsProfile.mockResolvedValue({ success: true, userId: 'existing_user_link2', oneTimeToken });
+    mockAuthCoreService.processSnsProfile.mockResolvedValue({
+      success: true,
+      userId: 'existing_user_link2',
+      oneTimeToken,
+    });
 
     // Initially createExternalProviderLinkVerificationIfNeeded returns a code
-    mockAuthService.createExternalProviderLinkVerificationIfNeeded.mockResolvedValue('verifycode_e2e_2');
+    mockAuthService.createExternalProviderLinkVerificationIfNeeded.mockResolvedValue(
+      'verifycode_e2e_2',
+    );
 
     // First callback should include verify code
     const res1 = await request(app.getHttpServer())
@@ -285,7 +370,9 @@ describe('Auth e2e (SNS link flows)', () => {
     expect(res1.headers.location).toContain('linkVerifyCode=verifycode_e2e_2');
 
     // Now simulate front-end POST to /auth/link/verify with authenticated user
-    mockAuthService.finalizeExternalProviderLinkAfterVerification.mockResolvedValue({ success: true });
+    mockAuthService.finalizeExternalProviderLinkAfterVerification.mockResolvedValue(
+      { success: true },
+    );
 
     // post with header to let our fake guard populate user
     const postRes = await request(app.getHttpServer())
@@ -294,11 +381,18 @@ describe('Auth e2e (SNS link flows)', () => {
       .send({ provider: 'google', verifyCode: 'verifycode_e2e_2' })
       .expect(200);
 
-    expect(postRes.body).toMatchObject({ message: 'Provider linked', success: true });
-    expect(mockAuthService.finalizeExternalProviderLinkAfterVerification).toHaveBeenCalledWith('existing_user_link2', 'google', 'verifycode_e2e_2');
+    expect(postRes.body).toMatchObject({
+      message: 'Provider linked',
+      success: true,
+    });
+    expect(
+      mockAuthService.finalizeExternalProviderLinkAfterVerification,
+    ).toHaveBeenCalledWith('existing_user_link2', 'google', 'verifycode_e2e_2');
 
     // After linking, createExternalProviderLinkVerificationIfNeeded should return null
-    mockAuthService.createExternalProviderLinkVerificationIfNeeded.mockResolvedValue(null);
+    mockAuthService.createExternalProviderLinkVerificationIfNeeded.mockResolvedValue(
+      null,
+    );
 
     // second callback should NOT include linkVerifyCode
     const res2 = await request(app.getHttpServer())
@@ -323,10 +417,19 @@ describe('Auth e2e (SNS link flows)', () => {
       expiresAt: new Date(Date.now() + 15 * 60 * 1000),
     } as any);
 
-    const snsProfile = { providerId: 'google_conflict_1', provider: 'google', email: 'exists@example.com' };
-    mockGoogleProvider.processOAuth.mockResolvedValue({ snsProfile: snsProfile as any, accessToken: 'access_conflict' });
+    const snsProfile = {
+      providerId: 'google_conflict_1',
+      provider: 'google',
+      email: 'exists@example.com',
+    };
+    mockGoogleProvider.processOAuth.mockResolvedValue({
+      snsProfile: snsProfile as any,
+      accessToken: 'access_conflict',
+    });
 
-    mockAuthCoreService.processSnsProfile.mockRejectedValue(AppErrorCodes.CONFLICT);
+    mockAuthCoreService.processSnsProfile.mockRejectedValue(
+      AppErrorCodes.CONFLICT,
+    );
 
     const res = await request(app.getHttpServer())
       .get('/auth/callback/google')
@@ -350,11 +453,22 @@ describe('Auth e2e (SNS link flows)', () => {
       expiresAt: new Date(Date.now() + 15 * 60 * 1000),
     } as any);
 
-    const snsProfile = { providerId: 'google_exists_1', provider: 'google', email: 'exists2@example.com' };
-    mockGoogleProvider.processOAuth.mockResolvedValue({ snsProfile: snsProfile as any, accessToken: 'access_exists' });
+    const snsProfile = {
+      providerId: 'google_exists_1',
+      provider: 'google',
+      email: 'exists2@example.com',
+    };
+    mockGoogleProvider.processOAuth.mockResolvedValue({
+      snsProfile: snsProfile as any,
+      accessToken: 'access_exists',
+    });
 
     // processSnsProfile finds existing profile and returns oneTimeToken
-    mockAuthCoreService.processSnsProfile.mockResolvedValue({ success: true, userId: 'existing_user_2', oneTimeToken });
+    mockAuthCoreService.processSnsProfile.mockResolvedValue({
+      success: true,
+      userId: 'existing_user_2',
+      oneTimeToken,
+    });
 
     // verifyAndCreateToken returns JWTs
     mockAuthCoreService.verifyAndCreateToken.mockResolvedValue({
@@ -377,6 +491,11 @@ describe('Auth e2e (SNS link flows)', () => {
       .send({ stateCode, oneTimeToken })
       .expect(200);
 
-    expect(verifyRes.body).toMatchObject({ message: 'Token verified successfully', jti: 'jti_exists', access_token: 'jwt_access_exists' });
+    expect(verifyRes.body).toMatchObject({
+      message: 'Token verified successfully',
+      jti: 'jti_exists',
+      access_token: 'jwt_access_exists',
+      sessionId: 'session_1',
+    });
   });
 });

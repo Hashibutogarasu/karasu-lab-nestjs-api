@@ -22,7 +22,6 @@ export class ExternalProviderLinkVerifyService {
     rawExternalProviderProfile: unknown;
     expiresInMinutes?: number;
   }) {
-
     try {
       await this.prisma.externalProviderLinkVerify.deleteMany({
         where: {
@@ -81,25 +80,7 @@ export class ExternalProviderLinkVerifyService {
       const ok = await bcrypt.compare(params.verifyCode, rec.verifyHashedCode);
       if (ok) {
         try {
-          try {
-            await this.prisma.externalProviderAccessToken.updateMany({
-              where: { userId: rec.userId, provider: rec.provider },
-              data: { linkingVerified: true },
-            });
-          } catch (e) {
-            // ignore and proceed; linkage verification should not fail hard because of this
-          }
-
-          try {
-            await this.prisma.extraProfile.updateMany({
-              where: { userId: rec.userId, provider: rec.provider },
-              data: { linkingVerified: true },
-            });
-          } catch (e) {
-            // ignore and proceed
-          }
-
-          await this.prisma.externalProviderLinkVerify.delete({ where: { id: rec.id } });
+          await this.markAsLinkingVerified(rec.id, rec.userId, rec.provider);
         } catch (e) {
           throw AppErrorCodes.EXTERNAL_PROVIDER_LINK_VERIFY_DELETE_FAILED;
         }
@@ -133,5 +114,21 @@ export class ExternalProviderLinkVerifyService {
     } catch (err) {
       throw AppErrorCodes.EXTERNAL_PROVIDER_LINK_VERIFY_DELETE_FAILED;
     }
+  }
+
+  async markAsLinkingVerified(processId: string, userId: string, provider: string) {
+    await this.prisma.externalProviderAccessToken.updateMany({
+      where: { userId: userId, provider: provider },
+      data: { linkingVerified: true },
+    });
+
+    await this.prisma.extraProfile.updateMany({
+      where: { userId: userId, provider: provider },
+      data: { linkingVerified: true },
+    });
+
+    await this.prisma.externalProviderLinkVerify.delete({
+      where: { id: processId },
+    });
   }
 }

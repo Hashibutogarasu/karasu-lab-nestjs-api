@@ -55,10 +55,12 @@ describe('AccountController - Password Management', () => {
   beforeEach(async () => {
     const mockResendService = mock<ResendService>();
     mockUserService = mock<UserService>();
-    const mockPendingEmailChangeService = mock<PendingEmailChangeProcessService>();
+    const mockPendingEmailChangeService =
+      mock<PendingEmailChangeProcessService>();
     const mockPasswordService = mock<PasswordService>();
     const mockJwtTokenService = mock<JwtTokenService>();
-    mockExternalProviderAccessTokenService = mock<ExternalProviderAccessTokenService>();
+    mockExternalProviderAccessTokenService =
+      mock<ExternalProviderAccessTokenService>();
     const mockExtraProfileService = mock<ExtraProfileService>();
 
     const module: TestingModule = await getGlobalModule({
@@ -80,7 +82,7 @@ describe('AccountController - Password Management', () => {
         {
           provide: ExtraProfileService,
           useValue: mockExtraProfileService,
-        }
+        },
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -752,47 +754,60 @@ describe('AccountController - Password Management', () => {
   describe('unlink provider behaviour', () => {
     it('removes provider from user and deletes associated external provider tokens so profile/token become inaccessible', async () => {
       let providerLinked = true;
-      let tokens = [
-        { id: 'token1', provider: 'github', userId: 'user_123' },
-      ];
+      let tokens = [{ id: 'token1', provider: 'github', userId: 'user_123' }];
 
-      mockUserService.findUserById.mockImplementation(async (userId: string) => {
-        return {
-          id: userId,
-          username: 'testuser',
-          email: 'test@example.com',
-          passwordHash: 'hashed-password',
-          providers: providerLinked ? ['github'] : [],
-          extraProfiles: providerLinked
-            ? [{ provider: 'github', providerId: 'prov_1' }]
-            : [],
-        };
-      });
+      mockUserService.findUserById.mockImplementation(
+        async (userId: string) => {
+          return {
+            id: userId,
+            username: 'testuser',
+            email: 'test@example.com',
+            passwordHash: 'hashed-password',
+            providers: providerLinked ? ['github'] : [],
+            extraProfiles: providerLinked
+              ? [{ provider: 'github', providerId: 'prov_1' }]
+              : [],
+          };
+        },
+      );
 
-      mockUserService.removeUserProvider.mockImplementation(async (userId: string) => {
-        providerLinked = false;
-        return mockUserService.findUserById(userId);
-      });
+      mockUserService.removeUserProvider.mockImplementation(
+        async (userId: string) => {
+          providerLinked = false;
+          return mockUserService.findUserById(userId);
+        },
+      );
 
-      mockExternalProviderAccessTokenService.getByUserId.mockImplementation(async (userId: string) => {
-        return tokens.filter((t) => t.userId === userId);
-      });
+      mockExternalProviderAccessTokenService.getByUserId.mockImplementation(
+        async (userId: string) => {
+          return tokens.filter((t) => t.userId === userId);
+        },
+      );
 
-      mockExternalProviderAccessTokenService.delete.mockImplementation(async (id: string) => {
-        tokens = tokens.filter((t) => t.id !== id);
-        return true;
-      });
+      mockExternalProviderAccessTokenService.delete.mockImplementation(
+        async (id: string) => {
+          tokens = tokens.filter((t) => t.id !== id);
+          return true;
+        },
+      );
 
       const beforeUser = await mockUserService.findUserById('user_123');
-      const beforeTokens = await mockExternalProviderAccessTokenService.getByUserId('user_123');
+      const beforeTokens =
+        await mockExternalProviderAccessTokenService.getByUserId('user_123');
       expect(beforeUser.providers).toContain('github');
       expect(beforeTokens).toHaveLength(1);
 
       await mockAccountService.unlinkProvider('user_123', 'github');
-      expect(mockUserService.removeUserProvider).toHaveBeenCalledWith('user_123', 'github');
-      expect(mockExternalProviderAccessTokenService.delete).toHaveBeenCalledWith('token1');
+      expect(mockUserService.removeUserProvider).toHaveBeenCalledWith(
+        'user_123',
+        'github',
+      );
+      expect(
+        mockExternalProviderAccessTokenService.delete,
+      ).toHaveBeenCalledWith('token1');
 
-      const afterTokens = await mockExternalProviderAccessTokenService.getByUserId('user_123');
+      const afterTokens =
+        await mockExternalProviderAccessTokenService.getByUserId('user_123');
       const afterUser = await mockUserService.findUserById('user_123');
 
       expect(afterTokens).toHaveLength(0);
@@ -803,16 +818,18 @@ describe('AccountController - Password Management', () => {
 
   describe('unlink provider edge cases', () => {
     it('throws PROVIDER_MUST_HAVE_ONE when passwordless user would end up with zero providers', async () => {
-      mockUserService.findUserById.mockImplementation(async (userId: string) => {
-        return {
-          id: userId,
-          username: 'testuser',
-          email: 'test@example.com',
-          passwordHash: null,
-          providers: ['discord'],
-          extraProfiles: [{ provider: 'discord', providerId: 'p_1' }],
-        };
-      });
+      mockUserService.findUserById.mockImplementation(
+        async (userId: string) => {
+          return {
+            id: userId,
+            username: 'testuser',
+            email: 'test@example.com',
+            passwordHash: null,
+            providers: ['discord'],
+            extraProfiles: [{ provider: 'discord', providerId: 'p_1' }],
+          };
+        },
+      );
 
       mockUserService.removeUserProvider.mockImplementation(async () => {
         return {
@@ -821,55 +838,77 @@ describe('AccountController - Password Management', () => {
       });
 
       let tokens = [{ id: 't1', provider: 'discord', userId: 'user_123' }];
-      mockExternalProviderAccessTokenService.getByUserId.mockImplementation(async () => tokens);
-      mockExternalProviderAccessTokenService.delete.mockImplementation(async (id: string) => {
-        tokens = tokens.filter((t) => t.id !== id);
-        return true;
-      });
+      mockExternalProviderAccessTokenService.getByUserId.mockImplementation(
+        async () => tokens,
+      );
+      mockExternalProviderAccessTokenService.delete.mockImplementation(
+        async (id: string) => {
+          tokens = tokens.filter((t) => t.id !== id);
+          return true;
+        },
+      );
 
       await expect(
         mockAccountService.unlinkProvider('user_123', 'discord'),
       ).rejects.toThrow(AppErrorCodes.PROVIDER_MUST_HAVE_ONE);
 
       expect(mockUserService.removeUserProvider).not.toHaveBeenCalled();
-      expect(mockExternalProviderAccessTokenService.delete).not.toHaveBeenCalled();
+      expect(
+        mockExternalProviderAccessTokenService.delete,
+      ).not.toHaveBeenCalled();
     });
 
     it('allows unlink when user has a password even if it becomes zero providers afterwards', async () => {
       let providerLinked = true;
       let tokens = [{ id: 'tokA', provider: 'github', userId: 'user_123' }];
 
-      mockUserService.findUserById.mockImplementation(async (userId: string) => {
-        return {
-          id: userId,
-          username: 'testuser',
-          email: 'test@example.com',
-          passwordHash: 'hashed',
-          providers: providerLinked ? ['github'] : [],
-          extraProfiles: providerLinked ? [{ provider: 'github', providerId: 'prov' }] : [],
-        };
-      });
+      mockUserService.findUserById.mockImplementation(
+        async (userId: string) => {
+          return {
+            id: userId,
+            username: 'testuser',
+            email: 'test@example.com',
+            passwordHash: 'hashed',
+            providers: providerLinked ? ['github'] : [],
+            extraProfiles: providerLinked
+              ? [{ provider: 'github', providerId: 'prov' }]
+              : [],
+          };
+        },
+      );
 
-      mockUserService.removeUserProvider.mockImplementation(async (userId: string) => {
-        providerLinked = false;
-        return mockUserService.findUserById(userId);
-      });
+      mockUserService.removeUserProvider.mockImplementation(
+        async (userId: string) => {
+          providerLinked = false;
+          return mockUserService.findUserById(userId);
+        },
+      );
 
-      mockExternalProviderAccessTokenService.getByUserId.mockImplementation(async () => tokens.slice());
-      mockExternalProviderAccessTokenService.delete.mockImplementation(async (id: string) => {
-        tokens = tokens.filter((t) => t.id !== id);
-        return true;
-      });
+      mockExternalProviderAccessTokenService.getByUserId.mockImplementation(
+        async () => tokens.slice(),
+      );
+      mockExternalProviderAccessTokenService.delete.mockImplementation(
+        async (id: string) => {
+          tokens = tokens.filter((t) => t.id !== id);
+          return true;
+        },
+      );
 
       await expect(
         mockAccountService.unlinkProvider('user_123', 'github'),
       ).resolves.toBeUndefined();
 
-      expect(mockUserService.removeUserProvider).toHaveBeenCalledWith('user_123', 'github');
-      expect(mockExternalProviderAccessTokenService.delete).toHaveBeenCalledWith('tokA');
+      expect(mockUserService.removeUserProvider).toHaveBeenCalledWith(
+        'user_123',
+        'github',
+      );
+      expect(
+        mockExternalProviderAccessTokenService.delete,
+      ).toHaveBeenCalledWith('tokA');
 
       const afterUser = await mockUserService.findUserById('user_123');
-      const afterTokens = await mockExternalProviderAccessTokenService.getByUserId('user_123');
+      const afterTokens =
+        await mockExternalProviderAccessTokenService.getByUserId('user_123');
 
       expect(afterUser.providers).not.toContain('github');
       expect(afterTokens).toHaveLength(0);

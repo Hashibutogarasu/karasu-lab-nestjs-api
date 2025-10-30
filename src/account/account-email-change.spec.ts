@@ -12,6 +12,7 @@ import { JwtTokenService } from '../auth/jwt-token/jwt-token.service';
 import { mockUser } from '../utils/test/mock-data';
 import { ExternalProviderAccessTokenService } from '../data-base/query/external-provider-access-token/external-provider-access-token.service';
 import { ExtraProfileService } from '../data-base/query/extra-profile/extra-profile.service';
+import { SessionService } from '../data-base/query/session/session.service';
 
 describe('Account Email Change Flow', () => {
   let service: AccountService;
@@ -21,7 +22,6 @@ describe('Account Email Change Flow', () => {
   const mockPendingEmailChangeService =
     mock<PendingEmailChangeProcessService>();
 
-
   beforeEach(async () => {
     jest.clearAllMocks();
 
@@ -30,6 +30,7 @@ describe('Account Email Change Flow', () => {
     const mockExternalProviderAccessTokenService =
       mock<ExternalProviderAccessTokenService>();
     const mockExtraProfileService = mock<ExtraProfileService>();
+    const mockSessionService = mock<SessionService>();
 
     const module: TestingModule = await getGlobalModule({
       controllers: [AccountController],
@@ -50,7 +51,11 @@ describe('Account Email Change Flow', () => {
         {
           provide: ExtraProfileService,
           useValue: mockExtraProfileService,
-        }
+        },
+        {
+          provide: SessionService,
+          useValue: mockSessionService,
+        },
       ],
     }).compile();
 

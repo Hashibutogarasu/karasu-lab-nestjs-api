@@ -62,13 +62,12 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { ZodValidationPipe } from 'nestjs-zod';
+import { SessionService } from '../data-base/query/session/session.service';
 
 @NoInterceptor()
 @UsePipes(ZodValidationPipe)
 @Controller('auth')
 export class AuthController {
-  private readonly DEFAULT_CALLBACK_URL = process.env.FRONTEND_CALLBACK_URL!;
-
   constructor(
     private readonly authService: AuthService,
     private readonly externalProviderAccessTokenService: ExternalProviderAccessTokenService,
@@ -77,6 +76,7 @@ export class AuthController {
     private readonly snsAuthCoreService: AuthCoreService,
     private readonly jwtTokenService: JwtTokenService,
     private readonly mfaService: MfaService,
+    private readonly sessionService: SessionService,
   ) { }
 
   private async getCodeChallengeFromState(stateCode?: string) {
@@ -102,17 +102,22 @@ export class AuthController {
   @UsePipes(new ZodValidationPipe(authProvidersSchema))
   @Get('providers')
   async getProviders(@Res() res: Response): Promise<void> {
-    const available: IOAuthProvider[] = [];
-
-    for (const p of this.oauthProviderFactory.getAllProviders()) {
+    const available: IOAuthProvider[] = this.oauthProviderFactory.getAllProviders().map((p) => {
       try {
-        if (p && p.isAvailable()) {
-          available.push(p);
+        if (p.isAvailable()) {
+          return p;
         }
       } catch (err) {
-        continue;
+        if (
+          err instanceof ProviderNotImplementedError ||
+          err instanceof ProviderUnavailableError
+        ) {
+          return null;
+        }
+        throw err;
       }
-    }
+      return null;
+    }).filter((p): p is IOAuthProvider => p !== null);
 
     res
       .status(HttpStatus.OK)
@@ -178,6 +183,13 @@ export class AuthController {
         }
       }
 
+      const mfaResponse = await this.checkForMfa(res, {
+        userId: result.user?.id,
+      });
+      if (mfaResponse) {
+        return;
+      }
+
       const tokenResult = await this.jwtTokenService.generateJWTToken({
         userId: result.user!.id,
         expirationHours: 1,
@@ -187,16 +199,29 @@ export class AuthController {
         throw AppErrorCodes.TOKEN_GENERATION_FAILED;
       }
 
-      await this.checkForMfa(res, { userId: result.user?.id });
+      const session = await this.sessionService.create({
+        userId: result.user!.id,
+        jti: tokenResult.jti,
+      });
+
+      if (tokenResult.id && result.user) {
+        await this.jwtTokenService.updateJWTTokenSessionId(
+          tokenResult.id,
+          result.user,
+          session.id,
+        );
+      }
 
       res.status(HttpStatus.OK).json({
         message: 'Login successful',
+        provider: 'email',
         jti: tokenResult.jti,
         access_token: tokenResult.accessToken,
         token_type: 'Bearer',
         expires_in: 60 * 60,
         refresh_token: tokenResult.refreshToken,
         refresh_expires_in: 60 * 60 * 24 * 30,
+        sessionId: session.id,
       });
     } catch (error) {
       if (error instanceof AppErrorCode) {
@@ -418,11 +443,12 @@ export class AuthController {
       }
 
       // パスワードをユーザーが外部プロバイダーで初めてリンクするかを検証します。
-      const maybeVerifyCode = await this.authService.createExternalProviderLinkVerificationIfNeeded(
-        processResult.userId!,
-        authState.provider,
-        snsProfile,
-      );
+      const maybeVerifyCode =
+        await this.authService.createExternalProviderLinkVerificationIfNeeded(
+          processResult.userId!,
+          authState.provider,
+          snsProfile,
+        );
 
       const finalCallbackUrl = queryCallbackUrl || authState.callbackUrl;
       const callbackUrl = new URL(finalCallbackUrl);
@@ -467,13 +493,33 @@ export class AuthController {
       const tokenResult =
         await this.snsAuthCoreService.verifyAndCreateToken(verifyTokenDto);
 
-      await this.checkForMfa(res, { userId: tokenResult.userId });
+      const mfaResponse = await this.checkForMfa(res, {
+        userId: tokenResult.userId,
+      });
+      if (mfaResponse) {
+        return;
+      }
+
+      const session = await this.sessionService.create({
+        userId: tokenResult.userId,
+        jti: tokenResult.jti,
+      });
+
+      if (tokenResult.id && session.user) {
+        await this.jwtTokenService.updateJWTTokenSessionId(
+          tokenResult.id,
+          session.user,
+          session.id,
+        );
+      }
 
       res.status(HttpStatus.OK).json({
         message: 'Token verified successfully',
         jti: tokenResult.jti,
         access_token: tokenResult.accessToken,
         refresh_token: tokenResult.refreshToken,
+        provider: tokenResult.provider ?? 'external',
+        sessionId: session.id,
       });
     } catch (error) {
       if (error instanceof AppErrorCode) {
@@ -513,13 +559,16 @@ export class AuthController {
 
     if (!user || !user.id) throw AppErrorCodes.UNAUTHORIZED;
 
-    const result = await this.authService.finalizeExternalProviderLinkAfterVerification(
-      user.id,
-      provider,
-      verifyCode,
-    );
+    const result =
+      await this.authService.finalizeExternalProviderLinkAfterVerification(
+        user.id,
+        provider,
+        verifyCode,
+      );
 
-    return res.status(HttpStatus.OK).json({ message: 'Provider linked', success: true, result });
+    return res
+      .status(HttpStatus.OK)
+      .json({ message: 'Provider linked', success: true, result });
   }
 
   async checkForMfa(res: Response, { userId }: { userId?: string }) {

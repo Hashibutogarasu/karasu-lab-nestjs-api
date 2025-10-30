@@ -26,7 +26,10 @@ describe('ExternalProviderLinkVerifyService', () => {
             if (where.userId && where.provider) {
               const before = store.length;
               for (let i = store.length - 1; i >= 0; i--) {
-                if (store[i].userId === where.userId && store[i].provider === where.provider) {
+                if (
+                  store[i].userId === where.userId &&
+                  store[i].provider === where.provider
+                ) {
                   store.splice(i, 1);
                 }
               }
@@ -57,7 +60,9 @@ describe('ExternalProviderLinkVerifyService', () => {
           },
           findMany: async ({ where }: any) => {
             const now = where.expiresAt.gt;
-            return store.filter((s) => s.provider === where.provider && s.expiresAt > now);
+            return store.filter(
+              (s) => s.provider === where.provider && s.expiresAt > now,
+            );
           },
           delete: async ({ where }: any) => {
             const idx = store.findIndex((s) => s.id === where.id);
@@ -66,11 +71,17 @@ describe('ExternalProviderLinkVerifyService', () => {
             return true;
           },
         },
-      }))
+      })),
     });
     const mockUtilityService = mock<UtilityService>({
-      generateRandomString: jest.fn().mockImplementation((len = 12) => 'verifycode1234'.slice(0, len)),
-      calculateExpiration: jest.fn().mockImplementation((minutes = 10) => new Date(Date.now() + minutes * 60 * 1000)),
+      generateRandomString: jest
+        .fn()
+        .mockImplementation((len = 12) => 'verifycode1234'.slice(0, len)),
+      calculateExpiration: jest
+        .fn()
+        .mockImplementation(
+          (minutes = 10) => new Date(Date.now() + minutes * 60 * 1000),
+        ),
     });
 
     const store: EPRec[] = [];
@@ -83,7 +94,9 @@ describe('ExternalProviderLinkVerifyService', () => {
       ],
     }).compile();
 
-    service = module.get<ExternalProviderLinkVerifyService>(ExternalProviderLinkVerifyService);
+    service = module.get<ExternalProviderLinkVerifyService>(
+      ExternalProviderLinkVerifyService,
+    );
   });
 
   it('should be defined', () => {
@@ -112,10 +125,18 @@ describe('ExternalProviderLinkVerifyService', () => {
     });
 
     const rehashed = await bcrypt.hash(created.verifyCode, 12);
-    const hashedResult = await service.verify({ userId: 'user_1', provider: 'discord', verifyCode: rehashed });
+    const hashedResult = await service.verify({
+      userId: 'user_1',
+      provider: 'discord',
+      verifyCode: rehashed,
+    });
     expect(hashedResult).toBe(false);
 
-    const goodResult = await service.verify({ userId: 'user_1', provider: 'discord', verifyCode: created.verifyCode });
+    const goodResult = await service.verify({
+      userId: 'user_1',
+      provider: 'discord',
+      verifyCode: created.verifyCode,
+    });
     expect(goodResult).toBe(true);
   });
 
@@ -127,17 +148,30 @@ describe('ExternalProviderLinkVerifyService', () => {
       expiresInMinutes: -1,
     });
 
-    const expiredResult = await service.verify({ userId: 'user_2', provider: 'github', verifyCode: expired.verifyCode });
+    const expiredResult = await service.verify({
+      userId: 'user_2',
+      provider: 'github',
+      verifyCode: expired.verifyCode,
+    });
     expect(expiredResult).toBe(false);
   });
 
   it('verify rejects wrong code', async () => {
-    const wrong = await service.verify({ userId: 'user_3', provider: 'discord', verifyCode: 'totally-wrong-code' });
+    const wrong = await service.verify({
+      userId: 'user_3',
+      provider: 'discord',
+      verifyCode: 'totally-wrong-code',
+    });
     expect(wrong).toBe(false);
   });
 
   it('delete removes existing record and throws for non-existent id', async () => {
-    const toDelete = await service.create({ userId: 'del_user', provider: 'p', rawExternalProviderProfile: {}, expiresInMinutes: 10 });
+    const toDelete = await service.create({
+      userId: 'del_user',
+      provider: 'p',
+      rawExternalProviderProfile: {},
+      expiresInMinutes: 10,
+    });
     const delOk = await service.delete(toDelete.id);
     expect(delOk).toBe(true);
 

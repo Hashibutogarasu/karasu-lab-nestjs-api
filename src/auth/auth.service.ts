@@ -28,14 +28,16 @@ export class AuthService {
     private readonly dateTimeService: DateTimeService,
     private readonly jwtTokenService: JwtTokenService,
     private readonly externalProviderLinkVerifyService: ExternalProviderLinkVerifyService,
-  ) { }
+  ) {}
 
   async createExternalProviderLinkVerificationIfNeeded(
     userId: string,
     provider: string,
     rawExternalProviderProfile: unknown,
   ): Promise<string | null> {
-    const user = await this.userService.findUserById(userId, { passwordHash: false });
+    const user = await this.userService.findUserById(userId, {
+      passwordHash: false,
+    });
     if (!user) throw AppErrorCodes.USER_NOT_FOUND;
 
     const hasProvider = user.providers?.includes(provider);

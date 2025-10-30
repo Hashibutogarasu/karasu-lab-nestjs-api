@@ -24,7 +24,7 @@ export class AccountService {
     private readonly pendingEmailChangeProcessService: PendingEmailChangeProcessService,
     private readonly externalProviderAccessTokenService: ExternalProviderAccessTokenService,
     private readonly extraProfileService: ExtraProfileService,
-  ) { }
+  ) {}
 
   /**
    * サインイン済みユーザーのパスワード変更（旧パスワード必要）
@@ -247,7 +247,9 @@ export class AccountService {
   }
 
   async unlinkProvider(userId: string, provider: string): Promise<void> {
-    const user = await this.userService.findUserById(userId, { passwordHash: false });
+    const user = await this.userService.findUserById(userId, {
+      passwordHash: false,
+    });
     if (!user) {
       throw AppErrorCodes.USER_NOT_FOUND;
     }
@@ -270,9 +272,8 @@ export class AccountService {
       throw AppErrorCodes.USER_UPDATE_DATABASE_ERROR;
     }
 
-    const tokens = await this.externalProviderAccessTokenService.getByUserId(
-      userId,
-    );
+    const tokens =
+      await this.externalProviderAccessTokenService.getByUserId(userId);
     const toDelete = (tokens || []).filter((t) => t.provider === provider);
     for (const t of toDelete) {
       try {

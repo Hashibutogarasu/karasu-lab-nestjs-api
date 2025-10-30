@@ -8,6 +8,7 @@ import { UtilityService } from '../data-base/utility/utility.service';
 import { RoleService } from '../data-base/query/role/role.service';
 import { JwtTokenService } from '../auth/jwt-token/jwt-token.service';
 import { JWTState } from '@prisma/client';
+import { SessionService } from '../data-base/query/session/session.service';
 
 describe('JwtStateController', () => {
   let controller: JwtStateController;
@@ -24,6 +25,7 @@ describe('JwtStateController', () => {
     const mockUtilityService = mock<UtilityService>();
     const mockRoleService = mock<RoleService>();
     const mockJwtTokenService = mock<JwtTokenService>();
+    const mockSessionService = mock<SessionService>();
 
     jwtStateService = mock<JwtstateService>();
 
@@ -35,6 +37,7 @@ describe('JwtStateController', () => {
         { provide: UtilityService, useValue: mockUtilityService },
         { provide: RoleService, useValue: mockRoleService },
         { provide: JwtTokenService, useValue: mockJwtTokenService },
+        { provide: SessionService, useValue: mockSessionService },
       ],
     }).compile();
 

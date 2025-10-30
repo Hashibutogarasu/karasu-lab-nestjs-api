@@ -22,6 +22,7 @@ import { mock } from 'jest-mock-extended';
 import { AppConfigModule } from '../src/app-config/app-config.module';
 import { EncryptionService } from '../src/encryption/encryption.service';
 import * as crypto from 'crypto';
+import { SessionService } from '../src/data-base/query/session/session.service';
 
 jest.setTimeout(30000);
 
@@ -55,6 +56,8 @@ describe('Global Response Formatter & NoInterceptor (e2e)', () => {
       inject: [AppConfigService],
     };
 
+    const mockSessionService = mock<SessionService>();
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
         {
@@ -80,6 +83,10 @@ describe('Global Response Formatter & NoInterceptor (e2e)', () => {
         {
           provide: APP_INTERCEPTOR,
           useClass: ResponseFormatterInterceptor,
+        },
+        {
+          provide: SessionService,
+          useValue: mockSessionService,
         },
       ],
     })

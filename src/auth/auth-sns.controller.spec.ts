@@ -19,6 +19,7 @@ import { MfaService } from '../data-base/query/mfa/mfa.service';
 import { DiscordOAuthProvider } from '../lib/auth/discord-oauth.provider';
 import { GoogleOAuthProvider } from '../lib/auth/google-oauth.provider';
 import * as crypto from 'crypto';
+import { SessionService } from '../data-base/query/session/session.service';
 
 describe('AuthController - SNS OAuth Authentication', () => {
   let controller: AuthController;
@@ -48,26 +49,39 @@ describe('AuthController - SNS OAuth Authentication', () => {
 
   const mockExternalProviderAccessTokenService =
     mock<ExternalProviderAccessTokenService>();
-  const mockGoogleProvider = mock<GoogleOAuthProvider>();
-  mockGoogleProvider.getProvider.mockReturnValue('google');
-  mockGoogleProvider.getAuthorizationUrl.mockReturnValue('');
-  // processOAuth will be configured per-test when needed
-  mockGoogleProvider.isAvailable.mockReturnValue(true);
-
-  const mockDiscordProvider = mock<DiscordOAuthProvider>();
-  mockDiscordProvider.getProvider.mockReturnValue('discord');
-  mockDiscordProvider.getAuthorizationUrl.mockReturnValue('');
-  mockDiscordProvider.isAvailable.mockReturnValue(true);
-
-  const mockOAuthProviderFactory = mock<OAuthProviderFactory>();
-  mockOAuthProviderFactory.getProvider.mockImplementation((provider: string) => {
-    if (provider === 'google') return mockGoogleProvider;
-    if (provider === 'discord') return mockDiscordProvider;
-    throw AppErrorCodes.PROVIDER_NOT_FOUND;
+  const mockGoogleProvider = mock<GoogleOAuthProvider>({
+    getProvider: jest.fn().mockRejectedValue('google'),
+    getAuthorizationUrl: jest.fn().mockReturnValue(''),
+    isAvailable: jest.fn().mockReturnValue(true),
   });
-  mockOAuthProviderFactory.getAllProviders.mockReturnValue([mockGoogleProvider, mockDiscordProvider]);
-  mockOAuthProviderFactory.getAvailableProviderNames.mockReturnValue(['google', 'discord']);
-  mockOAuthProviderFactory.getConfiguredProviders.mockReturnValue([mockGoogleProvider, mockDiscordProvider]);
+
+  const mockDiscordProvider = mock<DiscordOAuthProvider>({
+    getProvider: jest.fn().mockReturnValue('discord'),
+    getAuthorizationUrl: jest.fn().mockReturnValue(''),
+    isAvailable: jest.fn().mockReturnValue(true)
+  });
+
+  const mockOAuthProviderFactory = mock<OAuthProviderFactory>({
+    getProvider: jest.fn().mockImplementation(
+      (provider: string) => {
+        if (provider === 'google') return mockGoogleProvider;
+        if (provider === 'discord') return mockDiscordProvider;
+        throw AppErrorCodes.PROVIDER_NOT_FOUND;
+      },
+    ),
+    getAllProviders: jest.fn().mockReturnValue([
+      mockGoogleProvider,
+      mockDiscordProvider,
+    ]),
+    getAvailableProviderNames: jest.fn().mockReturnValue([
+      'google',
+      'discord',
+    ]),
+    getConfiguredProviders: jest.fn().mockReturnValue([
+      mockGoogleProvider,
+      mockDiscordProvider,
+    ]),
+  });
 
   let mockJwtTokenService: MockProxy<JwtTokenService>;
   let mockAuthStateService: MockProxy<AuthStateService>;
@@ -110,10 +124,14 @@ describe('AuthController - SNS OAuth Authentication', () => {
       accessToken: 'access_token_abc123',
       refreshToken: 'refresh_token_abc123',
       userId: 'user_123',
+      provider: 'email',
     });
     mockUserService = mock<UserService>();
     mockSnsWorkflowService = mock<WorkflowService>();
     const mockMfaService = mock<MfaService>();
+    const mockSessionService = mock<SessionService>({
+      create: jest.fn().mockResolvedValue({ id: 'session_1' }),
+    });
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
@@ -166,6 +184,10 @@ describe('AuthController - SNS OAuth Authentication', () => {
           provide: MfaService,
           useValue: mockMfaService,
         },
+        {
+          provide: SessionService,
+          useValue: mockSessionService,
+        },
       ],
     }).compile();
 
@@ -210,7 +232,9 @@ describe('AuthController - SNS OAuth Authentication', () => {
       const expectedRedirectUrl =
         'https://accounts.google.com/o/oauth2/v2/auth?client_id=test&redirect_uri=http://localhost:3000/auth/callback/google&response_type=code&scope=openid%20profile%20email&state=state_abc123';
 
-      mockAuthCoreService.createAuthenticationState.mockResolvedValue(expectedResult);
+      mockAuthCoreService.createAuthenticationState.mockResolvedValue(
+        expectedResult,
+      );
       mockGoogleProvider.getAuthorizationUrl.mockReturnValue(
         expectedRedirectUrl,
       );
@@ -276,7 +300,9 @@ describe('AuthController - SNS OAuth Authentication', () => {
         errorDescription: 'Failed to create authentication state',
       };
 
-      mockAuthCoreService.createAuthenticationState.mockResolvedValue(errorResult);
+      mockAuthCoreService.createAuthenticationState.mockResolvedValue(
+        errorResult,
+      );
 
       await expect(
         controller.createAuthState(
@@ -299,7 +325,9 @@ describe('AuthController - SNS OAuth Authentication', () => {
         errorDescription: 'Unsupported provider: facebook',
       };
 
-      mockAuthCoreService.createAuthenticationState.mockResolvedValue(errorResult);
+      mockAuthCoreService.createAuthenticationState.mockResolvedValue(
+        errorResult,
+      );
 
       await expect(
         controller.createAuthState(unsupportedDto, mockResponse, mockRequest),
@@ -324,26 +352,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
       },
     };
 
-    let buildCallbackRedirectMock: jest.Mock;
-    let buildErrorRedirectMock: jest.Mock;
-
-    beforeEach(() => {
-      // Setup static method mocks with dynamic implementation
-      buildCallbackRedirectMock = jest
-        .fn()
-        .mockImplementation((callbackUrl, stateCode, oneTimeToken, error) => {
-          if (error) {
-            return `${callbackUrl}?error=${error}`;
-          } else {
-            return `${callbackUrl}?state=${stateCode}&token=${oneTimeToken}`;
-          }
-        });
-      buildErrorRedirectMock = jest
-        .fn()
-        .mockImplementation((callbackUrl, error) => {
-          return `${callbackUrl}?error=${error}`;
-        });
-    });
+    beforeEach(() => { });
 
     it('should process Google OAuth callback successfully', async () => {
       // Mock auth state
@@ -502,7 +511,9 @@ describe('AuthController - SNS OAuth Authentication', () => {
       };
 
       mockAuthService.getAuthState.mockResolvedValue(mockAuthState);
-      mockGoogleProvider.processOAuth.mockRejectedValue(AppErrorCodes.GOOGLE_TOKEN_EXCHANGE_FAILED);
+      mockGoogleProvider.processOAuth.mockRejectedValue(
+        AppErrorCodes.GOOGLE_TOKEN_EXCHANGE_FAILED,
+      );
 
       // Ensure BASE_URL is defined for this invocation
       process.env.BASE_URL = 'http://localhost:3000';
@@ -619,10 +630,13 @@ describe('AuthController - SNS OAuth Authentication', () => {
         },
         accessToken: 'access_token_abc123',
         jti: 'jwt_id_abc123',
+        provider: 'external',
         refreshToken: 'refresh_token_abc123',
       };
 
-      mockAuthCoreService.verifyAndCreateToken.mockResolvedValue(expectedResult as any);
+      mockAuthCoreService.verifyAndCreateToken.mockResolvedValue(
+        expectedResult as any,
+      );
 
       await controller.verifyToken(validVerifyDto, mockResponse);
 
@@ -635,6 +649,40 @@ describe('AuthController - SNS OAuth Authentication', () => {
         jti: expectedResult.jti,
         access_token: expectedResult.accessToken,
         refresh_token: 'refresh_token_abc123',
+        sessionId: 'session_1',
+        provider: 'external'
+      });
+    });
+
+    it("should return provider 'google' when core service sets provider to google", async () => {
+      const expectedResult = {
+        success: true,
+        profile: {
+          sub: 'user_123',
+        },
+        accessToken: 'access_token_abc123',
+        jti: 'jwt_id_abc123',
+        provider: 'google',
+        refreshToken: 'refresh_token_abc123',
+      };
+
+      mockAuthCoreService.verifyAndCreateToken.mockResolvedValue(
+        expectedResult as any,
+      );
+
+      await controller.verifyToken(validVerifyDto, mockResponse);
+
+      expect(mockAuthCoreService.verifyAndCreateToken).toHaveBeenCalledWith(
+        validVerifyDto,
+      );
+      expect(mockStatusFn).toHaveBeenCalledWith(HttpStatus.OK);
+      expect(mockJsonFn).toHaveBeenCalledWith({
+        message: 'Token verified successfully',
+        jti: expectedResult.jti,
+        access_token: expectedResult.accessToken,
+        refresh_token: 'refresh_token_abc123',
+        sessionId: 'session_1',
+        provider: 'google',
       });
     });
 
@@ -662,7 +710,9 @@ describe('AuthController - SNS OAuth Authentication', () => {
 
     it('should handle invalid or expired token', async () => {
       // Simulate the core service throwing an AppErrorCode for invalid token
-      mockAuthCoreService.verifyAndCreateToken.mockRejectedValue(AppErrorCodes.INVALID_TOKEN);
+      mockAuthCoreService.verifyAndCreateToken.mockRejectedValue(
+        AppErrorCodes.INVALID_TOKEN,
+      );
 
       await expect(
         controller.verifyToken(validVerifyDto, mockResponse),
@@ -671,7 +721,9 @@ describe('AuthController - SNS OAuth Authentication', () => {
 
     it('should handle server error during token verification', async () => {
       // Simulate the core service throwing an AppErrorCode for server error
-      mockAuthCoreService.verifyAndCreateToken.mockRejectedValue(AppErrorCodes.INVALID_TOKEN);
+      mockAuthCoreService.verifyAndCreateToken.mockRejectedValue(
+        AppErrorCodes.INVALID_TOKEN,
+      );
 
       await expect(
         controller.verifyToken(validVerifyDto, mockResponse),
@@ -693,7 +745,9 @@ describe('AuthController - SNS OAuth Authentication', () => {
         jti: 'jwt_id_abc123',
       };
 
-      mockAuthCoreService.verifyAndCreateToken.mockResolvedValueOnce(successResult as any);
+      mockAuthCoreService.verifyAndCreateToken.mockResolvedValueOnce(
+        successResult as any,
+      );
 
       await controller.verifyToken(validVerifyDto, mockResponse);
 
@@ -704,7 +758,9 @@ describe('AuthController - SNS OAuth Authentication', () => {
         errorDescription: 'Token has already been used',
       };
 
-      mockAuthCoreService.verifyAndCreateToken.mockRejectedValueOnce(AppErrorCodes.INVALID_TOKEN);
+      mockAuthCoreService.verifyAndCreateToken.mockRejectedValueOnce(
+        AppErrorCodes.INVALID_TOKEN,
+      );
 
       await expect(
         controller.verifyToken(validVerifyDto, mockResponse),
@@ -713,7 +769,9 @@ describe('AuthController - SNS OAuth Authentication', () => {
 
     it('should handle missing user ID in authentication state', async () => {
       // Simulate core service throwing an AppErrorCode for invalid state
-      mockAuthCoreService.verifyAndCreateToken.mockRejectedValue(AppErrorCodes.INVALID_TOKEN);
+      mockAuthCoreService.verifyAndCreateToken.mockRejectedValue(
+        AppErrorCodes.INVALID_TOKEN,
+      );
 
       await expect(
         controller.verifyToken(validVerifyDto, mockResponse),
@@ -722,7 +780,9 @@ describe('AuthController - SNS OAuth Authentication', () => {
 
     it('should handle user not found after verification', async () => {
       // Simulate core service throwing an AppErrorCode for user not found
-      mockAuthCoreService.verifyAndCreateToken.mockRejectedValue(AppErrorCodes.INVALID_TOKEN);
+      mockAuthCoreService.verifyAndCreateToken.mockRejectedValue(
+        AppErrorCodes.INVALID_TOKEN,
+      );
 
       await expect(
         controller.verifyToken(validVerifyDto, mockResponse),
@@ -755,7 +815,9 @@ describe('AuthController - SNS OAuth Authentication', () => {
         oneTimeToken: 'one_time_token_123',
       };
 
-      mockAuthCoreService.verifyAndCreateToken.mockRejectedValue(AppErrorCodes.INVALID_TOKEN);
+      mockAuthCoreService.verifyAndCreateToken.mockRejectedValue(
+        AppErrorCodes.INVALID_TOKEN,
+      );
 
       await expect(
         controller.verifyToken(verifyDto, mockResponse),
@@ -786,7 +848,9 @@ describe('AuthController - SNS OAuth Authentication', () => {
       };
 
       // Simulate core service throwing an AppErrorCode for reused token
-      mockAuthCoreService.verifyAndCreateToken.mockRejectedValue(AppErrorCodes.INVALID_TOKEN);
+      mockAuthCoreService.verifyAndCreateToken.mockRejectedValue(
+        AppErrorCodes.INVALID_TOKEN,
+      );
 
       await expect(
         controller.verifyToken(verifyDto, mockResponse),
@@ -801,7 +865,9 @@ describe('AuthController - SNS OAuth Authentication', () => {
         oneTimeToken: 'one_time_token_123',
       };
 
-      mockAuthCoreService.verifyAndCreateToken.mockRejectedValue(AppErrorCodes.INVALID_TOKEN);
+      mockAuthCoreService.verifyAndCreateToken.mockRejectedValue(
+        AppErrorCodes.INVALID_TOKEN,
+      );
 
       await expect(
         controller.verifyToken(verifyDto, mockResponse),
@@ -1122,7 +1188,9 @@ describe('AuthController - SNS OAuth Authentication', () => {
       });
 
       // First call: controller should ask AuthService to create verify code
-      mockAuthService.createExternalProviderLinkVerificationIfNeeded.mockResolvedValue('verifycode_link_123');
+      mockAuthService.createExternalProviderLinkVerificationIfNeeded.mockResolvedValue(
+        'verifycode_link_123',
+      );
 
       process.env.BASE_URL = 'http://localhost:3000';
 
@@ -1141,11 +1209,9 @@ describe('AuthController - SNS OAuth Authentication', () => {
         snsProfile,
         mockAuthState.stateCode,
       );
-      expect(mockAuthService.createExternalProviderLinkVerificationIfNeeded).toHaveBeenCalledWith(
-        'existing_user_link_123',
-        'google',
-        snsProfile,
-      );
+      expect(
+        mockAuthService.createExternalProviderLinkVerificationIfNeeded,
+      ).toHaveBeenCalledWith('existing_user_link_123', 'google', snsProfile);
 
       expect(mockRedirectFn).toHaveBeenCalledWith(
         expect.stringContaining('linkVerifyCode=verifycode_link_123'),
@@ -1155,21 +1221,27 @@ describe('AuthController - SNS OAuth Authentication', () => {
       );
 
       // Simulate front-end posting verification code to /auth/link/verify
-      mockAuthService.finalizeExternalProviderLinkAfterVerification.mockResolvedValue({ success: true });
+      mockAuthService.finalizeExternalProviderLinkAfterVerification.mockResolvedValue(
+        { success: true },
+      );
 
       const jwtUser = { id: 'existing_user_link_123' } as any;
       const body = { provider: 'google', verifyCode: 'verifycode_link_123' };
 
       await controller.verifyLinkProvider(body, jwtUser, mockResponse);
 
-      expect(mockAuthService.finalizeExternalProviderLinkAfterVerification).toHaveBeenCalledWith(
+      expect(
+        mockAuthService.finalizeExternalProviderLinkAfterVerification,
+      ).toHaveBeenCalledWith(
         'existing_user_link_123',
         'google',
         'verifycode_link_123',
       );
 
       // After successful linking, subsequent SNS login shouldn't request a verify code
-      mockAuthService.createExternalProviderLinkVerificationIfNeeded.mockResolvedValue(null);
+      mockAuthService.createExternalProviderLinkVerificationIfNeeded.mockResolvedValue(
+        null,
+      );
 
       // Call callback again for same user/provider
       await controller.handleProviderCallback(
@@ -1183,9 +1255,8 @@ describe('AuthController - SNS OAuth Authentication', () => {
       );
 
       // Redirect should NOT contain linkVerifyCode now
-      const lastRedirectCallArg = mockRedirectFn.mock.calls[
-        mockRedirectFn.mock.calls.length - 1
-      ][0];
+      const lastRedirectCallArg =
+        mockRedirectFn.mock.calls[mockRedirectFn.mock.calls.length - 1][0];
       expect(lastRedirectCallArg).not.toContain('linkVerifyCode=');
     });
   });
@@ -1225,7 +1296,9 @@ describe('AuthController - SNS OAuth Authentication', () => {
         errorDescription: 'Google OAuth credentials not configured',
       };
 
-      mockAuthCoreService.createAuthenticationState.mockResolvedValue(errorResult);
+      mockAuthCoreService.createAuthenticationState.mockResolvedValue(
+        errorResult,
+      );
 
       await expect(
         controller.createAuthState(authStateDto, mockResponse, mockRequest),
@@ -1257,7 +1330,9 @@ describe('AuthController - SNS OAuth Authentication', () => {
       const expectedRedirectUrl =
         'https://accounts.google.com/o/oauth2/v2/auth?client_id=test&state=state_abc123';
 
-      mockAuthCoreService.createAuthenticationState.mockResolvedValue(expectedResult);
+      mockAuthCoreService.createAuthenticationState.mockResolvedValue(
+        expectedResult,
+      );
       mockGoogleProvider.getAuthorizationUrl.mockReturnValue(
         expectedRedirectUrl,
       );
@@ -1302,7 +1377,9 @@ describe('AuthController - SNS OAuth Authentication', () => {
         const expectedRedirectUrl =
           'https://accounts.google.com/o/oauth2/v2/auth?client_id=test&state=state_abc123';
 
-        mockAuthCoreService.createAuthenticationState.mockResolvedValue(stateResult);
+        mockAuthCoreService.createAuthenticationState.mockResolvedValue(
+          stateResult,
+        );
         mockGoogleProvider.getAuthorizationUrl.mockReturnValue(
           expectedRedirectUrl,
         );
@@ -1327,7 +1404,11 @@ describe('AuthController - SNS OAuth Authentication', () => {
           createdAt: new Date(),
         });
 
-        await controller.createAuthState(authStateDto, mockResponse, mockRequest);
+        await controller.createAuthState(
+          authStateDto,
+          mockResponse,
+          mockRequest,
+        );
 
         // 2. Process callback
         const snsProfile = {
@@ -1393,7 +1474,9 @@ describe('AuthController - SNS OAuth Authentication', () => {
           refreshToken: 'refresh_token_abc123',
         };
 
-        mockAuthCoreService.verifyAndCreateToken.mockResolvedValue(verifyResult as any);
+        mockAuthCoreService.verifyAndCreateToken.mockResolvedValue(
+          verifyResult as any,
+        );
 
         const verifyDto = {
           stateCode: 'state_abc123',

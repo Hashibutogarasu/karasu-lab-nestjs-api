@@ -50,6 +50,8 @@ import { R2Module } from './cloudflare/r2/r2.module';
 import { AppConfigService } from './app-config/app-config.service';
 import { EncryptionService } from './encryption/encryption.service';
 import { WellKnownModule } from './well-known/well-known.module';
+import { SessionsController } from './sessions/sessions.controller';
+import { SessionsModule } from './sessions/sessions.module';
 
 @Module({
   imports: [
@@ -148,8 +150,9 @@ import { WellKnownModule } from './well-known/well-known.module';
     },
     R2Module,
     WellKnownModule,
+    SessionsModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, SessionsController],
   providers: [
     AppService,
     ResendService,

@@ -8,6 +8,7 @@ import { DataBaseService } from '../data-base/data-base.service';
 import { PermissionBitcalcService } from '../permission-bitcalc/permission-bitcalc.service';
 import { UtilityService } from '../data-base/utility/utility.service';
 import { JwtTokenService } from '../auth/jwt-token/jwt-token.service';
+import { SessionService } from '../data-base/query/session/session.service';
 
 describe('RoleController', () => {
   let service: RoleService;
@@ -31,6 +32,7 @@ describe('RoleController', () => {
         return Promise.resolve();
       }),
     });
+    const mockSessionService = mock<SessionService>();
 
     const module: TestingModule = await getGlobalModule({
       controllers: [RoleController],
@@ -54,6 +56,10 @@ describe('RoleController', () => {
         {
           provide: JwtTokenService,
           useValue: mockJwtTokenService,
+        },
+        {
+          provide: SessionService,
+          useValue: mockSessionService,
         },
       ],
     }).compile();

@@ -10,26 +10,46 @@ import { UserService } from '../data-base/query/user/user.service';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { ApiWrappedOkResponse } from '../decorators/api-wrapped-ok-response/api-wrapped-ok-response.decorator';
 import { AuthUser, PublicUser } from '../auth/decorators/auth-user.decorator';
-import { GetRolesResponseDto } from './users.dto';
+import { GetRolesResponseDto, UsersMeResponseDto } from './users.dto';
+import { PublicSessionDto } from '../data-base/query/session/session.dto';
+import { AuthSession } from '../auth/decorators/auth-session.decorator';
+import { ExtraProfileService } from '../data-base/query/extra-profile/extra-profile.service';
 
 @Controller('users')
+@ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 export class UsersController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly extraProfileService: ExtraProfileService,
+  ) { }
 
   @ApiWrappedOkResponse({
-    type: PublicUser,
+    type: UsersMeResponseDto,
   })
-  @ApiBearerAuth()
   @Get('me')
-  async getMe(@AuthUser() user: PublicUser): Promise<PublicUser> {
-    return user;
+  async getMe(@AuthUser() user: PublicUser): Promise<UsersMeResponseDto> {
+    const userWithProfiles = await this.extraProfileService.getPublicUserWithExtraProfiles(user.id);
+
+    return {
+      ...user,
+      extraProfiles: userWithProfiles || [],
+    };
+  }
+
+  @ApiWrappedOkResponse({
+    type: PublicSessionDto,
+  })
+  @Get('session')
+  async getSession(
+    @AuthSession() session: PublicSessionDto,
+  ): Promise<PublicSessionDto> {
+    return session;
   }
 
   @ApiWrappedOkResponse({
     type: GetRolesResponseDto,
   })
-  @ApiBearerAuth()
   @Get('me/roles')
   async getMyRoles(@AuthUser() user: PublicUser): Promise<GetRolesResponseDto> {
     const roles = await this.userService.getUserRoles(user.id);
@@ -44,7 +64,6 @@ export class UsersController {
   @ApiWrappedOkResponse({
     type: DiscordUser,
   })
-  @ApiBearerAuth()
   @Get('me/discord')
   async getDiscordMe(
     @AuthDiscordUser() discordUser: DiscordUser,
@@ -60,7 +79,6 @@ export class UsersController {
   @ApiWrappedOkResponse({
     type: GoogleUser,
   })
-  @ApiBearerAuth()
   @Get('me/google')
   async getGoogleMe(
     @AuthGoogleUser() googleUser: GoogleUser,
@@ -73,7 +91,6 @@ export class UsersController {
    * `VIEW_ALL_USERS`権限を持つユーザーのみがアクセス可能
    * 全てのユーザーの一覧を取得
    */
-  @ApiBearerAuth()
   @Permission([PermissionType.VIEW_ALL_USERS])
   @Get('list')
   async findAllUsers() {

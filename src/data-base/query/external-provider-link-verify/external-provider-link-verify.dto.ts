@@ -10,7 +10,7 @@ export const createExternalProviderLinkVerifySchema = z.object({
 
 export class CreateExternalProviderLinkVerifyDto extends createZodDto(
   createExternalProviderLinkVerifySchema,
-) { }
+) {}
 
 export const verifyExternalProviderLinkVerifySchema = z.object({
   userId: z.string(),
@@ -20,7 +20,7 @@ export const verifyExternalProviderLinkVerifySchema = z.object({
 
 export class VerifyExternalProviderLinkVerifyDto extends createZodDto(
   verifyExternalProviderLinkVerifySchema,
-) { }
+) {}
 
 export const deleteExternalProviderLinkVerifySchema = z.object({
   id: z.string(),
@@ -28,7 +28,7 @@ export const deleteExternalProviderLinkVerifySchema = z.object({
 
 export class DeleteExternalProviderLinkVerifyDto extends createZodDto(
   deleteExternalProviderLinkVerifySchema,
-) { }
+) {}
 
 export const externalProviderLinkVerifyResponseSchema = z.object({
   id: z.string(),
@@ -40,4 +40,4 @@ export const externalProviderLinkVerifyResponseSchema = z.object({
 
 export class ExternalProviderLinkVerifyResponseDto extends createZodDto(
   externalProviderLinkVerifyResponseSchema,
-) { }
+) {}

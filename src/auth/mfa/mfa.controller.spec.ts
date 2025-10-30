@@ -9,6 +9,7 @@ import { MfaService } from '../../data-base/query/mfa/mfa.service';
 import { mock } from 'jest-mock-extended';
 import { JwtTokenService } from '../jwt-token/jwt-token.service';
 import { EncryptionService } from '../../encryption/encryption.service';
+import { SessionService } from '../../data-base/query/session/session.service';
 
 describe('MfaController', () => {
   let controller: MfaController;
@@ -16,7 +17,6 @@ describe('MfaController', () => {
   let mockAuthService: AuthService;
   let mockTotpService: TotpService;
   let mockJwtTokenService: JwtTokenService;
-  let mockEncryptionService: EncryptionService;
 
   beforeEach(async () => {
     mockMfaService = mock<MfaService>({
@@ -64,12 +64,16 @@ describe('MfaController', () => {
       }),
     });
 
-    mockEncryptionService = mock<EncryptionService>({
+    const mockEncryptionService = mock<EncryptionService>({
       decrypt: jest.fn().mockImplementation((secret) => {
         if (secret === 'encrypted_secret') return 'TOTP_SECRET';
         return secret;
       }),
       encrypt: jest.fn().mockImplementation((plain) => `encrypted_${plain}`),
+    });
+
+    const mockSessionService = mock<SessionService>({
+      create: jest.fn().mockResolvedValue({ id: 'session_1' }),
     });
 
     const module: TestingModule = await Test.createTestingModule({
@@ -84,6 +88,7 @@ describe('MfaController', () => {
         },
         { provide: JwtTokenService, useValue: mockJwtTokenService },
         { provide: EncryptionService, useValue: mockEncryptionService },
+        { provide: SessionService, useValue: mockSessionService },
       ],
     }).compile();
 
