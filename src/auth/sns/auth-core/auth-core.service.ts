@@ -15,6 +15,7 @@ import { JwtTokenService } from '../../jwt-token/jwt-token.service';
 import { ExtraProfileService } from '../../../data-base/query/extra-profile/extra-profile.service';
 import { ExternalProviderAuthResult } from './auth.core.dto';
 import { AppErrorCode, AppErrorCodes } from '../../../types/error-codes';
+import { PublicUser } from '../../decorators/auth-user.decorator';
 
 @Injectable()
 export class AuthCoreService {
@@ -170,7 +171,7 @@ export class AuthCoreService {
       }
 
       // --- 通常ログインフロー ---
-      let user = null as any | null;
+      let user = null as PublicUser | null;
       if (existingProfile) {
         user = existingProfile.user;
         // update profile record with fresh data

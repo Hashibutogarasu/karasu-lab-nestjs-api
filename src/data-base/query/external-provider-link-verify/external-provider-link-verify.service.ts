@@ -72,6 +72,12 @@ export class ExternalProviderLinkVerifyService {
           gt: now,
         },
       },
+      select: {
+        id: true,
+        userId: true,
+        verifyHashedCode: true,
+        provider: true,
+      }
     });
 
     for (const rec of records) {
@@ -117,13 +123,28 @@ export class ExternalProviderLinkVerifyService {
   }
 
   async markAsLinkingVerified(processId: string, userId: string, provider: string) {
-    await this.prisma.externalProviderAccessToken.updateMany({
-      where: { userId: userId, provider: provider },
+    const existingVerify = await this.prisma.externalProviderLinkVerify.findUnique({
+      where: { id: processId },
+    });
+
+    await this.prisma.externalProviderAccessToken.update({
+      where: {
+        id: existingVerify?.id,
+      },
       data: { linkingVerified: true },
     });
 
-    await this.prisma.extraProfile.updateMany({
-      where: { userId: userId, provider: provider },
+    const existingExtraProfile = await this.prisma.extraProfile.findFirst({
+      where: {
+        userId: userId,
+        provider: provider,
+      },
+    });
+
+    await this.prisma.extraProfile.update({
+      where: {
+        id: existingExtraProfile?.id,
+      },
       data: { linkingVerified: true },
     });
 
