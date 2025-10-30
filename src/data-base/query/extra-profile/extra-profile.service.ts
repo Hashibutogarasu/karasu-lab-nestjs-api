@@ -21,6 +21,7 @@ export class ExtraProfileService {
     email?: string;
     avatarUrl?: string;
     rawProfile: any;
+    linkingVerified: boolean;
   }) {
     return this.prisma.extraProfile.upsert({
       where: {
@@ -35,6 +36,7 @@ export class ExtraProfileService {
         email: data.email,
         avatarUrl: data.avatarUrl,
         rawProfile: data.rawProfile,
+        linkingVerified: data.linkingVerified,
       },
     });
   }

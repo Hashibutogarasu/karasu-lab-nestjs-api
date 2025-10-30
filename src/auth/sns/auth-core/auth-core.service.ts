@@ -156,6 +156,7 @@ export class AuthCoreService {
           email: snsProfile.email,
           avatarUrl: snsProfile.avatarUrl,
           rawProfile: snsProfile.rawProfile,
+          linkingVerified: false,
         });
 
         await this.authStateService.updateAuthStateWithUser(
@@ -183,6 +184,7 @@ export class AuthCoreService {
           email: snsProfile.email,
           avatarUrl: snsProfile.avatarUrl,
           rawProfile: snsProfile.rawProfile,
+          linkingVerified: true,
         });
       } else if (snsProfile.email) {
         const emailUser = await this.userService.findUserByEmail(
@@ -217,6 +219,7 @@ export class AuthCoreService {
           email: snsProfile.email,
           avatarUrl: snsProfile.avatarUrl,
           rawProfile: snsProfile.rawProfile,
+          linkingVerified: true,
         });
         await this.userService.addUserProvider(user.id, snsProfile.provider);
       }
