@@ -156,7 +156,7 @@ export class AuthCoreService {
           email: snsProfile.email,
           avatarUrl: snsProfile.avatarUrl,
           rawProfile: snsProfile.rawProfile,
-          linkingVerified: false,
+          linkingVerified: true,
         });
 
         await this.authStateService.updateAuthStateWithUser(
