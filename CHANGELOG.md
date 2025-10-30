@@ -1,3 +1,10 @@
+# [1.12.0](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.11.1...v1.12.0) (2025-10-30)
+
+
+### Features
+
+* add session management and provider tracking to auth flow ([48fc00a](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/48fc00a8744db87e910a086abcef77ba20b49291))
+
 ## [1.11.1](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.11.0...v1.11.1) (2025-10-29)
 
 
