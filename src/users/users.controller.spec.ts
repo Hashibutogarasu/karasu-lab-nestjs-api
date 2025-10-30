@@ -16,6 +16,7 @@ import { mock } from 'jest-mock-extended';
 import { DataBaseService } from '../data-base/data-base.service';
 import { UtilityService } from '../data-base/utility/utility.service';
 import { RoleService } from '../data-base/query/role/role.service';
+import { ExtraProfileService } from '../data-base/query/extra-profile/extra-profile.service';
 
 describe('UsersController', () => {
   let controller: UsersController;
@@ -162,6 +163,7 @@ describe('UsersController', () => {
     const mockUtilityService = mock<UtilityService>();
     mockPermissionbitcalcService = mock<PermissionBitcalcService>();
     const mockRoleService = mock<RoleService>();
+    const mockExtraProfileService = mock<ExtraProfileService>();
 
     const module: TestingModule = await getGlobalModule({
       controllers: [UsersController],
@@ -187,6 +189,10 @@ describe('UsersController', () => {
           provide: RoleService,
           useValue: mockRoleService,
         },
+        {
+          provide: ExtraProfileService,
+          useValue: mockExtraProfileService,
+        }
       ],
     })
       .overrideGuard(JwtAuthGuard)

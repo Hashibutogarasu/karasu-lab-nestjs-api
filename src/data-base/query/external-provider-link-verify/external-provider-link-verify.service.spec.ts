@@ -21,6 +21,18 @@ describe('ExternalProviderLinkVerifyService', () => {
   beforeEach(async () => {
     const mockDataBaseService = mock<DataBaseService>({
       prisma: jest.fn().mockImplementation(() => ({
+        externalProviderAccessToken: {
+          updateMany: async ({ where, data }: any) => {
+            // no-op for tests
+            return { count: 0 };
+          },
+        },
+        extraProfile: {
+          updateMany: async ({ where, data }: any) => {
+            // no-op for tests
+            return { count: 0 };
+          },
+        },
         externalProviderLinkVerify: {
           deleteMany: async ({ where }: any) => {
             if (where.userId && where.provider) {
