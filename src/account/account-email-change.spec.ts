@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/unbound-method */
 import { TestingModule } from '@nestjs/testing';
 import { getGlobalModule } from '../utils/test/global-modules';
 import { AccountController } from './account.controller';
@@ -11,6 +10,8 @@ import { PendingEmailChangeProcessService } from '../data-base/query/pending-ema
 import { PasswordService } from '../data-base/utility/password/password.service';
 import { JwtTokenService } from '../auth/jwt-token/jwt-token.service';
 import { mockUser } from '../utils/test/mock-data';
+import { ExternalProviderAccessTokenService } from '../data-base/query/external-provider-access-token/external-provider-access-token.service';
+import { ExtraProfileService } from '../data-base/query/extra-profile/extra-profile.service';
 
 describe('Account Email Change Flow', () => {
   let service: AccountService;
@@ -19,11 +20,16 @@ describe('Account Email Change Flow', () => {
   const mockUserService = mock<UserService>();
   const mockPendingEmailChangeService =
     mock<PendingEmailChangeProcessService>();
-  const mockPasswordService = mock<PasswordService>();
-  const mockJwtTokenService = mock<JwtTokenService>();
+
 
   beforeEach(async () => {
     jest.clearAllMocks();
+
+    const mockPasswordService = mock<PasswordService>();
+    const mockJwtTokenService = mock<JwtTokenService>();
+    const mockExternalProviderAccessTokenService =
+      mock<ExternalProviderAccessTokenService>();
+    const mockExtraProfileService = mock<ExtraProfileService>();
 
     const module: TestingModule = await getGlobalModule({
       controllers: [AccountController],
@@ -37,6 +43,14 @@ describe('Account Email Change Flow', () => {
         },
         { provide: PasswordService, useValue: mockPasswordService },
         { provide: JwtTokenService, useValue: mockJwtTokenService },
+        {
+          provide: ExternalProviderAccessTokenService,
+          useValue: mockExternalProviderAccessTokenService,
+        },
+        {
+          provide: ExtraProfileService,
+          useValue: mockExtraProfileService,
+        }
       ],
     }).compile();
 
@@ -62,7 +76,7 @@ describe('Account Email Change Flow', () => {
       id: 'p1',
       userId: 'user_1',
       newEmail: 'new@example.com',
-      verificationCode: '123456', // returned plaintext by createPending
+      verificationCode: '123456',
       expiresAt: new Date(Date.now() + 30 * 60 * 1000),
       used: false,
       createdAt: new Date(),
@@ -79,8 +93,6 @@ describe('Account Email Change Flow', () => {
     expect(reqRes).toHaveProperty('message');
     expect(mockResendService.sendEmail).toHaveBeenCalled();
 
-    // now verify
-    // findPendingByCode should return record when correct code is provided
     mockPendingEmailChangeService.findPendingByCode.mockResolvedValue({
       ...pendingRecord,
       id: 'p1',
@@ -111,7 +123,7 @@ describe('Account Email Change Flow', () => {
 
   it('requesting email change to an email already in use should return EMAIL_ALREADY_IN_USE', async () => {
     mockUserService.findUserById.mockResolvedValue(fakeUser as any);
-    // Simulate that another user already has the new email
+
     mockUserService.findUserByEmail.mockResolvedValue({
       id: 'user_2',
       email: 'taken@example.com',
@@ -135,7 +147,7 @@ describe('Account Email Change Flow', () => {
 
   it('code for another user should be rejected', async () => {
     mockUserService.findUserById.mockResolvedValue(fakeUser as any);
-    // findPendingByCode returns a record but for different user id -> function should have searched by userId so null
+
     mockPendingEmailChangeService.findPendingByCode.mockResolvedValue(
       null as any,
     );
@@ -160,7 +172,7 @@ describe('Account Email Change Flow', () => {
     mockPendingEmailChangeService.findPendingByCode.mockResolvedValue(
       null as any,
     );
-    // service.findPendingByCode internally checks expiry; our mock returns null to indicate invalid
+
     await expect(service.verifyEmailChange(mockUser, '111111')).rejects.toBe(
       AppErrorCodes.INVALID_REQUEST,
     );
@@ -168,7 +180,7 @@ describe('Account Email Change Flow', () => {
 
   it('concurrent pending request: second request should be rejected', async () => {
     mockUserService.findUserById.mockResolvedValue(fakeUser as any);
-    // Simulate createPending returning a record, but if there's already one, createPendingEmailChangeProcess may still create; we should check behavior: we'll simulate that function throws
+
     mockPendingEmailChangeService.createPendingEmailChangeProcess.mockRejectedValue(
       AppErrorCodes.ALREADY_PENDING,
     );

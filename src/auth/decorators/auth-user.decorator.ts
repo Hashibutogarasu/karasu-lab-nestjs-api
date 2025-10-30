@@ -46,7 +46,6 @@ export const AuthUser = createParamDecorator(
       throw AppErrorCodes.UNAUTHORIZED;
     }
 
-    // get by provider token name to avoid static import
     const userService = mr.get(UserService, { strict: false });
     if (!userService) {
       throw AppErrorCodes.UNAUTHORIZED;

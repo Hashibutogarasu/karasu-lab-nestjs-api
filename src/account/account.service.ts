@@ -12,6 +12,8 @@ import { UserService } from '../data-base/query/user/user.service';
 import { PasswordService } from '../data-base/utility/password/password.service';
 import { PendingEmailChangeProcessService } from '../data-base/query/pending-email-change-process/pending-email-change-process.service';
 import { PublicUser } from '../auth/decorators/auth-user.decorator';
+import { ExternalProviderAccessTokenService } from '../data-base/query/external-provider-access-token/external-provider-access-token.service';
+import { ExtraProfileService } from '../data-base/query/extra-profile/extra-profile.service';
 
 @Injectable()
 export class AccountService {
@@ -20,7 +22,9 @@ export class AccountService {
     private readonly userService: UserService,
     private readonly passwordService: PasswordService,
     private readonly pendingEmailChangeProcessService: PendingEmailChangeProcessService,
-  ) {}
+    private readonly externalProviderAccessTokenService: ExternalProviderAccessTokenService,
+    private readonly extraProfileService: ExtraProfileService,
+  ) { }
 
   /**
    * サインイン済みユーザーのパスワード変更（旧パスワード必要）
@@ -240,6 +244,44 @@ export class AccountService {
       message: 'Password set successfully',
       user: updatedUser,
     };
+  }
+
+  async unlinkProvider(userId: string, provider: string): Promise<void> {
+    const user = await this.userService.findUserById(userId, { passwordHash: false });
+    if (!user) {
+      throw AppErrorCodes.USER_NOT_FOUND;
+    }
+
+    if (!user.providers || !user.providers.includes(provider)) {
+      throw AppErrorCodes.PROVIDER_NOT_FOUND;
+    }
+
+    if (!user.passwordHash) {
+      const providerCount = user.providers ? user.providers.length : 0;
+      if (providerCount <= 1) {
+        throw AppErrorCodes.PROVIDER_MUST_HAVE_ONE;
+      }
+    }
+
+    try {
+      await this.userService.removeUserProvider(userId, provider);
+      await this.extraProfileService.removeProfileByUser(userId, provider);
+    } catch (err) {
+      throw AppErrorCodes.USER_UPDATE_DATABASE_ERROR;
+    }
+
+    const tokens = await this.externalProviderAccessTokenService.getByUserId(
+      userId,
+    );
+    const toDelete = (tokens || []).filter((t) => t.provider === provider);
+    for (const t of toDelete) {
+      try {
+        await this.externalProviderAccessTokenService.delete(t.id);
+      } catch (e) {
+        throw AppErrorCodes.EXTERNAL_PROVIDER_UNLINK_FAILED;
+      }
+    }
+    return;
   }
 
   /**

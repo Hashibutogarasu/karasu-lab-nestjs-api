@@ -56,3 +56,9 @@ export const canSetPasswordResponseSchema = z.object({
 export class CanSetPasswordResponseDto extends createZodDto(
   canSetPasswordResponseSchema,
 ) {}
+
+export const unlinkProviderSchema = z.object({
+  provider: z.string(),
+});
+
+export class UnlinkProviderDto extends createZodDto(unlinkProviderSchema) {}

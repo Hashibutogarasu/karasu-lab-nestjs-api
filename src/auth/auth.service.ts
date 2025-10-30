@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ExternalProviderLinkVerifyService } from '../data-base/query/external-provider-link-verify/external-provider-link-verify.service';
 import { JwtService } from '@nestjs/jwt';
 import { AuthResponse } from '../lib/auth/authentication';
 import { WorkflowService } from './sns/workflow/workflow.service';
@@ -26,7 +27,44 @@ export class AuthService {
     private readonly workflowService: WorkflowService,
     private readonly dateTimeService: DateTimeService,
     private readonly jwtTokenService: JwtTokenService,
-  ) {}
+    private readonly externalProviderLinkVerifyService: ExternalProviderLinkVerifyService,
+  ) { }
+
+  async createExternalProviderLinkVerificationIfNeeded(
+    userId: string,
+    provider: string,
+    rawExternalProviderProfile: unknown,
+  ): Promise<string | null> {
+    const user = await this.userService.findUserById(userId, { passwordHash: false });
+    if (!user) throw AppErrorCodes.USER_NOT_FOUND;
+
+    const hasProvider = user.providers?.includes(provider);
+    if (user.passwordHash && !hasProvider) {
+      const rec = await this.externalProviderLinkVerifyService.create({
+        userId,
+        provider,
+        rawExternalProviderProfile,
+      });
+      return rec.verifyCode;
+    }
+    return null;
+  }
+
+  async finalizeExternalProviderLinkAfterVerification(
+    loggedInUserId: string,
+    provider: string,
+    verifyCode: string,
+  ) {
+    const ok = await this.externalProviderLinkVerifyService.verify({
+      userId: loggedInUserId,
+      provider,
+      verifyCode,
+    });
+    if (!ok) throw AppErrorCodes.INVALID_REQUEST;
+
+    await this.userService.addUserProvider(loggedInUserId, provider);
+    return { success: true };
+  }
 
   /**
    * ユーザー登録処理

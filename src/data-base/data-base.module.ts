@@ -16,6 +16,7 @@ import { DataBaseMiddleware } from './data-base.middleware';
 import { DateTimeService } from '../date-time/date-time.service';
 import { OauthClientService } from './query/oauth-client/oauth-client.service';
 import { OauthGrantedTokenService } from './query/oauth-granted-token/oauth-granted-token.service';
+import { ExternalProviderLinkVerifyService } from './query/external-provider-link-verify/external-provider-link-verify.service';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { OauthGrantedTokenService } from './query/oauth-granted-token/oauth-gran
     DateTimeService,
     OauthClientService,
     OauthGrantedTokenService,
+    ExternalProviderLinkVerifyService,
   ],
   exports: [
     UtilityService,
@@ -49,6 +51,7 @@ import { OauthGrantedTokenService } from './query/oauth-granted-token/oauth-gran
     AuthStateService,
     UserService,
     ExtraProfileService,
+    ExternalProviderLinkVerifyService,
   ],
 })
 export class DataBaseModule {

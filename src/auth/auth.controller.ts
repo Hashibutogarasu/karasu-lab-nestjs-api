@@ -9,7 +9,6 @@ import {
   Query,
   Param,
   UseGuards,
-  Optional,
   UsePipes,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
@@ -38,6 +37,8 @@ import {
   AuthStateResponseDto,
   authStateSchema,
   AuthVerifyResponseDto,
+  LinkProviderVerifyDto,
+  linkProviderVerifySchema,
   LoginDto,
   LoginResponseDto,
   loginSchema,
@@ -76,7 +77,7 @@ export class AuthController {
     private readonly snsAuthCoreService: AuthCoreService,
     private readonly jwtTokenService: JwtTokenService,
     private readonly mfaService: MfaService,
-  ) {}
+  ) { }
 
   private async getCodeChallengeFromState(stateCode?: string) {
     if (!stateCode) return undefined;
@@ -141,77 +142,6 @@ export class AuthController {
       });
     } catch (error) {
       return Promise.reject(error);
-    }
-  }
-
-  /**
-   * SNS OAuth認証開始エンドポイント
-   * GET /auth/login/:provider
-   */
-  @ApiBadRequestResponse(AppErrorCodes.UNSUPPORTED_PROVIDER.apiResponse)
-  @ApiBadRequestResponse(AppErrorCodes.PROVIDER_UNAVAILABLE.apiResponse)
-  @ApiBadRequestResponse(AppErrorCodes.INVALID_STATE_CODE.apiResponse)
-  @ApiServiceUnavailableResponse(AppErrorCodes.PROVIDER_UNAVAILABLE.apiResponse)
-  @ApiInternalServerErrorResponse(
-    AppErrorCodes.INTERNAL_SERVER_ERROR.apiResponse,
-  )
-  @Get('login/:provider')
-  async loginWithProvider(
-    @Param('provider') provider: string,
-    @Query('callback_url') callbackUrl: string,
-    @Res() res: Response,
-    @Req() req: Request,
-  ): Promise<void> {
-    try {
-      const oauthProvider = this.oauthProviderFactory.getProvider(provider);
-      if (!oauthProvider.isAvailable()) {
-        throw AppErrorCodes.PROVIDER_UNAVAILABLE;
-      }
-
-      const finalCallbackUrl = callbackUrl || this.DEFAULT_CALLBACK_URL;
-
-      const baseUrl =
-        process.env.BASE_URL || `${req.protocol}://${req.headers.host}`;
-      const backendRedirectUri = `${baseUrl.replace(/\/$/, '')}/auth/callback/${provider}`;
-
-      const result = await this.snsAuthCoreService.createAuthenticationState(
-        {
-          provider,
-          callbackUrl: finalCallbackUrl,
-        },
-        oauthProvider,
-      );
-
-      if (!result.success) {
-        throw AppErrorCodes.INTERNAL_SERVER_ERROR;
-      }
-
-      let codeChallenge: string | undefined;
-
-      if (result.stateCode) {
-        codeChallenge = await this.getCodeChallengeFromState(result.stateCode);
-      } else {
-        throw AppErrorCodes.INVALID_STATE_CODE;
-      }
-
-      const authUrl = oauthProvider.getAuthorizationUrl(
-        backendRedirectUri,
-        result.stateCode,
-        codeChallenge,
-      );
-
-      res.redirect(authUrl);
-    } catch (error) {
-      if (error instanceof ProviderNotImplementedError) {
-        throw AppErrorCodes.UNSUPPORTED_PROVIDER;
-      }
-      if (error instanceof ProviderUnavailableError) {
-        throw AppErrorCodes.PROVIDER_UNAVAILABLE;
-      }
-      if (error instanceof AppErrorCode) {
-        throw error;
-      }
-      throw AppErrorCodes.INTERNAL_SERVER_ERROR;
     }
   }
 
@@ -442,11 +372,10 @@ export class AuthController {
     @Res() res: Response,
     @Req() req: Request,
   ): Promise<void> {
-    let authState: AuthState | null = null;
     try {
-      authState = await this.authService.getAuthState(state);
+      const authState = await this.authService.getAuthState(state);
 
-      if (error) {
+      if (error || !authState) {
         throw AppErrorCodes.INVALID_REQUEST;
       }
 
@@ -470,7 +399,11 @@ export class AuthController {
         state,
       );
 
-      if (accessToken) {
+      if (!processResult || processResult.success === false) {
+        throw AppErrorCodes.INTERNAL_SERVER_ERROR;
+      }
+
+      if (accessToken && processResult.userId) {
         await this.externalProviderAccessTokenService.upsert(
           {
             userId: processResult.userId,
@@ -479,14 +412,17 @@ export class AuthController {
           {
             provider: authState.provider,
             token: accessToken,
-            userId: processResult.userId!,
+            userId: processResult.userId,
           },
         );
       }
 
-      if (!processResult.success) {
-        throw AppErrorCodes.INTERNAL_SERVER_ERROR;
-      }
+      // パスワードをユーザーが外部プロバイダーで初めてリンクするかを検証します。
+      const maybeVerifyCode = await this.authService.createExternalProviderLinkVerificationIfNeeded(
+        processResult.userId!,
+        authState.provider,
+        snsProfile,
+      );
 
       const finalCallbackUrl = queryCallbackUrl || authState.callbackUrl;
       const callbackUrl = new URL(finalCallbackUrl);
@@ -497,9 +433,15 @@ export class AuthController {
         callbackUrl.searchParams.set('state', state);
       }
 
+      // 外部プロバイダーの検証のためにパラメーターをセットします。
+      if (maybeVerifyCode) {
+        callbackUrl.searchParams.set('linkVerifyCode', maybeVerifyCode);
+        callbackUrl.searchParams.set('linkProvider', authState.provider);
+      }
+
       return res.redirect(callbackUrl.toString());
     } catch (error) {
-      throw AppErrorCodes.INTERNAL_SERVER_ERROR;
+      throw error;
     }
   }
 
@@ -539,6 +481,45 @@ export class AuthController {
       }
       throw AppErrorCodes.INTERNAL_SERVER_ERROR;
     }
+  }
+
+  /**
+   * 外部プロバイダーでログインするときの検証エンドポイントです
+   * フロントエンドはJWTで確認コードをポストする必要があります。
+   */
+  @ApiOkResponse({ type: AuthStateResponseDto })
+  @ApiBadRequestResponse(AppErrorCodes.INVALID_REQUEST.apiResponse)
+  @ApiUnauthorizedResponse(AppErrorCodes.UNAUTHORIZED.apiResponse)
+  @UseGuards(JwtAuthGuard)
+  @Post('link/verify')
+  @ApiBody({ type: LinkProviderVerifyDto })
+  @UsePipes(new ZodValidationPipe(linkProviderVerifySchema))
+  async verifyLinkProvider(
+    @Body() body: any,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const { provider, verifyCode } = body;
+    if (!provider || !verifyCode) throw AppErrorCodes.INVALID_REQUEST;
+
+    let user: any = null;
+    if (req) {
+      if (req.user) {
+        user = req.user;
+      } else if ((req as any).id) {
+        user = req;
+      }
+    }
+
+    if (!user || !user.id) throw AppErrorCodes.UNAUTHORIZED;
+
+    const result = await this.authService.finalizeExternalProviderLinkAfterVerification(
+      user.id,
+      provider,
+      verifyCode,
+    );
+
+    return res.status(HttpStatus.OK).json({ message: 'Provider linked', success: true, result });
   }
 
   async checkForMfa(res: Response, { userId }: { userId?: string }) {

@@ -34,6 +34,7 @@ import {
   ApiNotFoundResponse,
   ApiResponse,
 } from '@nestjs/swagger';
+import { UnlinkProviderDto } from './account.dto';
 import { ApiWrappedOkResponse } from '../decorators/api-wrapped-ok-response/api-wrapped-ok-response.decorator';
 import {
   CanSetPasswordResponseDto,
@@ -48,7 +49,7 @@ import { AppErrorCodes } from '../types/error-codes';
 
 @Controller('account')
 export class AccountController {
-  constructor(private readonly accountService: AccountService) {}
+  constructor(private readonly accountService: AccountService) { }
 
   /**
    * サインイン済みユーザーのパスワード変更
@@ -186,5 +187,22 @@ export class AccountController {
     @AuthUser() user: PublicUser,
   ) {
     return await this.accountService.canSetPassword(user);
+  }
+
+  /**
+   * 外部プロバイダーの連携解除
+   */
+  @ApiBody({ type: UnlinkProviderDto })
+  @ApiBearerAuth()
+  @ApiBadRequestResponse(AppErrorCodes.PROVIDER_NOT_FOUND.apiResponse)
+  @UseGuards(JwtAuthGuard)
+  @Post('providers/unlink')
+  async unlinkProvider(
+    @AuthUser() user: PublicUser,
+    @Body() body: UnlinkProviderDto,
+    @Res() res: Response,
+  ) {
+    await this.accountService.unlinkProvider(user.id, body.provider);
+    return res.status(HttpStatus.OK).json({ message: 'Provider unlinked successfully' });
   }
 }

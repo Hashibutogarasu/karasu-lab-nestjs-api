@@ -31,6 +31,15 @@ export const verifyTokenSchema = z.object({
 
 export class VerifyTokenDto extends createZodDto(verifyTokenSchema) {}
 
+export const linkProviderVerifySchema = z.object({
+  provider: z.string(),
+  verifyCode: z.string(),
+});
+
+export class LinkProviderVerifyDto extends createZodDto(linkProviderVerifySchema) {}
+
+export const zodLinkProviderVerifySchema = linkProviderVerifySchema;
+
 export const refreshTokenSchema = z.object({
   refresh_token: z.string(),
 });
@@ -40,6 +49,7 @@ export class RefreshTokenDto extends createZodDto(refreshTokenSchema) {}
 export const authStateSchema = z.object({
   provider: z.string(),
   callbackUrl: z.url(),
+  userId: z.string().optional(),
 });
 
 export class AuthStateDto extends createZodDto(authStateSchema) {}
@@ -105,7 +115,6 @@ export const usernameSchema = z
       'Username can only contain letters, numbers, underscores, and hyphens',
   });
 
-// ユーザー情報レスポンス用（パスワードを除く）
 export const UserResponseSchema = z.object({
   id: z.string(),
   username: z.string(),

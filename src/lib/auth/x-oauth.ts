@@ -2,6 +2,7 @@
  * X (旧Twitter) OAuth認証の実装（OAuth 2.0 Authorization Code Flow）
  */
 
+import { AppErrorCodes } from '../../types/error-codes';
 import { SnsProfile } from './sns-auth';
 
 export interface XProfile {
@@ -33,7 +34,7 @@ export async function exchangeXCode(
   const clientSecret = process.env.X_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
-    throw new Error('X OAuth credentials not configured');
+    throw AppErrorCodes.X_CLIENT_CONFIGURATION;
   }
 
   const tokenEndpoint = 'https://api.x.com/2/oauth2/token';
@@ -59,8 +60,7 @@ export async function exchangeXCode(
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`X token exchange failed: ${errorText}`);
+    throw AppErrorCodes.X_TOKEN_EXCHANGE_FAILED;
   }
 
   return response.json();
@@ -82,8 +82,7 @@ export async function getXProfile(accessToken: string): Promise<XProfile> {
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`X profile fetch failed: ${errorText}`);
+    throw AppErrorCodes.X_TOKEN_EXCHANGE_FAILED;
   }
 
   const json = await response.json();

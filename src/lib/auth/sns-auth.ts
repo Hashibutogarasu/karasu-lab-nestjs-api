@@ -10,6 +10,7 @@ export interface SnsProfile {
 export interface AuthStateRequest {
   provider: string;
   callbackUrl: string;
+  userId?: string;
 }
 
 export interface AuthStateResponse {

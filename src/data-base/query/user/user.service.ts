@@ -58,7 +58,7 @@ export class UserService {
   /**
    * ユーザーIDでユーザーを取得
    */
-  async findUserById(userId: string, { passwordHash = false } = {}) {
+  async findUserById(userId: string, { passwordHash = true } = {}) {
     return this.prisma.user.findFirst({
       where: { id: userId },
       omit: {
@@ -254,6 +254,33 @@ export class UserService {
         providers: {
           push: provider,
         },
+      },
+    });
+  }
+
+  /**
+   * ユーザーのプロバイダーリストから指定のプロバイダーを削除
+   */
+  async removeUserProvider(userId: string, provider: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { providers: true },
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    if (!user.providers || !user.providers.includes(provider)) {
+      return;
+    }
+
+    const newProviders = user.providers.filter((p) => p !== provider);
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        providers: newProviders,
       },
     });
   }

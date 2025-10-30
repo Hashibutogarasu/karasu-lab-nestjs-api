@@ -26,7 +26,7 @@ const getErrorSchema = ({
     customMessage: z.string().default(customMessage ?? 'An error occurred'),
   });
 
-export class ErrorDto extends createZodDto(getErrorSchema()) {}
+export class ErrorDto extends createZodDto(getErrorSchema()) { }
 
 /**
  * @example
@@ -35,7 +35,7 @@ export class ErrorDto extends createZodDto(getErrorSchema()) {}
 export class AppErrorCode extends Error {
   public readonly key: string;
   public readonly code: number;
-  public readonly isHttpError: boolean;
+  public readonly isHttpError: boolean = true;
   public customMessage: string;
   public zodSchema: z.ZodObject<any>;
   public zodDtoClass: any;
@@ -61,10 +61,10 @@ export class AppErrorCode extends Error {
     });
 
     const className = `Error${this.name}Dto`;
-    const ZodDtoClass = class extends createZodDto(this.zodSchema) {};
+    const ZodDtoClass = class extends createZodDto(this.zodSchema) { };
     try {
       Object.defineProperty(ZodDtoClass, 'name', { value: className });
-    } catch (e) {}
+    } catch (e) { }
     this.zodDtoClass = ZodDtoClass;
   }
 
@@ -181,6 +181,13 @@ export const AppErrorCodes = {
       name: z.string().default('InvalidAuthState'),
       code: z.number().default(400),
       customMessage: z.string().default('Invalid authentication state'),
+    }),
+  ),
+  AUTH_STATE_CREATION_FAILED: new AppErrorCode(
+    z.object({
+      name: z.string().default('AuthStateCreationFailed'),
+      code: z.number().default(500),
+      customMessage: z.string().default('Failed to create authentication state'),
     }),
   ),
   PROVIDER_NOT_FOUND: new AppErrorCode(
@@ -341,6 +348,41 @@ export const AppErrorCodes = {
       customMessage: z.string().default('Failed to create user in database'),
     }),
   ),
+  DISCORD_CLIENT_CONFIGURATION: new AppErrorCode(
+    z.object({
+      name: z.string().default('DiscordClientConfiguration'),
+      code: z.number().default(500),
+      customMessage: z.string().default('Discord client configuration error'),
+    }),
+  ),
+  GOOGLE_TOKEN_EXCHANGE_FAILED: new AppErrorCode(
+    z.object({
+      name: z.string().default('GoogleTokenExchangeFailed'),
+      code: z.number().default(500),
+      customMessage: z.string().default('Failed to exchange Google token'),
+    }),
+  ),
+  DISCORD_TOKEN_EXCHANGE_FAILED: new AppErrorCode(
+    z.object({
+      name: z.string().default('DiscordTokenExchangeFailed'),
+      code: z.number().default(500),
+      customMessage: z.string().default('Failed to exchange Discord token'),
+    }),
+  ),
+  X_CLIENT_CONFIGURATION: new AppErrorCode(
+    z.object({
+      name: z.string().default('XClientConfiguration'),
+      code: z.number().default(500),
+      customMessage: z.string().default('X client configuration error'),
+    }),
+  ),
+  X_TOKEN_EXCHANGE_FAILED: new AppErrorCode(
+    z.object({
+      name: z.string().default('XTokenExchangeFailed'),
+      code: z.number().default(500),
+      customMessage: z.string().default('Failed to exchange X token'),
+    }),
+  ),
 
   // OAuth Errors
   UNSUPPORTED_PROVIDER: new AppErrorCode(
@@ -499,6 +541,41 @@ export const AppErrorCodes = {
       name: z.string().default('AlreadyPending'),
       code: z.number().default(400),
       customMessage: z.string().default('Request is already pending'),
+    }),
+  ),
+  EXTERNAL_PROVIDER_UNLINK_FAILED: new AppErrorCode(
+    z.object({
+      name: z.string().default('ExternalProviderUnlinkFailed'),
+      code: z.number().default(400),
+      customMessage: z.string().default('Failed to unlink external provider'),
+    }),
+  ),
+  EXTERNAL_PROVIDER_LINK_VERIFY_CREATE_FAILED: new AppErrorCode(
+    z.object({
+      name: z.string().default('ExternalProviderLinkVerifyCreateFailed'),
+      code: z.number().default(500),
+      customMessage: z.string().default('Failed to create external provider link verification record'),
+    }),
+  ),
+  EXTERNAL_PROVIDER_LINK_VERIFY_DELETE_FAILED: new AppErrorCode(
+    z.object({
+      name: z.string().default('ExternalProviderLinkVerifyDeleteFailed'),
+      code: z.number().default(500),
+      customMessage: z.string().default('Failed to delete external provider link verification record'),
+    }),
+  ),
+  EXTERNAL_PROVIDER_LINK_VERIFY_VERIFY_FAILED: new AppErrorCode(
+    z.object({
+      name: z.string().default('ExternalProviderLinkVerifyVerifyFailed'),
+      code: z.number().default(500),
+      customMessage: z.string().default('Failed to verify external provider link verification record'),
+    }),
+  ),
+  PROVIDER_MUST_HAVE_ONE: new AppErrorCode(
+    z.object({
+      name: z.string().default('ProviderMustHaveOne'),
+      code: z.number().default(400),
+      customMessage: z.string().default('Provider must have at least one linked account'),
     }),
   ),
 

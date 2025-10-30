@@ -5,6 +5,7 @@
 import z from 'zod';
 import { SnsProfile } from './sns-auth';
 import { createZodDto } from 'nestjs-zod';
+import { AppErrorCodes } from '../../types/error-codes';
 
 export const discordProfileSchema = z.object({
   id: z.string(),
@@ -20,7 +21,7 @@ export const discordProfileSchema = z.object({
   public_flags: z.number().optional(),
 });
 
-export class DiscordProfile extends createZodDto(discordProfileSchema) {}
+export class DiscordProfile extends createZodDto(discordProfileSchema) { }
 
 export const discordTokenResponseSchema = z.object({
   access_token: z.string(),
@@ -32,7 +33,7 @@ export const discordTokenResponseSchema = z.object({
 
 export class DiscordTokenResponse extends createZodDto(
   discordTokenResponseSchema,
-) {}
+) { }
 
 /**
  * Discordの認可コードをアクセストークンに交換
@@ -45,7 +46,7 @@ export async function exchangeDiscordCode(
   const clientSecret = process.env.DISCORD_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
-    throw new Error('Discord OAuth credentials not configured');
+    throw AppErrorCodes.DISCORD_CLIENT_CONFIGURATION;
   }
 
   const tokenEndpoint = 'https://discord.com/api/oauth2/token';
@@ -65,8 +66,7 @@ export async function exchangeDiscordCode(
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Discord token exchange failed: ${errorText}`);
+    throw AppErrorCodes.DISCORD_TOKEN_EXCHANGE_FAILED;
   }
 
   return response.json();
@@ -88,8 +88,7 @@ export async function getDiscordProfile(
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Discord profile fetch failed: ${errorText}`);
+    throw AppErrorCodes.DISCORD_TOKEN_EXCHANGE_FAILED;
   }
 
   return response.json();

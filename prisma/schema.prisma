@@ -50,6 +50,7 @@ model User {
   issuedOtps                  UserOTP[]                     @relation("UserOTP_Issuer")
   oAuthGrantedToken           OAuthGrantedToken[]
   OAuthClient                 OAuthClient[]
+  ExternalProviderLinkVerify  ExternalProviderLinkVerify[]
 
   @@map("users")
 }
@@ -132,16 +133,18 @@ model RefreshToken {
 
 // SNS認証用のプロフィール情報
 model ExtraProfile {
-  id          String   @id @default(cuid())
-  userId      String   @map("user_id")
-  provider    String
-  providerId  String   @map("provider_id")
-  displayName String?  @map("display_name")
-  email       String?
-  avatarUrl   String?  @map("avatar_url")
-  rawProfile  Json     @map("raw_profile")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id              String  @id @default(cuid())
+  userId          String  @map("user_id")
+  provider        String
+  providerId      String  @map("provider_id")
+  displayName     String? @map("display_name")
+  email           String?
+  avatarUrl       String? @map("avatar_url")
+  rawProfile      Json    @map("raw_profile")
+  linkingVerified Boolean @default(false)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -173,6 +176,21 @@ model AuthState {
   @@index([oneTimeToken])
   @@index([userId])
   @@map("auth_states")
+}
+
+// 外部プロバイダーの連携時の一時的な検証用テーブル
+model ExternalProviderLinkVerify {
+  id                         String @id @default(cuid())
+  provider                   String
+  rawExternalProviderProfile Json
+  userId                     String
+  verifyHashedCode           String
+
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
 }
 
 // パスワードリセット用のテーブル
@@ -208,9 +226,10 @@ model JWTState {
 model ExternalProviderAccessToken {
   id String @id @default(cuid())
 
-  userId         String @map("user_id")
-  encryptedToken String @map("encrypted_token")
-  provider       String
+  userId          String  @map("user_id")
+  encryptedToken  String  @map("encrypted_token")
+  provider        String
+  linkingVerified Boolean @default(false)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
@@ -263,13 +282,12 @@ model OTPBackupCode {
 // Start of OAuth 2.0 PKCE related models
 
 model OAuthClient {
-  id           String   @id @default(cuid())
-  name         String
-  secret       String   @map("client_secret") // Hashed secret
-  redirectUris String[] @map("redirect_uris")
-
-  permissionBitMask Int    @map("permission_bit_mask")
-  userId            String @map("user_id")
+  id                String   @id @default(cuid())
+  name              String
+  secret            String   @map("client_secret") // Hashed secret
+  redirectUris      String[] @map("redirect_uris")
+  permissionBitMask Int      @map("permission_bit_mask")
+  userId            String   @map("user_id")
 
   createdAt         DateTime            @default(now()) @map("created_at")
   updatedAt         DateTime            @updatedAt @map("updated_at")
@@ -278,17 +296,14 @@ model OAuthClient {
 }
 
 model OAuthGrantedToken {
-  jti String @id @unique
+  jti               String   @id @unique
+  userId            String   @map("user_id")
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permissionBitMask Int      @map("permission_bit_mask")
+  expiryAt          DateTime @map("expiry_at")
+  clientId          String   @map("client_id")
 
-  userId String @map("user_id")
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  permissionBitMask Int @map("permission_bit_mask")
-
-  expiryAt DateTime @map("expiry_at")
-
-  clientId String      @map("client_id")
-  client   OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
 }
 
 // End of OAuth 2.0 PKCE related models

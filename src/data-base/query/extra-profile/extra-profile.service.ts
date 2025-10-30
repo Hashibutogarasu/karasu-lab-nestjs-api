@@ -74,4 +74,27 @@ export class ExtraProfileService {
 
     return extraProfile?.user || null;
   }
+
+  async removeProfileByUser(userId: string, provider: string) {
+    const extraProfile = await this.prisma.extraProfile.findFirst({
+      where: {
+        userId,
+        provider,
+      }
+    });
+
+    if (!extraProfile) {
+      return null;
+    }
+
+    await this.prisma.extraProfile.delete({
+      where: {
+        providerId_provider: {
+          providerId: extraProfile.providerId,
+          provider: extraProfile.provider,
+        },
+        userId,
+      },
+    });
+  }
 }

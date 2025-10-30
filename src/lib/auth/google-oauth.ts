@@ -5,6 +5,7 @@
 import z from 'zod';
 import { SnsProfile } from './sns-auth';
 import { createZodDto } from 'nestjs-zod';
+import { AppErrorCodes } from '../../types/error-codes';
 
 export const googleProfileSchema = z.object({
   id: z.string(),
@@ -17,7 +18,7 @@ export const googleProfileSchema = z.object({
   locale: z.string().optional(),
 });
 
-export class GoogleProfile extends createZodDto(googleProfileSchema) {}
+export class GoogleProfile extends createZodDto(googleProfileSchema) { }
 
 export const googleTokenResponseSchema = z.object({
   access_token: z.string(),
@@ -30,7 +31,7 @@ export const googleTokenResponseSchema = z.object({
 
 export class GoogleTokenResponse extends createZodDto(
   googleTokenResponseSchema,
-) {}
+) { }
 
 /**
  * Googleの認可コードをアクセストークンに交換
@@ -63,8 +64,7 @@ export async function exchangeGoogleCode(
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Google token exchange failed: ${errorText}`);
+    throw AppErrorCodes.GOOGLE_TOKEN_EXCHANGE_FAILED;
   }
 
   return response.json();
@@ -86,8 +86,7 @@ export async function getGoogleProfile(
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Google profile fetch failed: ${errorText}`);
+    throw AppErrorCodes.GOOGLE_TOKEN_EXCHANGE_FAILED;
   }
 
   return response.json();

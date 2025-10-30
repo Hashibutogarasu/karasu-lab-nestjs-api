@@ -24,12 +24,14 @@ import { JwtTokenService } from './jwt-token/jwt-token.service';
 import { DataBaseService } from '../data-base/data-base.service';
 import { UtilityService } from '../data-base/utility/utility.service';
 import { RoleService } from '../data-base/query/role/role.service';
+import { UserService } from '../data-base/query/user/user.service';
 import { AuthStateService } from '../data-base/query/auth-state/auth-state.service';
 import { AuthCoreService } from './sns/auth-core/auth-core.service';
 import { LoginDto, RegisterDto } from './auth.dto';
 import { MfaService } from '../data-base/query/mfa/mfa.service';
 import { APP_PIPE } from '@nestjs/core';
 import { ZodValidationPipe } from '../zod-validation-type';
+import { ExternalProviderLinkVerifyService } from '../data-base/query/external-provider-link-verify/external-provider-link-verify.service';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -97,6 +99,8 @@ describe('AuthController', () => {
       }),
     });
     const mockMFaService = mock<MfaService>();
+    const mockExternalProviderLinkVerifyService = mock<ExternalProviderLinkVerifyService>();
+    const mockUserService = mock<UserService>();
 
     const module: TestingModule = await getGlobalModule({
       controllers: [AuthController],
@@ -122,6 +126,10 @@ describe('AuthController', () => {
           useValue: mockDatabaseService,
         },
         {
+          provide: UserService,
+          useValue: mockUserService,
+        },
+        {
           provide: UtilityService,
           useValue: mockUtilityService,
         },
@@ -140,6 +148,10 @@ describe('AuthController', () => {
         {
           provide: MfaService,
           useValue: mockMFaService,
+        },
+        {
+          provide: ExternalProviderLinkVerifyService,
+          useValue: mockExternalProviderLinkVerifyService
         },
         {
           provide: APP_PIPE,

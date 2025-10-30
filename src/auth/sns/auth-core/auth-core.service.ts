@@ -14,7 +14,7 @@ import { UserService } from '../../../data-base/query/user/user.service';
 import { JwtTokenService } from '../../jwt-token/jwt-token.service';
 import { ExtraProfileService } from '../../../data-base/query/extra-profile/extra-profile.service';
 import { ExternalProviderAuthResult } from './auth.core.dto';
-import { AppErrorCodes } from '../../../types/error-codes';
+import { AppErrorCode, AppErrorCodes } from '../../../types/error-codes';
 
 @Injectable()
 export class AuthCoreService {
@@ -25,7 +25,7 @@ export class AuthCoreService {
     private readonly jwtTokenService: JwtTokenService,
     private readonly extraProfileService: ExtraProfileService,
     private readonly oauthProviderFactory: OAuthProviderFactory,
-  ) {}
+  ) { }
 
   /**
    * 認証ステートを作成し、リダイレクトURLを生成
@@ -65,6 +65,7 @@ export class AuthCoreService {
       }
 
       // データベースに保存（callbackUrlはフロントエンドのコールバックURL）
+      // request.userId があれば、リンクフローとして userId を保存する
       await this.authStateService.createAuthState({
         stateCode,
         oneTimeToken,
@@ -74,22 +75,15 @@ export class AuthCoreService {
         codeVerifier,
         codeChallenge,
         codeChallengeMethod,
+        userId: request.userId,
       });
 
-      // 注意: この関数ではリダイレクトURLを返しますが、
-      // 実際の外部プロバイダーへのリダイレクトURLはコントローラー側で
-      // バックエンドのコールバックURIを使って生成されます
       return {
         success: true,
         stateCode,
       };
     } catch (error) {
-      console.error(error);
-      return {
-        success: false,
-        error: 'server_error',
-        errorDescription: 'Failed to create authentication state',
-      };
+      throw AppErrorCodes.AUTH_STATE_CREATION_FAILED;
     }
   }
 
@@ -116,46 +110,94 @@ export class AuthCoreService {
       }
 
       // マッチング戦略:
-      // 1) まず受け取ったメールアドレスで既存ユーザーを探す（メールで見つかればそのユーザーに紐付ける）
-      // 2) メールで見つからなければ、プロバイダーID(providerId+provider)でExtraProfileが存在するか確認する
-      //    存在すればそのユーザーを使用する（メールが変わっていても紐付けを維持するため）
+      // 1) providerId で ExtraProfile を探す（最優先）
+      // 2) 見つからなければ受け取ったメールアドレスで既存ユーザーを探す
       // 3) どちらでも見つからなければ新規ユーザーを作成する
+      // 注意: 既存のメールユーザーがパスワードを持っている場合は、自動でプロバイダーを
+      // 追加せず、フロントエンド側でリンク確認（link/verify）を要求するためのフローにする
 
-      let user;
+      // 新しい仕様:
+      // - authState.userId が存在する場合は「リンクフロー」
+      //   -> providerId が既に存在すればエラー (別ユーザーに紐づいている)
+      //   -> 存在しなければ target user に ExtraProfile を作成するが、
+      //      providers 配列への追加は検証後に行うためここでは addUserProvider しない
+      // - authState.userId が存在しない場合は通常ログインフロー
+      //   -> providerId が既に存在すればそのユーザーでログイン
+      //   -> providerId が見つからず、メールアドレスが DB に存在する場合は CONFLICT を返す
+      //   -> どちらも見つからなければ新規ユーザー作成してログイン（ExtraProfile 作成と providers 追加を行う）
 
-      // 1) メールでのマッチングを優先
-      if (snsProfile.email) {
-        user = await this.userService.findUserByEmail(snsProfile.email);
+      const existingProfile = await this.extraProfileService.findExtraProfileByProvider(
+        snsProfile.providerId,
+        snsProfile.provider,
+      );
+
+      // --- リンクフロー ---
+      if (authState.userId) {
+        // providerId が既に誰かに紐づいている場合はコンフリクト
+        if (existingProfile) {
+          throw AppErrorCodes.CONFLICT.setCustomMessage('External provider already linked to another account');
+        }
+
+        const targetUser = await this.userService.findUserById(authState.userId);
+        if (!targetUser) {
+          throw AppErrorCodes.USER_NOT_FOUND;
+        }
+
+        // ExtraProfile を作成しておく（検証後に providers 配列へ反映される）
+        await this.extraProfileService.upsertExtraProfile({
+          userId: targetUser.id,
+          provider: snsProfile.provider,
+          providerId: snsProfile.providerId,
+          displayName: snsProfile.displayName,
+          email: snsProfile.email,
+          avatarUrl: snsProfile.avatarUrl,
+          rawProfile: snsProfile.rawProfile,
+        });
+
+        // 認証ステートにユーザーIDを保存（後で verifyAndCreateToken で使用）
+        await this.authStateService.updateAuthStateWithUser(stateCode, targetUser.id);
+
+        return {
+          success: true,
+          userId: targetUser.id,
+          oneTimeToken: authState.oneTimeToken,
+        };
       }
 
-      // 2) メールで見つからなければプロバイダーIDでExtraProfileを探す
-      let existingProfile;
-      if (!user) {
-        existingProfile =
-          await this.extraProfileService.findExtraProfileByProvider(
-            snsProfile.providerId,
-            snsProfile.provider,
-          );
-
-        if (existingProfile) {
-          user = existingProfile.user;
+      // --- 通常ログインフロー ---
+      let user = null as any | null;
+      if (existingProfile) {
+        user = existingProfile.user;
+        // update profile record with fresh data
+        await this.extraProfileService.upsertExtraProfile({
+          userId: user.id,
+          provider: snsProfile.provider,
+          providerId: snsProfile.providerId,
+          displayName: snsProfile.displayName,
+          email: snsProfile.email,
+          avatarUrl: snsProfile.avatarUrl,
+          rawProfile: snsProfile.rawProfile,
+        });
+      } else if (snsProfile.email) {
+        // メールが DB に存在する場合はコンフリクト（仕様）
+        const emailUser = await this.userService.findUserByEmail(snsProfile.email);
+        if (emailUser) {
+          throw AppErrorCodes.CONFLICT.setCustomMessage('Email already exists in database');
         }
       }
 
-      // 3) 新規ユーザー作成または既存ユーザーにプロバイダーを追加
+      // 新規ユーザー作成（providerId でも email でも未検出）
       if (!user) {
         const username = this.generateUniqueUsername(
           snsProfile.displayName || snsProfile.email || snsProfile.providerId,
         );
         user = await this.userService.createSnsUser({
           username,
-          email:
-            snsProfile.email ||
-            `${snsProfile.providerId}@${snsProfile.provider}.local`,
+          email: snsProfile.email || `${snsProfile.providerId}@${snsProfile.provider}.local`,
           provider: snsProfile.provider,
         });
 
-        // 新規ユーザーの場合はExtraProfileを作成
+        // 新規ユーザーの場合は ExtraProfile を作成し、プロバイダーを追加する
         await this.extraProfileService.upsertExtraProfile({
           userId: user.id,
           provider: snsProfile.provider,
@@ -165,19 +207,6 @@ export class AuthCoreService {
           avatarUrl: snsProfile.avatarUrl,
           rawProfile: snsProfile.rawProfile,
         });
-      } else {
-        // 既存ユーザーが見つかった場合、ExtraProfileが既に存在すれば更新、存在しなければ作成
-        await this.extraProfileService.upsertExtraProfile({
-          userId: user.id,
-          provider: snsProfile.provider,
-          providerId: snsProfile.providerId,
-          displayName: snsProfile.displayName,
-          email: snsProfile.email,
-          avatarUrl: snsProfile.avatarUrl,
-          rawProfile: snsProfile.rawProfile,
-        });
-
-        // ユーザーのproviders配列にプロバイダーを追加
         await this.userService.addUserProvider(user.id, snsProfile.provider);
       }
 
@@ -190,10 +219,10 @@ export class AuthCoreService {
         oneTimeToken: authState.oneTimeToken,
       };
     } catch (error) {
-      return {
-        success: false,
-        error: 'server_error',
-      };
+      if(error instanceof AppErrorCode) {
+        throw error;
+      }
+      throw AppErrorCodes.INTERNAL_SERVER_ERROR;
     }
   }
 
@@ -263,6 +292,7 @@ export class AuthCoreService {
       }
 
       return {
+        success: true,
         jti: token.jti,
         accessToken: token.accessToken,
         refreshToken: token.refreshToken,
