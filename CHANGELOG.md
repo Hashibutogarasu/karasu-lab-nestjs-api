@@ -1,3 +1,10 @@
+# [1.14.0](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.13.0...v1.14.0) (2025-10-30)
+
+
+### Features
+
+* add linkingVerified flag to user extra profile ([3bc0aff](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/3bc0aff23f029d5637e1cfcaa717b3d44cf95cfb))
+
 # [1.13.0](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.12.0...v1.13.0) (2025-10-30)
 
 
