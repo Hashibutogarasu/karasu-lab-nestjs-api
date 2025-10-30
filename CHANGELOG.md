@@ -1,3 +1,10 @@
+# [1.13.0](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.12.0...v1.13.0) (2025-10-30)
+
+
+### Features
+
+* refactors verification logic and streamlines zod schema formatting ([f22d800](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/f22d8004ce0d7640bf5e1a9c06972f2d9099dbe7))
+
 # [1.12.0](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.11.1...v1.12.0) (2025-10-30)
 
 
