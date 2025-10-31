@@ -28,14 +28,19 @@ export class AppErrorCodeFilter implements ExceptionFilter {
         ? (appError.code as number)
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
-      response.status(status).json({
+      const body = {
         message: appError.message,
         customMessage: appError.customMessage,
         status: status,
         code: appError.key,
         timestamp: new Date().toISOString(),
         path: request.url,
-      });
+      };
+
+      Promise.resolve(this.postProcessBody(body, appError.name, request, exception))
+        .then((processed) => response.status(status).json(processed))
+        .catch(() => response.status(status).json(body));
+
       return;
     }
 
@@ -43,19 +48,29 @@ export class AppErrorCodeFilter implements ExceptionFilter {
       const status = exception.getStatus();
       const resp = exception.getResponse();
       const body = typeof resp === 'string' ? { message: resp } : resp;
-      response.status(status).json(body as any);
+      Promise.resolve(this.postProcessBody(body, exception.name, request, exception))
+        .then((processed) => response.status(status).json(processed))
+        .catch(() => response.status(status).json(body as any));
       return;
     }
 
     const appErr = AppErrorCodes.INTERNAL_SERVER_ERROR;
 
-    response.status(appErr.code).json({
+    const body = {
       message: appErr.message,
       customMessage: appErr.customMessage,
       status: appErr.code,
       code: appErr.key,
       timestamp: new Date().toISOString(),
       path: request.url,
-    });
+    };
+
+    Promise.resolve(this.postProcessBody(body, appErr.name, request, exception))
+      .then((processed) => response.status(appErr.code).json(processed))
+      .catch(() => response.status(appErr.code).json(body));
+  }
+
+  protected async postProcessBody(body: any, name: string, request: Request, exception: Error) {
+    return body;
   }
 }

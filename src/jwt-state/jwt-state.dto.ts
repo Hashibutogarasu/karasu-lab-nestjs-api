@@ -15,7 +15,7 @@ export class UpdateJwtStateDto extends PartialType(CreateJwtStateDto) {}
 
 export const createJwtStateResponseSchema = createJwtStateSchema.extend({
   jti: z.string(),
-  accessToken: z.string().optional(),
+  accessToken: z.string(),
   expiresAt: z.number(),
   userId: z.string(),
 });

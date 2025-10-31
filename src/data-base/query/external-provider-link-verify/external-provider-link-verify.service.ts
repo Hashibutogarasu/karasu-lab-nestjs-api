@@ -77,7 +77,7 @@ export class ExternalProviderLinkVerifyService {
         userId: true,
         verifyHashedCode: true,
         provider: true,
-      }
+      },
     });
 
     for (const rec of records) {
@@ -122,10 +122,15 @@ export class ExternalProviderLinkVerifyService {
     }
   }
 
-  async markAsLinkingVerified(processId: string, userId: string, provider: string) {
-    const existingVerify = await this.prisma.externalProviderLinkVerify.findUnique({
-      where: { id: processId },
-    });
+  async markAsLinkingVerified(
+    processId: string,
+    userId: string,
+    provider: string,
+  ) {
+    const existingVerify =
+      await this.prisma.externalProviderLinkVerify.findUnique({
+        where: { id: processId },
+      });
 
     await this.prisma.externalProviderAccessToken.update({
       where: {

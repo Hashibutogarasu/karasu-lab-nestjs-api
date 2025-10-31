@@ -18,6 +18,7 @@ import { OauthClientService } from './query/oauth-client/oauth-client.service';
 import { OauthGrantedTokenService } from './query/oauth-granted-token/oauth-granted-token.service';
 import { ExternalProviderLinkVerifyService } from './query/external-provider-link-verify/external-provider-link-verify.service';
 import { SessionService } from './query/session/session.service';
+import { JwtTokenService } from '../auth/jwt-token/jwt-token.service';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { SessionService } from './query/session/session.service';
     OauthGrantedTokenService,
     ExternalProviderLinkVerifyService,
     SessionService,
+    JwtTokenService,
   ],
   exports: [
     UtilityService,
@@ -55,6 +57,7 @@ import { SessionService } from './query/session/session.service';
     ExtraProfileService,
     ExternalProviderLinkVerifyService,
     SessionService,
+    JwtTokenService,
   ],
 })
 export class DataBaseModule {

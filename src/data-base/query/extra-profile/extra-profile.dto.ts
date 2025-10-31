@@ -1,5 +1,5 @@
-import { createZodDto } from "nestjs-zod";
-import z from "zod";
+import { createZodDto } from 'nestjs-zod';
+import z from 'zod';
 
 export const extraProfileSchema = z.object({
   id: z.string(),
@@ -15,4 +15,4 @@ export const extraProfileSchema = z.object({
   updatedAt: z.union([z.string(), z.any()]),
 });
 
-export class ExtraProfileDto extends createZodDto(extraProfileSchema) { }
+export class ExtraProfileDto extends createZodDto(extraProfileSchema) {}

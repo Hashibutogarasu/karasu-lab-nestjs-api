@@ -3,10 +3,11 @@ import { NoInterceptor } from './interceptors/no-interceptor.decorator';
 import { AppService } from './app.service';
 import { Permission } from './auth/decorators/permission.decorator';
 import { PermissionType } from './types/permission';
+import { AppErrorCodes } from './types/error-codes';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(private readonly appService: AppService) { }
 
   @Get()
   getVersion() {
@@ -34,5 +35,15 @@ export class AppController {
   @Get('admin-read')
   adminRead() {
     return { adminRead: true };
+  }
+
+  @Get('yosi')
+  getYosi() {
+    return { message: 'app.yosi.response', foo: 'bar' };
+  }
+
+  @Get('internal-server-error')
+  getInternalError() {
+    throw AppErrorCodes.INTERNAL_SERVER_ERROR;
   }
 }

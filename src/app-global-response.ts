@@ -1,19 +1,30 @@
+import { ApiProperty } from '@nestjs/swagger';
+import { createZodDto } from 'nestjs-zod';
 import z from 'zod';
 
 const baseResponseSchema = z.object({
   success: z.boolean().default(true),
-  message: z.string(),
+  message: z.string().optional().default('OK'),
   sessionId: z.string().optional(),
+  rawMessage: z.string().optional(),
+  data: z.union([z.any(), z.array(z.any())]).optional(),
 });
 
-export const createGlobalResponseSchema = <T extends z.ZodTypeAny>(
-  dataSchema: T,
-) => {
-  return baseResponseSchema.extend({
-    data: dataSchema,
-  });
-};
+export const formattedSchema = baseResponseSchema.loose().transform((inputData) => {
+  const knownKeys = Object.keys(baseResponseSchema.shape);
+  const known: Record<string, unknown> = {};
+  const extra: Record<string, unknown> = {};
 
-export type GlobalResponseType<T extends z.ZodTypeAny> = z.infer<
-  ReturnType<typeof createGlobalResponseSchema<T>>
->;
+  for (const key in inputData) {
+    if (knownKeys.includes(key)) {
+      known[key] = inputData[key];
+    } else {
+      extra[key] = inputData[key];
+    }
+  }
+
+  known.data = extra;
+  return known;
+});
+
+export class AppGlobalResponse extends createZodDto(formattedSchema) { }

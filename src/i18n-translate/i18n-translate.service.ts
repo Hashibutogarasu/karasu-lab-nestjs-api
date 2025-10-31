@@ -13,7 +13,7 @@ export class I18nTranslateService extends BaseService {
   }
 
   text(key: string) {
-    return this.i18n.translate(key);
+    return this.i18n.t(key);
   }
 
   scopeText(path: string, locale?: string): string {

@@ -6,11 +6,11 @@ export const createSessionSchema = z.object({
   jti: z.string(),
 });
 
-export class CreateSessionDto extends createZodDto(createSessionSchema) { }
+export class CreateSessionDto extends createZodDto(createSessionSchema) {}
 
 export const updateSessionSchema = createSessionSchema.partial();
 
-export class UpdateSessionDto extends createZodDto(updateSessionSchema) { }
+export class UpdateSessionDto extends createZodDto(updateSessionSchema) {}
 
 export const publicSessionSchema = z.object({
   id: z.cuid(),
@@ -20,7 +20,7 @@ export const publicSessionSchema = z.object({
   updatedAt: z.number(),
 });
 
-export class PublicSessionDto extends createZodDto(publicSessionSchema) { }
+export class PublicSessionDto extends createZodDto(publicSessionSchema) {}
 
 export const sessionsFindAllRequestSchema = z.object({
   userId: z.string(),
@@ -28,7 +28,7 @@ export const sessionsFindAllRequestSchema = z.object({
 
 export class SessionsFindAllRequestDto extends createZodDto(
   sessionsFindAllRequestSchema,
-) { }
+) {}
 
 export const sessionsFindAllResponseSchema = z.object({
   sessions: z.array(publicSessionSchema),
@@ -36,7 +36,7 @@ export const sessionsFindAllResponseSchema = z.object({
 
 export class SessionsFindAllResponseDto extends createZodDto(
   sessionsFindAllResponseSchema,
-) { }
+) {}
 
 export const sessionsDeleteRequestSchema = z.object({
   id: z.string(),
@@ -44,4 +44,4 @@ export const sessionsDeleteRequestSchema = z.object({
 
 export class SessionsDeleteRequestDto extends createZodDto(
   sessionsDeleteRequestSchema,
-) { }
+) {}

@@ -26,7 +26,7 @@ export class AuthCoreService {
     private readonly jwtTokenService: JwtTokenService,
     private readonly extraProfileService: ExtraProfileService,
     private readonly oauthProviderFactory: OAuthProviderFactory,
-  ) { }
+  ) {}
 
   /**
    * 認証ステートを作成し、リダイレクトURLを生成
@@ -134,6 +134,8 @@ export class AuthCoreService {
         );
 
       // --- リンクフロー ---
+      // TODO: linkingVerifiedはターゲットユーザーが見つかるか、通常のログインフローで
+      // 正常にログインできた場合にtrueにするように変更する
       if (authState.userId) {
         if (existingProfile && existingProfile.linkingVerified) {
           throw AppErrorCodes.CONFLICT.setCustomMessage(
@@ -306,7 +308,9 @@ export class AuthCoreService {
         throw AppErrorCodes.TOKEN_GENERATION_FAILED;
       }
 
-      const authProvider = this.oauthProviderFactory.getProvider(authState.provider);
+      const authProvider = this.oauthProviderFactory.getProvider(
+        authState.provider,
+      );
 
       return {
         success: true,

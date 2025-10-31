@@ -192,7 +192,7 @@ describe('UsersController', () => {
         {
           provide: ExtraProfileService,
           useValue: mockExtraProfileService,
-        }
+        },
       ],
     })
       .overrideGuard(JwtAuthGuard)

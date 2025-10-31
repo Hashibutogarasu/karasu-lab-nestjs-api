@@ -22,18 +22,30 @@ describe('ExternalProviderLinkVerifyService', () => {
     const mockDataBaseService = mock<DataBaseService>({
       prisma: jest.fn().mockImplementation(() => ({
         externalProviderAccessToken: {
+          update: async ({ where, data }: any) => {
+            return { id: where.id, ...data };
+          },
           updateMany: async ({ where, data }: any) => {
             // no-op for tests
             return { count: 0 };
           },
         },
         extraProfile: {
+          findFirst: async ({ where }: any) => {
+            return { id: `ep_${Math.random().toString(36).slice(2, 8)}`, userId: where.userId, provider: where.provider };
+          },
+          update: async ({ where, data }: any) => {
+            return { id: where.id, ...data };
+          },
           updateMany: async ({ where, data }: any) => {
             // no-op for tests
             return { count: 0 };
           },
         },
         externalProviderLinkVerify: {
+          findUnique: async ({ where }: any) => {
+            return store.find((s) => s.id === where.id) || null;
+          },
           deleteMany: async ({ where }: any) => {
             if (where.userId && where.provider) {
               const before = store.length;

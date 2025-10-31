@@ -50,7 +50,6 @@ import { R2Module } from './cloudflare/r2/r2.module';
 import { AppConfigService } from './app-config/app-config.service';
 import { EncryptionService } from './encryption/encryption.service';
 import { WellKnownModule } from './well-known/well-known.module';
-import { SessionsController } from './sessions/sessions.controller';
 import { SessionsModule } from './sessions/sessions.module';
 
 @Module({
@@ -60,11 +59,11 @@ import { SessionsModule } from './sessions/sessions.module';
     AccountModule,
     ...(process.env.DISCORD_BOT_TOKEN
       ? [
-          {
-            global: true,
-            module: DiscordAppModule,
-          },
-        ]
+        {
+          global: true,
+          module: DiscordAppModule,
+        },
+      ]
       : []),
     MarkdownModule,
     McpServerModule,
@@ -110,16 +109,16 @@ import { SessionsModule } from './sessions/sessions.module';
     MfaModule,
     process.env.REDIS_HOST
       ? CacheModule.register({
-          store: async () =>
-            await redisStore({
-              socket: {
-                host: process.env.REDIS_HOST!,
-                port: process.env.REDIS_PORT!,
-              },
-              ttl: 10,
-            }),
-          isGlobal: true,
-        })
+        store: async () =>
+          await redisStore({
+            socket: {
+              host: process.env.REDIS_HOST!,
+              port: process.env.REDIS_PORT!,
+            },
+            ttl: 10,
+          }),
+        isGlobal: true,
+      })
       : CacheModule.register({ isGlobal: true, ttl: 10 }),
     {
       global: true,
@@ -152,14 +151,10 @@ import { SessionsModule } from './sessions/sessions.module';
     WellKnownModule,
     SessionsModule,
   ],
-  controllers: [AppController, SessionsController],
+  controllers: [AppController],
   providers: [
     AppService,
     ResendService,
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: ResponseFormatterInterceptor,
-    },
     {
       provide: APP_INTERCEPTOR,
       useClass: ConcurrentRequestInterceptor,

@@ -7,7 +7,6 @@ import {
   QueryResolver,
 } from 'nestjs-i18n';
 import * as path from 'path';
-import { ConfigService } from '@nestjs/config';
 import { AppConfigService } from '../app-config/app-config.service';
 import { AppConfigModule } from '../app-config/app-config.module';
 
@@ -25,16 +24,21 @@ import { AppConfigModule } from '../app-config/app-config.module';
           __dirname,
           '../../src/generated/i18n.generated.ts',
         ),
+        resolvers: [
+          { use: QueryResolver, options: ['lang'] },
+          AcceptLanguageResolver,
+          new HeaderResolver(['Accept-Language']),
+        ],
       }),
       resolvers: [
         { use: QueryResolver, options: ['lang'] },
         AcceptLanguageResolver,
-        new HeaderResolver(['x-lang']),
+        new HeaderResolver(['Accept-Language']),
       ],
-      inject: [ConfigService],
+      inject: [AppConfigService],
     }),
   ],
   providers: [I18nTranslateService],
   exports: [I18nTranslateService],
 })
-export class I18nTranslateModule {}
+export class I18nTranslateModule { }

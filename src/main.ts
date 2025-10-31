@@ -10,9 +10,8 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.useGlobalFilters(new AppErrorCodeFilter());
-
   const reflector = app.get(Reflector);
+  
   app.useGlobalInterceptors(new ResponseFormatterInterceptor(reflector));
   app.useGlobalPipes(new ZodValidationPipe());
 

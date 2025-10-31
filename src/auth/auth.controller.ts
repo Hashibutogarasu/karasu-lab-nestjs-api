@@ -77,7 +77,7 @@ export class AuthController {
     private readonly jwtTokenService: JwtTokenService,
     private readonly mfaService: MfaService,
     private readonly sessionService: SessionService,
-  ) { }
+  ) {}
 
   private async getCodeChallengeFromState(stateCode?: string) {
     if (!stateCode) return undefined;
@@ -102,22 +102,25 @@ export class AuthController {
   @UsePipes(new ZodValidationPipe(authProvidersSchema))
   @Get('providers')
   async getProviders(@Res() res: Response): Promise<void> {
-    const available: IOAuthProvider[] = this.oauthProviderFactory.getAllProviders().map((p) => {
-      try {
-        if (p.isAvailable()) {
-          return p;
+    const available: IOAuthProvider[] = this.oauthProviderFactory
+      .getAllProviders()
+      .map((p) => {
+        try {
+          if (p.isAvailable()) {
+            return p;
+          }
+        } catch (err) {
+          if (
+            err instanceof ProviderNotImplementedError ||
+            err instanceof ProviderUnavailableError
+          ) {
+            return null;
+          }
+          throw err;
         }
-      } catch (err) {
-        if (
-          err instanceof ProviderNotImplementedError ||
-          err instanceof ProviderUnavailableError
-        ) {
-          return null;
-        }
-        throw err;
-      }
-      return null;
-    }).filter((p): p is IOAuthProvider => p !== null);
+        return null;
+      })
+      .filter((p): p is IOAuthProvider => p !== null);
 
     res
       .status(HttpStatus.OK)

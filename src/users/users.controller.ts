@@ -12,7 +12,6 @@ import { ApiWrappedOkResponse } from '../decorators/api-wrapped-ok-response/api-
 import { AuthUser, PublicUser } from '../auth/decorators/auth-user.decorator';
 import { GetRolesResponseDto, UsersMeResponseDto } from './users.dto';
 import { PublicSessionDto } from '../data-base/query/session/session.dto';
-import { AuthSession } from '../auth/decorators/auth-session.decorator';
 import { ExtraProfileService } from '../data-base/query/extra-profile/extra-profile.service';
 
 @Controller('users')
@@ -22,29 +21,20 @@ export class UsersController {
   constructor(
     private readonly userService: UserService,
     private readonly extraProfileService: ExtraProfileService,
-  ) { }
+  ) {}
 
   @ApiWrappedOkResponse({
     type: UsersMeResponseDto,
   })
   @Get('me')
   async getMe(@AuthUser() user: PublicUser): Promise<UsersMeResponseDto> {
-    const userWithProfiles = await this.extraProfileService.getPublicUserWithExtraProfiles(user.id);
+    const userWithProfiles =
+      await this.extraProfileService.getPublicUserWithExtraProfiles(user.id);
 
     return {
       ...user,
       extraProfiles: userWithProfiles || [],
     };
-  }
-
-  @ApiWrappedOkResponse({
-    type: PublicSessionDto,
-  })
-  @Get('session')
-  async getSession(
-    @AuthSession() session: PublicSessionDto,
-  ): Promise<PublicSessionDto> {
-    return session;
   }
 
   @ApiWrappedOkResponse({

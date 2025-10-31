@@ -8,7 +8,13 @@ import { Prisma } from '@prisma/client';
 // JSON
 //------------------------------------------------------
 
-export type NullableJsonInput = Prisma.JsonValue | null | 'JsonNull' | 'DbNull' | Prisma.NullTypes.DbNull | Prisma.NullTypes.JsonNull;
+export type NullableJsonInput =
+  | Prisma.JsonValue
+  | null
+  | 'JsonNull'
+  | 'DbNull'
+  | Prisma.NullTypes.DbNull
+  | Prisma.NullTypes.JsonNull;
 
 export const transformJsonNull = (v?: NullableJsonInput) => {
   if (!v || v === 'DbNull') return Prisma.NullTypes.DbNull;
@@ -22,9 +28,12 @@ export const JsonValueSchema: z.ZodType<Prisma.JsonValue> = z.lazy(() =>
     z.number(),
     z.boolean(),
     z.literal(null),
-    z.record(z.string(), z.lazy(() => JsonValueSchema.optional())),
+    z.record(
+      z.string(),
+      z.lazy(() => JsonValueSchema.optional()),
+    ),
     z.array(z.lazy(() => JsonValueSchema)),
-  ])
+  ]),
 );
 
 export type JsonValueType = z.infer<typeof JsonValueSchema>;
@@ -36,69 +45,230 @@ export const NullableJsonValue = z
 
 export type NullableJsonValueType = z.infer<typeof NullableJsonValue>;
 
-export const InputJsonValueSchema: z.ZodType<Prisma.InputJsonValue> = z.lazy(() =>
-  z.union([
-    z.string(),
-    z.number(),
-    z.boolean(),
-    z.object({ toJSON: z.any() }),
-    z.record(z.string(), z.lazy(() => z.union([InputJsonValueSchema, z.literal(null)]))),
-    z.array(z.lazy(() => z.union([InputJsonValueSchema, z.literal(null)]))),
-  ])
+export const InputJsonValueSchema: z.ZodType<Prisma.InputJsonValue> = z.lazy(
+  () =>
+    z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.object({ toJSON: z.any() }),
+      z.record(
+        z.string(),
+        z.lazy(() => z.union([InputJsonValueSchema, z.literal(null)])),
+      ),
+      z.array(z.lazy(() => z.union([InputJsonValueSchema, z.literal(null)]))),
+    ]),
 );
 
 export type InputJsonValueType = z.infer<typeof InputJsonValueSchema>;
-
 
 /////////////////////////////////////////
 // ENUMS
 /////////////////////////////////////////
 
-export const TransactionIsolationLevelSchema = z.enum(['ReadUncommitted','ReadCommitted','RepeatableRead','Serializable']);
+export const TransactionIsolationLevelSchema = z.enum([
+  'ReadUncommitted',
+  'ReadCommitted',
+  'RepeatableRead',
+  'Serializable',
+]);
 
-export const UserScalarFieldEnumSchema = z.enum(['id','username','email','passwordHash','providers','createdAt','updatedAt']);
+export const UserScalarFieldEnumSchema = z.enum([
+  'id',
+  'username',
+  'email',
+  'passwordHash',
+  'providers',
+  'createdAt',
+  'updatedAt',
+]);
 
-export const PendingEMailChangeProcessScalarFieldEnumSchema = z.enum(['id','userId','newEmail','verificationCode','expiresAt','used','createdAt']);
+export const PendingEMailChangeProcessScalarFieldEnumSchema = z.enum([
+  'id',
+  'userId',
+  'newEmail',
+  'verificationCode',
+  'expiresAt',
+  'used',
+  'createdAt',
+]);
 
-export const RoleScalarFieldEnumSchema = z.enum(['id','name','description','createdAt','updatedAt','bitmask']);
+export const RoleScalarFieldEnumSchema = z.enum([
+  'id',
+  'name',
+  'description',
+  'createdAt',
+  'updatedAt',
+  'bitmask',
+]);
 
-export const AuthorizationCodeScalarFieldEnumSchema = z.enum(['code','clientId','userId','redirectUri','scope','codeChallenge','codeChallengeMethod','expiresAt','createdAt']);
+export const AuthorizationCodeScalarFieldEnumSchema = z.enum([
+  'code',
+  'clientId',
+  'userId',
+  'redirectUri',
+  'scope',
+  'codeChallenge',
+  'codeChallengeMethod',
+  'expiresAt',
+  'createdAt',
+]);
 
-export const AccessTokenScalarFieldEnumSchema = z.enum(['token','clientId','userId','scope','expiresAt','createdAt']);
+export const AccessTokenScalarFieldEnumSchema = z.enum([
+  'token',
+  'clientId',
+  'userId',
+  'scope',
+  'expiresAt',
+  'createdAt',
+]);
 
-export const RefreshTokenScalarFieldEnumSchema = z.enum(['token','accessToken','clientId','userId','scope','expiresAt','createdAt']);
+export const RefreshTokenScalarFieldEnumSchema = z.enum([
+  'token',
+  'accessToken',
+  'clientId',
+  'userId',
+  'scope',
+  'expiresAt',
+  'createdAt',
+]);
 
-export const ExtraProfileScalarFieldEnumSchema = z.enum(['id','userId','provider','providerId','displayName','email','avatarUrl','rawProfile','linkingVerified','createdAt','updatedAt']);
+export const ExtraProfileScalarFieldEnumSchema = z.enum([
+  'id',
+  'userId',
+  'provider',
+  'providerId',
+  'displayName',
+  'email',
+  'avatarUrl',
+  'rawProfile',
+  'linkingVerified',
+  'createdAt',
+  'updatedAt',
+]);
 
-export const AuthStateScalarFieldEnumSchema = z.enum(['id','stateCode','oneTimeToken','provider','callbackUrl','userId','codeVerifier','codeChallenge','codeChallengeMethod','expiresAt','used','createdAt']);
+export const AuthStateScalarFieldEnumSchema = z.enum([
+  'id',
+  'stateCode',
+  'oneTimeToken',
+  'provider',
+  'callbackUrl',
+  'userId',
+  'codeVerifier',
+  'codeChallenge',
+  'codeChallengeMethod',
+  'expiresAt',
+  'used',
+  'createdAt',
+]);
 
-export const ExternalProviderLinkVerifyScalarFieldEnumSchema = z.enum(['id','provider','rawExternalProviderProfile','userId','verifyHashedCode','expiresAt','createdAt','updatedAt']);
+export const ExternalProviderLinkVerifyScalarFieldEnumSchema = z.enum([
+  'id',
+  'provider',
+  'rawExternalProviderProfile',
+  'userId',
+  'verifyHashedCode',
+  'expiresAt',
+  'createdAt',
+  'updatedAt',
+]);
 
-export const PasswordResetScalarFieldEnumSchema = z.enum(['id','userId','resetCode','expiresAt','used','createdAt']);
+export const PasswordResetScalarFieldEnumSchema = z.enum([
+  'id',
+  'userId',
+  'resetCode',
+  'expiresAt',
+  'used',
+  'createdAt',
+]);
 
-export const JWTStateScalarFieldEnumSchema = z.enum(['id','userId','revoked','sessionId','createdAt','updatedAt','expiresAt']);
+export const JWTStateScalarFieldEnumSchema = z.enum([
+  'id',
+  'userId',
+  'revoked',
+  'sessionId',
+  'createdAt',
+  'updatedAt',
+  'expiresAt',
+]);
 
-export const SessionScalarFieldEnumSchema = z.enum(['id','userId','jti','createdAt','updatedAt']);
+export const SessionScalarFieldEnumSchema = z.enum([
+  'id',
+  'userId',
+  'jti',
+  'createdAt',
+  'updatedAt',
+]);
 
-export const ExternalProviderAccessTokenScalarFieldEnumSchema = z.enum(['id','userId','encryptedToken','provider','linkingVerified','createdAt','updatedAt']);
+export const ExternalProviderAccessTokenScalarFieldEnumSchema = z.enum([
+  'id',
+  'userId',
+  'encryptedToken',
+  'provider',
+  'linkingVerified',
+  'createdAt',
+  'updatedAt',
+]);
 
-export const UserOTPScalarFieldEnumSchema = z.enum(['id','secret','issuedAt','lastAuthenticatedAt','issuerId','userId','setupCompleted','createdAt','updatedAt']);
+export const UserOTPScalarFieldEnumSchema = z.enum([
+  'id',
+  'secret',
+  'issuedAt',
+  'lastAuthenticatedAt',
+  'issuerId',
+  'userId',
+  'setupCompleted',
+  'createdAt',
+  'updatedAt',
+]);
 
-export const OTPBackupCodeScalarFieldEnumSchema = z.enum(['id','hashedCode','createdAt','userOtpId']);
+export const OTPBackupCodeScalarFieldEnumSchema = z.enum([
+  'id',
+  'hashedCode',
+  'createdAt',
+  'userOtpId',
+]);
 
-export const OAuthClientScalarFieldEnumSchema = z.enum(['id','name','secret','redirectUris','permissionBitMask','userId','createdAt','updatedAt']);
+export const OAuthClientScalarFieldEnumSchema = z.enum([
+  'id',
+  'name',
+  'secret',
+  'redirectUris',
+  'permissionBitMask',
+  'userId',
+  'createdAt',
+  'updatedAt',
+]);
 
-export const OAuthGrantedTokenScalarFieldEnumSchema = z.enum(['jti','userId','permissionBitMask','expiryAt','clientId']);
+export const OAuthGrantedTokenScalarFieldEnumSchema = z.enum([
+  'jti',
+  'userId',
+  'permissionBitMask',
+  'expiryAt',
+  'clientId',
+]);
 
-export const SortOrderSchema = z.enum(['asc','desc']);
+export const SortOrderSchema = z.enum(['asc', 'desc']);
 
-export const JsonNullValueInputSchema = z.enum(['JsonNull',]).transform((value) => (value === 'JsonNull' ? Prisma.JsonNull : value));
+export const JsonNullValueInputSchema = z
+  .enum(['JsonNull'])
+  .transform((value) => (value === 'JsonNull' ? Prisma.JsonNull : value));
 
-export const QueryModeSchema = z.enum(['default','insensitive']);
+export const QueryModeSchema = z.enum(['default', 'insensitive']);
 
-export const NullsOrderSchema = z.enum(['first','last']);
+export const NullsOrderSchema = z.enum(['first', 'last']);
 
-export const JsonNullValueFilterSchema = z.enum(['DbNull','JsonNull','AnyNull',]).transform((value) => value === 'JsonNull' ? Prisma.JsonNull : value === 'DbNull' ? Prisma.DbNull : value === 'AnyNull' ? Prisma.AnyNull : value);
+export const JsonNullValueFilterSchema = z
+  .enum(['DbNull', 'JsonNull', 'AnyNull'])
+  .transform((value) =>
+    value === 'JsonNull'
+      ? Prisma.JsonNull
+      : value === 'DbNull'
+        ? Prisma.DbNull
+        : value === 'AnyNull'
+          ? Prisma.AnyNull
+          : value,
+  );
 /////////////////////////////////////////
 // MODELS
 /////////////////////////////////////////
@@ -115,9 +285,9 @@ export const UserSchema = z.object({
   providers: z.string().array(),
   createdAt: z.string(),
   updatedAt: z.string(),
-})
+});
 
-export type User = z.infer<typeof UserSchema>
+export type User = z.infer<typeof UserSchema>;
 
 /////////////////////////////////////////
 // PENDING E MAIL CHANGE PROCESS SCHEMA
@@ -131,9 +301,11 @@ export const PendingEMailChangeProcessSchema = z.object({
   expiresAt: z.coerce.date(),
   used: z.boolean(),
   createdAt: z.coerce.date(),
-})
+});
 
-export type PendingEMailChangeProcess = z.infer<typeof PendingEMailChangeProcessSchema>
+export type PendingEMailChangeProcess = z.infer<
+  typeof PendingEMailChangeProcessSchema
+>;
 
 /////////////////////////////////////////
 // ROLE SCHEMA
@@ -146,9 +318,9 @@ export const RoleSchema = z.object({
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
   bitmask: z.number().int(),
-})
+});
 
-export type Role = z.infer<typeof RoleSchema>
+export type Role = z.infer<typeof RoleSchema>;
 
 /////////////////////////////////////////
 // AUTHORIZATION CODE SCHEMA
@@ -164,9 +336,9 @@ export const AuthorizationCodeSchema = z.object({
   codeChallengeMethod: z.string().nullable(),
   expiresAt: z.coerce.date(),
   createdAt: z.coerce.date(),
-})
+});
 
-export type AuthorizationCode = z.infer<typeof AuthorizationCodeSchema>
+export type AuthorizationCode = z.infer<typeof AuthorizationCodeSchema>;
 
 /////////////////////////////////////////
 // ACCESS TOKEN SCHEMA
@@ -179,9 +351,9 @@ export const AccessTokenSchema = z.object({
   scope: z.string().nullable(),
   expiresAt: z.coerce.date(),
   createdAt: z.coerce.date(),
-})
+});
 
-export type AccessToken = z.infer<typeof AccessTokenSchema>
+export type AccessToken = z.infer<typeof AccessTokenSchema>;
 
 /////////////////////////////////////////
 // REFRESH TOKEN SCHEMA
@@ -195,9 +367,9 @@ export const RefreshTokenSchema = z.object({
   scope: z.string().nullable(),
   expiresAt: z.coerce.date(),
   createdAt: z.coerce.date(),
-})
+});
 
-export type RefreshToken = z.infer<typeof RefreshTokenSchema>
+export type RefreshToken = z.infer<typeof RefreshTokenSchema>;
 
 /////////////////////////////////////////
 // EXTRA PROFILE SCHEMA
@@ -215,9 +387,9 @@ export const ExtraProfileSchema = z.object({
   linkingVerified: z.boolean(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
-})
+});
 
-export type ExtraProfile = z.infer<typeof ExtraProfileSchema>
+export type ExtraProfile = z.infer<typeof ExtraProfileSchema>;
 
 /////////////////////////////////////////
 // AUTH STATE SCHEMA
@@ -236,9 +408,9 @@ export const AuthStateSchema = z.object({
   expiresAt: z.coerce.date(),
   used: z.boolean(),
   createdAt: z.coerce.date(),
-})
+});
 
-export type AuthState = z.infer<typeof AuthStateSchema>
+export type AuthState = z.infer<typeof AuthStateSchema>;
 
 /////////////////////////////////////////
 // EXTERNAL PROVIDER LINK VERIFY SCHEMA
@@ -253,9 +425,11 @@ export const ExternalProviderLinkVerifySchema = z.object({
   expiresAt: z.coerce.date(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
-})
+});
 
-export type ExternalProviderLinkVerify = z.infer<typeof ExternalProviderLinkVerifySchema>
+export type ExternalProviderLinkVerify = z.infer<
+  typeof ExternalProviderLinkVerifySchema
+>;
 
 /////////////////////////////////////////
 // PASSWORD RESET SCHEMA
@@ -268,9 +442,9 @@ export const PasswordResetSchema = z.object({
   expiresAt: z.coerce.date(),
   used: z.boolean(),
   createdAt: z.coerce.date(),
-})
+});
 
-export type PasswordReset = z.infer<typeof PasswordResetSchema>
+export type PasswordReset = z.infer<typeof PasswordResetSchema>;
 
 /////////////////////////////////////////
 // JWT STATE SCHEMA
@@ -284,9 +458,9 @@ export const JWTStateSchema = z.object({
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
   expiresAt: z.coerce.date().nullable(),
-})
+});
 
-export type JWTState = z.infer<typeof JWTStateSchema>
+export type JWTState = z.infer<typeof JWTStateSchema>;
 
 /////////////////////////////////////////
 // SESSION SCHEMA
@@ -298,9 +472,9 @@ export const SessionSchema = z.object({
   jti: z.string(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
-})
+});
 
-export type Session = z.infer<typeof SessionSchema>
+export type Session = z.infer<typeof SessionSchema>;
 
 /////////////////////////////////////////
 // EXTERNAL PROVIDER ACCESS TOKEN SCHEMA
@@ -314,9 +488,11 @@ export const ExternalProviderAccessTokenSchema = z.object({
   linkingVerified: z.boolean(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
-})
+});
 
-export type ExternalProviderAccessToken = z.infer<typeof ExternalProviderAccessTokenSchema>
+export type ExternalProviderAccessToken = z.infer<
+  typeof ExternalProviderAccessTokenSchema
+>;
 
 /////////////////////////////////////////
 // USER OTP SCHEMA
@@ -332,9 +508,9 @@ export const UserOTPSchema = z.object({
   setupCompleted: z.boolean(),
   createdAt: z.bigint(),
   updatedAt: z.bigint(),
-})
+});
 
-export type UserOTP = z.infer<typeof UserOTPSchema>
+export type UserOTP = z.infer<typeof UserOTPSchema>;
 
 /////////////////////////////////////////
 // OTP BACKUP CODE SCHEMA
@@ -345,9 +521,9 @@ export const OTPBackupCodeSchema = z.object({
   hashedCode: z.string(),
   createdAt: z.bigint(),
   userOtpId: z.string(),
-})
+});
 
-export type OTPBackupCode = z.infer<typeof OTPBackupCodeSchema>
+export type OTPBackupCode = z.infer<typeof OTPBackupCodeSchema>;
 
 /////////////////////////////////////////
 // O AUTH CLIENT SCHEMA
@@ -362,9 +538,9 @@ export const OAuthClientSchema = z.object({
   userId: z.string(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
-})
+});
 
-export type OAuthClient = z.infer<typeof OAuthClientSchema>
+export type OAuthClient = z.infer<typeof OAuthClientSchema>;
 
 /////////////////////////////////////////
 // O AUTH GRANTED TOKEN SCHEMA
@@ -376,6 +552,6 @@ export const OAuthGrantedTokenSchema = z.object({
   permissionBitMask: z.number().int(),
   expiryAt: z.coerce.date(),
   clientId: z.string(),
-})
+});
 
-export type OAuthGrantedToken = z.infer<typeof OAuthGrantedTokenSchema>
+export type OAuthGrantedToken = z.infer<typeof OAuthGrantedTokenSchema>;

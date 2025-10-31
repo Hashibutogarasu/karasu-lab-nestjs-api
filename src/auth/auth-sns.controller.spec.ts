@@ -58,29 +58,22 @@ describe('AuthController - SNS OAuth Authentication', () => {
   const mockDiscordProvider = mock<DiscordOAuthProvider>({
     getProvider: jest.fn().mockReturnValue('discord'),
     getAuthorizationUrl: jest.fn().mockReturnValue(''),
-    isAvailable: jest.fn().mockReturnValue(true)
+    isAvailable: jest.fn().mockReturnValue(true),
   });
 
   const mockOAuthProviderFactory = mock<OAuthProviderFactory>({
-    getProvider: jest.fn().mockImplementation(
-      (provider: string) => {
-        if (provider === 'google') return mockGoogleProvider;
-        if (provider === 'discord') return mockDiscordProvider;
-        throw AppErrorCodes.PROVIDER_NOT_FOUND;
-      },
-    ),
-    getAllProviders: jest.fn().mockReturnValue([
-      mockGoogleProvider,
-      mockDiscordProvider,
-    ]),
-    getAvailableProviderNames: jest.fn().mockReturnValue([
-      'google',
-      'discord',
-    ]),
-    getConfiguredProviders: jest.fn().mockReturnValue([
-      mockGoogleProvider,
-      mockDiscordProvider,
-    ]),
+    getProvider: jest.fn().mockImplementation((provider: string) => {
+      if (provider === 'google') return mockGoogleProvider;
+      if (provider === 'discord') return mockDiscordProvider;
+      throw AppErrorCodes.PROVIDER_NOT_FOUND;
+    }),
+    getAllProviders: jest
+      .fn()
+      .mockReturnValue([mockGoogleProvider, mockDiscordProvider]),
+    getAvailableProviderNames: jest.fn().mockReturnValue(['google', 'discord']),
+    getConfiguredProviders: jest
+      .fn()
+      .mockReturnValue([mockGoogleProvider, mockDiscordProvider]),
   });
 
   let mockJwtTokenService: MockProxy<JwtTokenService>;
@@ -206,7 +199,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
     mockDiscordProvider.isAvailable.mockReturnValue(true);
 
     // Mock console.error to prevent test output pollution
-    jest.spyOn(console, 'error').mockImplementation(() => { });
+    jest.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -352,7 +345,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
       },
     };
 
-    beforeEach(() => { });
+    beforeEach(() => {});
 
     it('should process Google OAuth callback successfully', async () => {
       // Mock auth state
@@ -650,7 +643,7 @@ describe('AuthController - SNS OAuth Authentication', () => {
         access_token: expectedResult.accessToken,
         refresh_token: 'refresh_token_abc123',
         sessionId: 'session_1',
-        provider: 'external'
+        provider: 'external',
       });
     });
 

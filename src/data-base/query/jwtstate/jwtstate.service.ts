@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import { JWTState, PrismaClient, User } from '@prisma/client';
 import { DataBaseService } from '../../data-base.service';
 import {
   CreateJwtStateDto,
+  CreateJwtStateResponseDto,
   UpdateJwtStateDto,
 } from '../../../jwt-state/jwt-state.dto';
 import { JwtTokenService } from '../../../auth/jwt-token/jwt-token.service';
@@ -17,12 +18,13 @@ export class JwtstateService {
 
   constructor(
     private readonly databaseService: DataBaseService,
-    private readonly moduleRef: ModuleRef,
+    @Inject(forwardRef(() => JwtTokenService))
+    private readonly jwtTokenService: JwtTokenService,
   ) {
     this.prisma = this.databaseService.prisma();
   }
 
-  async createJWT(createJwtStateDto: CreateJwtStateDto) {
+  async createJWT(createJwtStateDto: CreateJwtStateDto): Promise<CreateJwtStateResponseDto> {
     const iat = Math.floor(Date.now() / 1000);
     const exp = iat + 1 * 60 * 60;
 
@@ -38,8 +40,15 @@ export class JwtstateService {
       },
     );
 
+    const accessToken = await this.jwtTokenService.generateJWTToken({
+      userId: createJwtStateDto.userId,
+      jwtStateId: state.id,
+      expirationHours: 1,
+    });
+
     return {
       jti: state.id,
+      accessToken: accessToken.accessToken,
       expiresAt: Math.floor(state.expiresAt!.getTime() / 1000),
       userId: state.userId,
     };
