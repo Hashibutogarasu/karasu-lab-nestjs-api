@@ -1,3 +1,10 @@
+## [1.14.1](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.14.0...v1.14.1) (2025-10-30)
+
+
+### Bug Fixes
+
+* set linkingVerified to true after SNS profile creation ([7c71548](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/commit/7c71548e48fb6e4f5ffdf4e50cd4639968d627b9))
+
 # [1.14.0](https://github.com/Hashibutogarasu/karasu-lab-nestjs-api/compare/v1.13.0...v1.14.0) (2025-10-30)
 
 
