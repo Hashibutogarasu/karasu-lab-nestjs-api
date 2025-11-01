@@ -14,6 +14,7 @@ import { PendingEmailChangeProcessService } from '../data-base/query/pending-ema
 import { PublicUser } from '../auth/decorators/auth-user.decorator';
 import { ExternalProviderAccessTokenService } from '../data-base/query/external-provider-access-token/external-provider-access-token.service';
 import { ExtraProfileService } from '../data-base/query/extra-profile/extra-profile.service';
+import { CanSetPasswordResponseDto } from './account.dto';
 
 @Injectable()
 export class AccountService {
@@ -24,7 +25,7 @@ export class AccountService {
     private readonly pendingEmailChangeProcessService: PendingEmailChangeProcessService,
     private readonly externalProviderAccessTokenService: ExternalProviderAccessTokenService,
     private readonly extraProfileService: ExtraProfileService,
-  ) {}
+  ) { }
 
   /**
    * サインイン済みユーザーのパスワード変更（旧パスワード必要）
@@ -289,22 +290,31 @@ export class AccountService {
    * パスワード設定可能性チェック
    * JWT認証したユーザーが外部プロバイダーでパスワードを持たないかどうかを判定
    */
-  async canSetPassword(user: PublicUser) {
-    const foundUser = await this.userService.findUserById(user.id, {
+  async canSetPassword(userId: string): Promise<CanSetPasswordResponseDto> {
+    const hasPassword = await this.hasPassword(userId);
+    const canSetPassword = !hasPassword;
+    const hasExternalProviders = await this.hasExternalProviders(userId);
+
+    return {
+      canSetPassword,
+      hasPassword,
+      hasExternalProviders,
+    };
+  }
+
+  async hasPassword(userId: string): Promise<boolean> {
+    const foundUser = await this.userService.findUserById(userId, {
       passwordHash: false,
     });
     if (!foundUser) {
       throw AppErrorCodes.USER_NOT_FOUND;
     }
 
-    const canSetPassword =
-      !foundUser.passwordHash && foundUser.providers.length > 0;
+    return !!foundUser.passwordHash;
+  }
 
-    return {
-      canSetPassword,
-      hasPassword: !!foundUser.passwordHash,
-      hasExternalProviders: foundUser.providers.length > 0,
-      providers: foundUser.providers,
-    };
+  async hasExternalProviders(userId: string): Promise<boolean> {
+    const profiles = await this.extraProfileService.getPublicUserWithExtraProfiles(userId);
+    return profiles && profiles.length > 0;
   }
 }

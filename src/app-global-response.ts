@@ -1,4 +1,3 @@
-import { ApiProperty } from '@nestjs/swagger';
 import { createZodDto } from 'nestjs-zod';
 import z from 'zod';
 
@@ -7,7 +6,7 @@ const baseResponseSchema = z.object({
   message: z.string().optional().default('OK'),
   sessionId: z.string().optional(),
   rawMessage: z.string().optional(),
-  data: z.union([z.any(), z.array(z.any())]).optional(),
+  data: z.any().optional(),
 });
 
 export const formattedSchema = baseResponseSchema.loose().transform((inputData) => {

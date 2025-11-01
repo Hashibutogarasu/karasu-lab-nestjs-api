@@ -49,7 +49,7 @@ import { AppErrorCodes } from '../types/error-codes';
 
 @Controller('account')
 export class AccountController {
-  constructor(private readonly accountService: AccountService) {}
+  constructor(private readonly accountService: AccountService) { }
 
   /**
    * サインイン済みユーザーのパスワード変更
@@ -180,13 +180,13 @@ export class AccountController {
     type: CanSetPasswordResponseDto,
   })
   @ApiBadRequestResponse(AppErrorCodes.USER_NOT_FOUND.apiResponse)
-  @Get('can-set-password')
+  @Get('security/status')
   @UseGuards(JwtAuthGuard)
   async canSetPassword(
     @Request() req: ExpressRequest,
     @AuthUser() user: PublicUser,
   ) {
-    return await this.accountService.canSetPassword(user);
+    return await this.accountService.canSetPassword(user.id);
   }
 
   /**

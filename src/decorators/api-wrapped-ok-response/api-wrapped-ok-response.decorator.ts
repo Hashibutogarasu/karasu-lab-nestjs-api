@@ -17,9 +17,21 @@ export const ApiWrappedOkResponse = (
     (meta && typeof meta === 'object' && (meta as any).type) || undefined;
 
   if (providedType) {
-    class _RuntimeApiWrappedOkDto extends AppGlobalResponse {
-      @ApiProperty({ type: providedType as any, nullable: true })
-      declare data?: any;
+    class _RuntimeApiWrappedOkDto {
+      @ApiProperty({ type: () => providedType, required: false, nullable: true })
+      data?: typeof providedType;
+
+      @ApiProperty({ default: true })
+      success: boolean;
+
+      @ApiProperty({ default: 'OK' })
+      message: string;
+
+      @ApiProperty({ required: false })
+      sessionId?: string;
+
+      @ApiProperty({ required: false })
+      rawMessage?: string;
     }
 
     try {

@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { AppErrorCodeFilter } from './filters/app-error-code.filter';
 import { ResponseFormatterInterceptor } from './interceptors/response-formatter.interceptor';
 import { Reflector } from '@nestjs/core';
 import { ZodValidationPipe } from 'nestjs-zod';
